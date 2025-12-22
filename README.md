@@ -68,12 +68,14 @@ frontend/
 ### 环境要求
 - Node.js >= 16.0.0
 - MongoDB >= 5.0.0
+- Git
+- 推荐使用 PM2 进行生产环境部署
 
 ### 安装步骤
 
 1. **克隆项目**
 ```bash
-git clone <repository-url>
+git clone https://gitea.yangzai.fun:16666/yangzai/videoAll.git
 cd videoAll
 ```
 
@@ -84,8 +86,35 @@ npm install
 ```
 
 3. **配置环境变量**
-   - 复制 `.env.example` 文件为 `.env`
-   - 编辑 `.env` 文件，配置数据库连接、端口等参数
+   - 创建 `.env` 文件
+   ```bash
+   cp .env.example .env
+   ```
+   - 编辑 `.env` 文件，配置以下参数：
+   ```env
+   # 服务器配置
+   PORT=3000
+   NODE_ENV=development
+   
+   # 数据库配置
+   MONGODB_URI=mongodb://localhost:27017/videoAll
+   
+   # JWT 配置
+   JWT_SECRET=your_jwt_secret_key
+   JWT_EXPIRES_IN=7d
+   
+   # 存储配置
+   STORAGE_PATH=./media
+   TEMP_PATH=./tmp
+   
+   # 日志配置
+   LOG_LEVEL=info
+   LOG_DIR=./logs
+   
+   # 安全配置
+   RATE_LIMIT_WINDOW_MS=900000
+   RATE_LIMIT_MAX=100
+   ```
 
 4. **安装前端依赖**
 ```bash
@@ -101,12 +130,97 @@ npm run build
 6. **启动后端服务**
 ```bash
 cd ../backend
+# 开发环境
 npm run dev
+
+# 生产环境（推荐使用 PM2）
+npm install -g pm2
+pm run start
 ```
 
 7. **访问系统**
    - 前端地址：`http://localhost:3000`
    - 后端API地址：`http://localhost:3000/api/v1`
+   - 默认管理员账号：admin@example.com / admin123
+
+### 生产环境部署建议
+- 使用 Nginx 作为反向代理
+- 配置 HTTPS 证书
+- 启用 MongoDB 认证
+- 定期备份数据库
+- 配置日志轮转
+
+## 使用指南
+
+### 1. 系统登录
+1. 访问 `http://localhost:3000`
+2. 使用默认账号或管理员分配的账号登录
+3. 首次登录建议修改密码
+
+### 2. 内容解析
+1. 进入「内容解析」页面
+2. 在输入框中粘贴内容平台链接
+3. 点击「解析」按钮
+4. 系统自动解析并下载内容
+5. 解析完成后可在「内容管理」页面查看
+
+### 3. 创建作者监控任务
+1. 进入「任务管理」页面
+2. 点击「创建任务」按钮
+3. 选择平台类型
+4. 输入作者主页链接
+5. 设置监控频率（每小时、每天、每周）
+6. 点击「保存」按钮
+
+### 4. 管理内容资产
+1. 进入「内容管理」页面
+2. 使用筛选条件查找特定内容
+3. 点击内容卡片查看详情
+4. 可执行预览、下载、删除等操作
+5. 支持批量选择和批量操作
+
+### 5. 查看热搜数据
+1. 进入「热搜管理」页面
+2. 选择平台和日期
+3. 查看热搜榜单
+4. 点击热搜关键词可一键解析相关内容
+
+### 6. 配置系统参数
+1. 进入「系统配置」页面
+2. 配置平台Cookie（提高解析成功率）
+3. 管理用户账号
+4. 调整系统设置
+
+## 配置方法
+
+### 平台Cookie配置
+1. 登录对应平台
+2. 打开浏览器开发者工具（F12）
+3. 进入「Application」/「Storage」选项卡
+4. 找到对应平台的Cookie
+5. 复制完整Cookie字符串
+6. 进入系统「配置管理」-「Cookie管理」
+7. 添加新的Cookie配置
+8. 定期更新Cookie以保持有效性
+
+### 自定义存储路径
+在 `.env` 文件中修改以下配置：
+```env
+STORAGE_PATH=/path/to/your/storage
+TEMP_PATH=/path/to/your/temp
+```
+
+### 调整日志级别
+在 `.env` 文件中修改：
+```env
+LOG_LEVEL=debug  # 可选：error, warn, info, debug, silly
+```
+
+### 配置速率限制
+在 `.env` 文件中修改：
+```env
+RATE_LIMIT_WINDOW_MS=900000  # 15分钟
+RATE_LIMIT_MAX=100  # 每个IP最多100请求
 
 ## API文档
 
@@ -301,16 +415,52 @@ npm test
 ## 常见问题与解决方案
 
 1. **问题**：解析失败
-   **解决方案**：检查平台Cookie是否有效，网络连接是否正常
+   **解决方案**：检查平台Cookie是否有效，网络连接是否正常，查看系统日志获取详细错误信息
 
 2. **问题**：监控任务未执行
-   **解决方案**：检查任务状态是否为启用，查看任务日志获取详细错误信息
+   **解决方案**：检查任务状态是否为启用，查看任务日志获取详细错误信息，确保系统服务正常运行
 
 3. **问题**：系统运行缓慢
-   **解决方案**：检查数据库索引，优化查询语句，清理过期数据
+   **解决方案**：检查数据库索引，优化查询语句，清理过期数据，增加服务器资源
 
 4. **问题**：文件下载失败
-   **解决方案**：检查存储路径权限，确保文件存在
+   **解决方案**：检查存储路径权限，确保文件存在，查看系统日志获取详细错误信息
+
+5. **问题**：登录失败
+   **解决方案**：检查用户名密码是否正确，联系管理员重置密码，检查JWT配置是否正确
+
+## 贡献指南
+
+### 开发环境搭建
+1. 克隆项目代码
+2. 按照「安装步骤」配置开发环境
+3. 安装依赖
+4. 启动开发服务器
+
+### 代码规范
+- 遵循项目现有的代码风格
+- 使用ESLint和Prettier进行代码检查和格式化
+- 为新功能编写测试用例
+- 提交代码前运行测试
+
+### 提交规范
+- 使用语义化提交信息
+- 提交信息格式：`type(scope): description`
+- 例如：`feat(content): add batch delete functionality`
+
+### 分支管理
+- `main`：主分支，用于发布生产版本
+- `develop`：开发分支，用于集成新功能
+- `feature/xxx`：功能分支，用于开发特定功能
+- `fix/xxx`：修复分支，用于修复bug
+
+### 贡献流程
+1. Fork项目仓库
+2. 创建功能分支
+3. 提交代码
+4. 创建Pull Request
+5. 代码审查
+6. 合并到主分支
 
 ## 版本更新日志
 
@@ -318,14 +468,52 @@ npm test
 - 初始版本发布
 - 实现所有核心功能
 - 完善的API文档
+- 支持多平台内容解析
+- 作者监控任务功能
+- 内容管理系统
+- 热搜数据抓取与分析
+- 数据可视化仪表盘
 
 ## 许可证
 
 MIT License
 
+Copyright (c) 2025 videoAll Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## 免责声明
+
+本项目仅供学习和研究使用，请勿用于商业用途。使用本项目进行内容抓取时，请遵守各平台的服务条款和相关法律法规。对于因使用本项目而引起的任何法律责任，项目作者不承担任何责任。
+
 ## 联系方式
 
 如有任何问题或建议，欢迎通过以下方式联系：
-- 项目维护者：[Your Name]
-- 邮箱：[your-email@example.com]
-- GitHub：[repository-url]
+- 项目仓库：https://gitea.yangzai.fun:16666/yangzai/videoAll.git
+- 项目文档：https://gitea.yangzai.fun:16666/yangzai/videoAll.git
+
+## 更新记录
+
+- 2025-12-19：初始版本发布
+- 2025-12-20：完善README文档，添加使用指南和配置方法
+- 2025-12-21：优化API文档，添加贡献指南
+
+## 致谢
+
+感谢所有为本项目做出贡献的开发者和测试人员。
