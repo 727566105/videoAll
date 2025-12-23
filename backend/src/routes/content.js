@@ -27,6 +27,9 @@ router.get('/:id', ContentController.getContentById);
 // Delete content by ID
 router.delete('/:id', ContentController.deleteContent);
 
+// Refresh statistics from original source
+router.post('/:id/refresh-stats', ContentController.refreshStats);
+
 // Batch delete contents
 router.post('/batch-delete', ContentController.batchDeleteContents);
 

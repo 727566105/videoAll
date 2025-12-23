@@ -55,7 +55,16 @@ class XiaohongshuParser(BaseParser):
                 description=media_data.get("description"),
                 tags=media_data.get("tags", []),
                 has_live_photo=media_data.get("has_live_photo", False),
-                raw_data=media_data.get("raw_data", {})
+                raw_data=media_data.get("raw_data", {}),
+                # 统计数据
+                like_count=media_data.get("like_count"),
+                collect_count=media_data.get("collect_count"),
+                comment_count=media_data.get("comment_count"),
+                share_count=media_data.get("share_count"),
+                view_count=media_data.get("view_count"),
+                # 发布时间
+                publish_time=media_data.get("publish_time"),
+                url=url
             )
             
             return media_info
@@ -167,7 +176,46 @@ class XiaohongshuParser(BaseParser):
                         # 提取标签
                         tag_list = note_data.get("tagList", [])
                         media_data["tags"] = [tag.get("name", "") for tag in tag_list if tag.get("name")]
-                        
+
+                        # 提取统计数据 - 小红书数据在 interactInfo 对象中
+                        interact_info = note_data.get("interactInfo", {})
+
+                        # 从 interactInfo 中提取（新版本数据结构）
+                        if interact_info:
+                            # 尝试从 interactInfo 获取，值可能是字符串需要转换为整数
+                            media_data["like_count"] = self._safe_int(interact_info.get("likedCount"))
+                            media_data["collect_count"] = self._safe_int(interact_info.get("collectedCount"))
+                            media_data["comment_count"] = self._safe_int(interact_info.get("commentCount"))
+                            media_data["share_count"] = self._safe_int(interact_info.get("shareCount"))
+                        else:
+                            # 备用：从 note_data 根级别获取（旧版本数据结构）
+                            media_data["like_count"] = self._safe_int(note_data.get("likedCount") or note_data.get("like_count"))
+                            media_data["collect_count"] = self._safe_int(note_data.get("collectedCount") or note_data.get("collect_count"))
+                            media_data["comment_count"] = self._safe_int(note_data.get("commentCount") or note_data.get("comment_count"))
+                            media_data["share_count"] = self._safe_int(note_data.get("shareCount") or note_data.get("share_count"))
+
+                        # viewCount 通常不在 interactInfo 中，从根级别获取
+                        media_data["view_count"] = self._safe_int(note_data.get("viewCount") or note_data.get("view_count"))
+
+                        # 记录提取的统计数据
+                        self.log_info(f"提取统计数据 - 点赞:{media_data['like_count']}, 收藏:{media_data['collect_count']}, 评论:{media_data['comment_count']}")
+
+                        # 提取发布时间（小红书使用毫秒级时间戳）
+                        publish_time = note_data.get("time") or note_data.get("publishTime") or note_data.get("publish_time")
+                        if publish_time:
+                            try:
+                                from datetime import datetime
+                                if isinstance(publish_time, (int, float)):
+                                    # 毫秒级时间戳转换
+                                    media_data["publish_time"] = datetime.fromtimestamp(publish_time / 1000)
+                                    self.log_info(f"提取发布时间: {media_data['publish_time']}")
+                                elif isinstance(publish_time, str):
+                                    # ISO格式字符串
+                                    media_data["publish_time"] = datetime.fromisoformat(publish_time.replace('Z', '+00:00'))
+                                    self.log_info(f"提取发布时间: {media_data['publish_time']}")
+                            except Exception as e:
+                                self.log_debug(f"发布时间解析失败: {publish_time}, 错误: {e}")
+
                         # 保存完整的note数据，用于后续下载链接提取
                         media_data["note_data"] = note_data
                         return True
@@ -197,27 +245,66 @@ class XiaohongshuParser(BaseParser):
         except Exception as e:
             self.log_debug(f"解析__INITIAL_STATE__详细信息失败: {str(e)}")
             return False
-    
+
+    def _safe_int(self, value) -> int:
+        """安全地将值转换为整数"""
+        if value is None:
+            return 0
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                return 0
+        if isinstance(value, float):
+            return int(value)
+        return 0
+
     def _get_download_urls(self, media_data: dict) -> DownloadUrls:
         """获取下载链接"""
         download_urls = DownloadUrls()
-        
+
         try:
             # 从note_data中提取媒体URL
             note_data = media_data.get("note_data")
             if note_data:
                 self._extract_urls_from_note_data(note_data, download_urls)
-            
+
             # 从raw_data中搜索所有可能的媒体链接
             raw_data = media_data.get("raw_data", {})
             if raw_data:
                 self._extract_all_urls_from_data(raw_data, download_urls)
-            
+
+            # 最终去重：使用规范化URL进行去重（去除所有查询参数）
+            download_urls.video = self._deduplicate_urls(download_urls.video)
+            download_urls.images = self._deduplicate_urls(download_urls.images)
+            download_urls.live = self._deduplicate_urls(download_urls.live)
+
+            self.log_debug(f"去重后: 视频{len(download_urls.video)}个, 图片{len(download_urls.images)}张, 实况{len(download_urls.live)}个")
+
             return download_urls
-            
+
         except Exception as e:
             self.log_error(f"获取下载链接失败: {str(e)}")
             return download_urls
+
+    def _deduplicate_urls(self, url_list: list) -> list:
+        """URL去重 - 使用基础URL（去除查询参数）进行比较"""
+        seen = set()
+        result = []
+
+        for url in url_list:
+            # 提取基础URL（去除查询参数和片段）
+            base_url = url.split('?')[0].split('#')[0]
+
+            if base_url not in seen:
+                seen.add(base_url)
+                result.append(url)
+            else:
+                self.log_debug(f"去除重复URL: {url}")
+
+        return result
     
     def _extract_urls_from_note_data(self, note_data: dict, download_urls: DownloadUrls) -> None:
         """从note_data中提取媒体URL"""

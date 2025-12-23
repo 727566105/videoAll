@@ -78,6 +78,12 @@ module.exports = new EntitySchema({
       default: 0,
       comment: '点赞数量',
     },
+    collect_count: {
+      type: 'int',
+      nullable: true,
+      default: 0,
+      comment: '收藏数量',
+    },
     comment_count: {
       type: 'int',
       nullable: true,
@@ -90,6 +96,12 @@ module.exports = new EntitySchema({
       default: 0,
       comment: '分享数量',
     },
+    view_count: {
+      type: 'int',
+      nullable: true,
+      default: 0,
+      comment: '浏览数量',
+    },
     publish_time: {
       type: 'timestamp',
       nullable: true,
@@ -99,6 +111,12 @@ module.exports = new EntitySchema({
       type: 'text',
       nullable: true,
       comment: 'JSON array of tags',
+    },
+    is_missing: {
+      type: 'boolean',
+      nullable: true,
+      default: false,
+      comment: '笔记是否已消失',
     },
     created_at: {
       type: 'timestamp',

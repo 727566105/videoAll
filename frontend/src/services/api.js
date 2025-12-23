@@ -134,7 +134,8 @@ const apiService = {
     export: (data) => api.post('/content/export', data),
     download: (id) => api.post('/content/download', { id }, { responseType: 'blob' }),
     downloadByUrl: (data) => api.post('/content/download-by-url', data),
-    save: (data) => api.post('/content/save', data)
+    save: (data) => api.post('/content/save', data),
+    refreshStats: (id) => api.post(`/content/${id}/refresh-stats`)
   },
   
   // Task management

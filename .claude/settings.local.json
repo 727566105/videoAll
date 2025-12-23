@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run dev)"
+      "Bash(npm run dev)",
+      "Bash(node -e \"\nconst { Client } = require\\(''pg''\\);\nconst client = new Client\\({\n  connectionString: process.env.DATABASE_URL || ''postgresql://postgres:postgres@localhost:5432/videoall''\n}\\);\n\nasync function checkData\\(\\) {\n  await client.connect\\(\\);\n  const result = await client.query\\(\\\\`\n    SELECT id, title, platform, \n           like_count, collect_count, comment_count, share_count, view_count, \n           publish_time, created_at\n    FROM contents \n    ORDER BY created_at DESC \n    LIMIT 3\n  \\\\`\\);\n  \n  console.log\\(''数据库中的最新3条记录:''\\);\n  console.log\\(JSON.stringify\\(result.rows, null, 2\\)\\);\n  \n  await client.end\\(\\);\n}\n\ncheckData\\(\\).catch\\(console.error\\);\n\")",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(curl:*)"
     ]
   }
 }

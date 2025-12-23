@@ -88,19 +88,43 @@ const Dashboard = () => {
       type: 'inner',
       offset: '-30%',
       content: ({ percent }) => `${(percent * 100).toFixed(0)}%`,
+      style: {
+        fill: '#fff',
+        fontSize: 14,
+        textAlign: 'center'
+      }
     },
     tooltip: {
+      fields: ['type', 'value'],
       formatter: (datum) => {
-        return `${datum.type}: ${datum.value}`;
+        return { name: datum.type, value: datum.value };
       },
-      style: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '4px',
-        padding: '8px 12px',
-        fontSize: '14px',
+      domStyles: {
+        'g2-tooltip': {
+          backgroundColor: '#fff',
+          color: '#000',
+          border: '1px solid #d9d9d9',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        }
       },
+      customContent: (title, data) => {
+        if (!data || data.length === 0) return '';
+        const item = data[0];
+        return `
+          <div style="
+            padding: 8px 12px;
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 14px;
+            color: #000;
+          ">
+            <div style="margin-bottom: 4px; font-weight: 500;">${item.name}</div>
+            <div>数量: <strong>${item.value}</strong></div>
+          </div>
+        `;
+      }
     },
     interactions: [
       { type: 'element-active' },

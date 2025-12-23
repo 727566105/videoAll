@@ -66,6 +66,7 @@ class MediaInfo(BaseModel):
     
     # 统计信息
     like_count: Optional[int] = Field(None, description="点赞数")
+    collect_count: Optional[int] = Field(None, description="收藏数")
     comment_count: Optional[int] = Field(None, description="评论数")
     share_count: Optional[int] = Field(None, description="分享数")
     view_count: Optional[int] = Field(None, description="浏览数")

@@ -31,8 +31,11 @@ class DashboardController {
       // Image content count
       const imageCount = await contentRepository.count({ where: { media_type: 'image' } });
 
-      // Today's added content count
-      const todayAdded = await contentRepository.count({ where: { created_at: { $gte: today } } });
+      // Today's added content count - 使用 TypeORM 语法
+      const todayAdded = await contentRepository
+        .createQueryBuilder('content')
+        .where('content.created_at >= :today', { today })
+        .getCount();
 
       // Active tasks count
       const activeTasks = await crawlTaskRepository.count({ where: { status: 1 } });
@@ -114,7 +117,7 @@ class DashboardController {
     try {
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
-      
+
       // Calculate dates for the last 7 days
       const trendData = [];
       const today = new Date();
@@ -128,15 +131,12 @@ class DashboardController {
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
 
-        // Count content added on this date
-        const count = await contentRepository.count({
-          where: {
-            created_at: {
-              gte: date,
-              lt: nextDate
-            }
-          }
-        });
+        // Count content added on this date - 使用 TypeORM 语法
+        const count = await contentRepository
+          .createQueryBuilder('content')
+          .where('content.created_at >= :date', { date })
+          .andWhere('content.created_at < :nextDate', { nextDate })
+          .getCount();
 
         // Format date as MM-DD
         const dateStr = `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
@@ -206,7 +206,7 @@ class DashboardController {
     // Get repositories from TypeORM
     const contentRepository = AppDataSource.getRepository('Content');
     const crawlTaskRepository = AppDataSource.getRepository('CrawlTask');
-    
+
     // Total content count
     const total = await contentRepository.count();
 
@@ -216,14 +216,11 @@ class DashboardController {
     // Image content count
     const imageCount = await contentRepository.count({ where: { media_type: 'image' } });
 
-    // Today's added content count
-    const todayAdded = await contentRepository.count({
-      where: {
-        created_at: {
-          gte: today
-        }
-      }
-    });
+    // Today's added content count - 使用 TypeORM 语法
+    const todayAdded = await contentRepository
+      .createQueryBuilder('content')
+      .where('content.created_at >= :today', { today })
+      .getCount();
 
     // Active tasks count
     const activeTasks = await crawlTaskRepository.count({ where: { status: 1 } });
@@ -271,7 +268,7 @@ class DashboardController {
   static async getRecentContentTrendInternal() {
     // Get Content repository from TypeORM
     const contentRepository = AppDataSource.getRepository('Content');
-    
+
     // Calculate dates for the last 7 days
     const trendData = [];
     const today = new Date();
@@ -285,15 +282,12 @@ class DashboardController {
       const nextDate = new Date(date);
       nextDate.setDate(nextDate.getDate() + 1);
 
-      // Count content added on this date
-        const count = await contentRepository.count({
-          where: {
-            created_at: {
-              gte: date,
-              lt: nextDate
-            }
-          }
-        });
+      // Count content added on this date - 使用 TypeORM 语法
+      const count = await contentRepository
+        .createQueryBuilder('content')
+        .where('content.created_at >= :date', { date })
+        .andWhere('content.created_at < :nextDate', { nextDate })
+        .getCount();
 
       // Format date as MM-DD
       const dateStr = `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;

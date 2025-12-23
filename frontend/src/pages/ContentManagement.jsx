@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag } from 'antd';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 
 const { Title } = Typography;
@@ -26,6 +26,7 @@ const ContentManagement = () => {
   // Preview modal state
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewContent, setPreviewContent] = useState(null);
+  const [refreshingStats, setRefreshingStats] = useState(false);
 
   // Columns definition
   const columns = [
@@ -33,11 +34,12 @@ const ContentManagement = () => {
       title: '封面',
       dataIndex: 'cover_url',
       key: 'cover_url',
-      render: (cover_url) => (
-        <img 
-          src={`/api/v1/content/proxy-image?url=${encodeURIComponent(cover_url)}`} 
-          alt="封面" 
-          style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4 }}
+      render: (cover_url, record) => (
+        <img
+          src={`/api/v1/content/proxy-image?url=${encodeURIComponent(cover_url)}`}
+          alt="封面"
+          style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+          onClick={() => handlePreview(record)}
           onError={(e) => {
             e.target.src = 'https://via.placeholder.com/80x60?text=加载失败';
           }}
@@ -48,7 +50,13 @@ const ContentManagement = () => {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true
+      ellipsis: true,
+      render: (title, record) => (
+        <Space>
+          <span>{title}</span>
+          {record.is_missing && <Tag color="error">已消失</Tag>}
+        </Space>
+      )
     },
     {
       title: '作者',
@@ -103,11 +111,10 @@ const ContentManagement = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small" wrap>
-          <Button type="link" icon={<EyeOutlined />} onClick={() => handlePreview(record)}>预览</Button>
           <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>下载</Button>
-          <Button 
-            type="link" 
-            danger 
+          <Button
+            type="link"
+            danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
@@ -286,6 +293,55 @@ const ContentManagement = () => {
 
     setPreviewContent(record);
     setPreviewVisible(true);
+  };
+
+  // Handle refresh statistics
+  const handleRefreshStats = async () => {
+    if (!previewContent?.source_url) {
+      message.warning('没有源链接，无法刷新统计数据');
+      return;
+    }
+
+    setRefreshingStats(true);
+    try {
+      // 调用后端 API 刷新统计数据
+      const response = await apiService.content.refreshStats(previewContent.id);
+
+      if (response.success) {
+        // 更新预览内容中的统计数据
+        setPreviewContent({
+          ...previewContent,
+          like_count: response.data.like_count,
+          collect_count: response.data.collect_count,
+          comment_count: response.data.comment_count,
+          share_count: response.data.share_count,
+          view_count: response.data.view_count,
+          is_missing: response.data.is_missing
+        });
+
+        // 同时更新列表中的数据
+        setContentList(prevList =>
+          prevList.map(item =>
+            item.id === previewContent.id
+              ? { ...item, ...response.data }
+              : item
+          )
+        );
+
+        if (response.data.is_missing) {
+          message.warning('笔记已消失，但保留了已有数据');
+        } else {
+          message.success('统计数据已更新');
+        }
+      } else {
+        message.error(response.message || '刷新统计数据失败');
+      }
+    } catch (error) {
+      console.error('刷新统计数据失败:', error);
+      message.error(error.response?.data?.message || error.message || '刷新统计数据失败');
+    } finally {
+      setRefreshingStats(false);
+    }
   };
 
   // Handle content download
@@ -505,7 +561,14 @@ const ContentManagement = () => {
 
       {/* Content Preview Modal */}
       <Modal
-        title={previewContent?.title || '内容预览'}
+        title={
+          <Space>
+            <span>{previewContent?.title || '内容预览'}</span>
+            {previewContent?.is_missing && (
+              <Tag color="error">已消失</Tag>
+            )}
+          </Space>
+        }
         open={previewVisible}
         onCancel={() => setPreviewVisible(false)}
         footer={null}
@@ -513,6 +576,26 @@ const ContentManagement = () => {
       >
         {previewContent && (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {/* 操作栏 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+              <Space>
+                {previewContent?.is_missing && (
+                  <Tag color="error" style={{ fontSize: 14 }}>
+                    ⚠️ 笔记已消失
+                  </Tag>
+                )}
+              </Space>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleRefreshStats}
+                loading={refreshingStats}
+                type="primary"
+                size="small"
+              >
+                刷新统计数据
+              </Button>
+            </div>
+
             {/* 🎥 视频预览区域 */}
             {previewContent.all_videos && previewContent.all_videos.length > 0 && (
               <div>
@@ -634,7 +717,51 @@ const ContentManagement = () => {
               <div>类型: {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
               <div>来源: {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
               <div>采集时间: {new Date(previewContent.created_at).toLocaleString()}</div>
+              {previewContent.publish_time && (
+                <div>发布时间: {new Date(previewContent.publish_time).toLocaleString()}</div>
+              )}
             </div>
+
+            {/* 统计数据 */}
+            {(previewContent.like_count || previewContent.collect_count ||
+              previewContent.comment_count || previewContent.share_count ||
+              previewContent.view_count) && (
+              <div style={{ marginBottom: '16px' }}>
+                <h4>互动数据</h4>
+                <Space size="large" wrap>
+                  {previewContent.like_count !== undefined && previewContent.like_count !== null && (
+                    <Space>
+                      <span>👍 点赞:</span>
+                      <strong>{previewContent.like_count.toLocaleString()}</strong>
+                    </Space>
+                  )}
+                  {previewContent.collect_count !== undefined && previewContent.collect_count !== null && (
+                    <Space>
+                      <span>⭐ 收藏:</span>
+                      <strong>{previewContent.collect_count.toLocaleString()}</strong>
+                    </Space>
+                  )}
+                  {previewContent.comment_count !== undefined && previewContent.comment_count !== null && (
+                    <Space>
+                      <span>💬 评论:</span>
+                      <strong>{previewContent.comment_count.toLocaleString()}</strong>
+                    </Space>
+                  )}
+                  {previewContent.share_count !== undefined && previewContent.share_count !== null && (
+                    <Space>
+                      <span>🔄 分享:</span>
+                      <strong>{previewContent.share_count.toLocaleString()}</strong>
+                    </Space>
+                  )}
+                  {previewContent.view_count !== undefined && previewContent.view_count !== null && (
+                    <Space>
+                      <span>👁️ 浏览:</span>
+                      <strong>{previewContent.view_count.toLocaleString()}</strong>
+                    </Space>
+                  )}
+                </Space>
+              </div>
+            )}
             {previewContent.description && (
               <div>
                 <h4>描述</h4>

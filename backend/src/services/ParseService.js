@@ -111,24 +111,28 @@ class ParseService {
     let mediaUrl = '';
     let allImages = [];
     let allVideos = [];
-    
+
     if (actualResult.download_urls) {
       // 提取所有视频URL
       allVideos = actualResult.download_urls.video || [];
-      
+
       // 视频URL优先作为主媒体URL
       if (allVideos.length > 0) {
         mediaUrl = allVideos[0];
       }
-      
+
       // 图片URL处理，包括普通图片和实况图片
       allImages = [...(actualResult.download_urls.images || []), ...(actualResult.download_urls.live || [])];
-      
+
       // 如果没有视频，使用图片作为主媒体URL
       if (!mediaUrl && allImages.length > 0) {
         mediaUrl = allImages[0];
       }
     }
+
+    // 去重处理 - 防止SDK返回重复的URL
+    allVideos = this.deduplicateUrls(allVideos);
+    allImages = this.deduplicateUrls(allImages);
     
     // 封面URL处理
     let coverUrl = actualResult.cover_url || '';
@@ -154,16 +158,42 @@ class ParseService {
       // SDK扩展字段
       tags: actualResult.tags || [],
       like_count: actualResult.like_count,
+      collect_count: actualResult.collect_count,
       comment_count: actualResult.comment_count,
       share_count: actualResult.share_count,
       view_count: actualResult.view_count,
-      has_live_photo: actualResult.has_live_photo || false
+      has_live_photo: actualResult.has_live_photo || false,
+      publish_time: actualResult.publish_time ? new Date(actualResult.publish_time) : null
     };
   }
 
   // 清理文件名，移除特殊字符
   static cleanFilename(filename) {
     return filename.replace(/[\\/:*?"<>|]/g, '_').substring(0, 50);
+  }
+
+  // URL去重 - 使用基础URL（去除查询参数）进行比较
+  static deduplicateUrls(urlList) {
+    if (!Array.isArray(urlList)) return [];
+
+    const seen = new Set();
+    const result = [];
+
+    for (const url of urlList) {
+      if (!url || typeof url !== 'string') continue;
+
+      // 提取基础URL（去除查询参数和片段）
+      const baseUrl = url.split('?')[0].split('#')[0];
+
+      if (baseUrl && !seen.has(baseUrl)) {
+        seen.add(baseUrl);
+        result.push(url);
+      } else if (baseUrl) {
+        console.log(`去除重复URL: ${url}`);
+      }
+    }
+
+    return result;
   }
 
   // Detect platform from URL (保持API兼容性)

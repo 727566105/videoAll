@@ -42,8 +42,11 @@ class ContentController {
         all_videos: parsedData.all_videos, // Ensure all_videos is included - NEW
         has_live_photo: parsedData.has_live_photo, // Include live photo support
         like_count: parsedData.like_count, // Include interaction stats
+        collect_count: parsedData.collect_count,
         comment_count: parsedData.comment_count,
         share_count: parsedData.share_count,
+        view_count: parsedData.view_count,
+        publish_time: parsedData.publish_time,
         tags: parsedData.tags, // Include tags
         source_url: link,
         source_type: 1, // 1-单链接解析
@@ -219,6 +222,87 @@ class ContentController {
     } catch (error) {
       console.error('Delete content error:', error);
       res.status(500).json({ message: '删除内容失败' });
+    }
+  }
+
+  // Refresh statistics from original source
+  static async refreshStats(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Get Content repository from TypeORM
+      const contentRepository = AppDataSource.getRepository('Content');
+
+      // Find content first
+      const content = await contentRepository.findOne({ where: { id } });
+      if (!content) {
+        return res.status(404).json({ message: '内容不存在' });
+      }
+
+      // Check if content has source_url
+      if (!content.source_url) {
+        return res.status(400).json({ message: '没有源链接，无法刷新统计数据' });
+      }
+
+      // Re-parse the content from original source
+      let parsedData;
+      try {
+        parsedData = await ParseService.parseLink(content.source_url);
+      } catch (parseError) {
+        console.error('Refresh stats - parse error:', parseError);
+
+        // If parsing failed, mark as missing but keep existing data
+        const updatedContent = {
+          ...content,
+          is_missing: true
+        };
+
+        await contentRepository.save(updatedContent);
+
+        return res.status(200).json({
+          success: true,
+          message: '笔记已消失，但保留了已有数据',
+          data: {
+            is_missing: true,
+            like_count: content.like_count || 0,
+            collect_count: content.collect_count || 0,
+            comment_count: content.comment_count || 0,
+            share_count: content.share_count || 0,
+            view_count: content.view_count || 0
+          }
+        });
+      }
+
+      // Update only statistics fields, keep media data unchanged
+      const updatedContent = {
+        ...content,
+        like_count: parsedData.like_count || 0,
+        collect_count: parsedData.collect_count || 0,
+        comment_count: parsedData.comment_count || 0,
+        share_count: parsedData.share_count || 0,
+        view_count: parsedData.view_count || 0,
+        publish_time: parsedData.publish_time || content.publish_time,
+        is_missing: false
+      };
+
+      await contentRepository.save(updatedContent);
+
+      res.status(200).json({
+        success: true,
+        message: '统计数据已更新',
+        data: {
+          is_missing: false,
+          like_count: updatedContent.like_count,
+          collect_count: updatedContent.collect_count,
+          comment_count: updatedContent.comment_count,
+          share_count: updatedContent.share_count,
+          view_count: updatedContent.view_count,
+          publish_time: updatedContent.publish_time
+        }
+      });
+    } catch (error) {
+      console.error('Refresh stats error:', error);
+      res.status(500).json({ message: '刷新统计数据失败' });
     }
   }
 
@@ -800,8 +884,10 @@ class ContentController {
         source_type: parseInt(source_type),
         task_id,
         like_count: parsedData.like_count || 0,
+        collect_count: parsedData.collect_count || 0,
         comment_count: parsedData.comment_count || 0,
         share_count: parsedData.share_count || 0,
+        view_count: parsedData.view_count || 0,
         publish_time: parsedData.publish_time ? new Date(parsedData.publish_time) : null,
         tags: parsedData.tags ? JSON.stringify(parsedData.tags) : null,
         created_at: new Date()

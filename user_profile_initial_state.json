@@ -1,0 +1,978 @@
+{
+  "global": {
+    "appSettings": {
+      "notificationInterval": 30,
+      "prefetchTimeout": 3001,
+      "prefetchRedisExpires": 259200000,
+      "searchFilterGuideConfig": {
+        "maxDailyShow": 1,
+        "maxTotalShow": 3,
+        "showInterval": 1,
+        "validDays": 15,
+        "autoCloseDelay": 5000
+      },
+      "retryFeeds": true,
+      "grayModeConfig": {
+        "global": false,
+        "dateRange": [
+          "2023-08-01 00:00:00",
+          "2023-08-19 23:59:59"
+        ],
+        "greyRule": {
+          "layout": {
+            "enable": false,
+            "pages": [
+              "Explore"
+            ]
+          },
+          "pages": [
+            "Explore"
+          ]
+        },
+        "disableLikeNotes": [
+          "64ce36f7000000000c036ba5"
+        ],
+        "disableSearchHint": false
+      },
+      "NIO": true,
+      "ICPInfoList": [
+        {
+          "label": "沪ICP备13030189号",
+          "link": "//beian.miit.gov.cn/",
+          "title": "小红书_沪ICP备"
+        },
+        {
+          "label": "营业执照",
+          "link": "//fe-video-qc.xhscdn.com/fe-platform/5581076bd6b6af2e0e943abb024ad0e16f2ebff6.pdf",
+          "title": "小红书_营业执照"
+        },
+        {
+          "label": "2024沪公网安备31010102002533号",
+          "link": "//www.beian.gov.cn/portal/registerSystemInfo?recordcode=31010102002533",
+          "title": "小红书_沪公网安备"
+        },
+        {
+          "label": "增值电信业务经营许可证：沪B2-20150021",
+          "link": "//fe-video-qc.xhscdn.com/fe-platform-file/104101b831hhkkll23u0678gtks7tu70004en2n231udpe",
+          "title": "小红书_网文"
+        },
+        {
+          "label": "医疗器械网络交易服务第三方平台备案：(沪)网械平台备字[2019]第00006号",
+          "link": "//fe-video-qc.xhscdn.com/fe-platform/410dce57bc12a6d7e5808060e47644fbe46f68ff.pdf",
+          "title": "小红书_医疗器械网络交易服务"
+        },
+        {
+          "label": "互联网药品信息服务资格证书：(沪)-经营性-2023-0144",
+          "link": "//fe-video-qc.xhscdn.com/fe-platform/f37a08cacc088061beb38329c387c32fc48fc6fe.pdf",
+          "title": "小红书_互联网药品信息服务"
+        },
+        {
+          "label": "违法不良信息举报电话：4006676810",
+          "link": "//www.shjbzx.cn",
+          "title": "小红书_上海市互联网举报中心"
+        },
+        {
+          "label": "上海市互联网举报中心",
+          "link": "//www.shjbzx.cn",
+          "title": "小红书_上海市互联网举报中心"
+        },
+        {
+          "label": "网上有害信息举报专区",
+          "link": "//www.12377.cn",
+          "title": "网上有害信息举报专区"
+        },
+        {
+          "label": "自营经营者信息",
+          "link": "//dc.xhscdn.com/06c2adb0-b353-11e9-9d0c-7be9ff8961c1/自营经营者信息公示.pdf",
+          "title": "小红书_沪公网安备"
+        },
+        {
+          "label": "网络文化经营许可证：沪网文(2024)1344-086号",
+          "link": "//fe-video-qc.xhscdn.com/fe-platform/7970f6e8b70aedc995ba273d04b6b6751abcd63c.pdf",
+          "title": "小红书_网络文化经营许可"
+        },
+        {
+          "label": "个性化推荐算法 网信算备310101216601302230019号",
+          "link": "https://beian.cac.gov.cn/api/static/fileUpload/principalOrithm/additional/user_c015445c-80ac-45f7-94d7-3871e961b1fe_d4425f3b-7f35-45af-b8d4-badd4424d6d5.pdf"
+        }
+      ],
+      "disableBanAlert": "false",
+      "showAdBlockAlert": 0,
+      "aiSearchConfig": {
+        "searchInputImageConfig": {
+          "disableTextWhenAcrossWeb": "联网搜索暂不支持上传图片"
+        },
+        "acrosssWebConfig": {
+          "enable": false,
+          "text": "联网搜索",
+          "icon": "",
+          "disableTextWhenInputImage": "图片搜索暂不支持联网搜索",
+          "offTooltipContent": "",
+          "onTooltipContent": "开启后将搜索全网内容"
+        },
+        "searchHintConfig": {
+          "homePageSearchInputHint": "搜索或输入任何问题"
+        },
+        "sugConfig": {
+          "maxSugCount": 10
+        }
+      },
+      "signConfig": {
+        "url": "https://fe-static.xhscdn.com/as/v2/ds/4c0bab9011f51d35ca6280649340e9b9.js"
+      }
+    },
+    "supportWebp": false,
+    "serverTime": 1766504795633,
+    "grayMode": false,
+    "referer": "https://www.xiaohongshu.com/",
+    "pwaAddDesktopPrompt": null,
+    "firstVisitUrl": null,
+    "easyAccessModalVisible": {
+      "addDesktopGuide": false,
+      "collectGuide": false,
+      "keyboardList": false,
+      "miniWindowGuide": false
+    },
+    "currentLayout": "default",
+    "fullscreenLocking": false,
+    "feedbackPopupVisible": false,
+    "trackFps": false,
+    "supportAVIF": false,
+    "imgFormatCollect": {
+      "ssr": [
+        "jpg"
+      ],
+      "csr": [
+        "jpg"
+      ]
+    },
+    "isUndertake": false,
+    "aiSearchMode": "large",
+    "sideCollapse": false,
+    "currentNoteColumnWidthInAIFeeds": null
+  },
+  "user": {
+    "loggedIn": false,
+    "activated": false,
+    "userInfo": {},
+    "follow": [],
+    "userPageData": {
+      "result": {
+        "success": true,
+        "code": 0,
+        "message": "success"
+      },
+      "basicInfo": {
+        "images": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g?imageView2/2/w/360/format/webp",
+        "redId": "26736621021",
+        "gender": 2,
+        "ipLocation": "广西",
+        "desc": "还没有简介",
+        "imageb": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g?imageView2/2/w/540/format/webp",
+        "nickname": "娜娜"
+      },
+      "interactions": [
+        {
+          "type": "follows",
+          "name": "关注",
+          "count": "0"
+        },
+        {
+          "count": "10+",
+          "type": "fans",
+          "name": "粉丝"
+        },
+        {
+          "type": "interaction",
+          "name": "获赞与收藏",
+          "count": "10+"
+        }
+      ],
+      "tags": [],
+      "tabPublic": {
+        "collectionBoard": {
+          "display": false,
+          "lock": false,
+          "count": 0
+        },
+        "collection": false,
+        "collectionNote": {
+          "display": false,
+          "lock": false,
+          "count": 0
+        }
+      },
+      "extraInfo": {
+        "fstatus": "none",
+        "blockType": "DEFAULT"
+      }
+    },
+    "activeTab": {
+      "key": 0,
+      "index": 0,
+      "query": "note",
+      "label": "笔记",
+      "lock": false,
+      "subTabs": null,
+      "feedType": 0
+    },
+    "notes": [
+      [
+        {
+          "id": "",
+          "noteCard": {
+            "type": "normal",
+            "displayTitle": "也太好看啦 ",
+            "user": {
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b",
+              "nickname": "娜娜"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "10+",
+              "sticky": false
+            },
+            "cover": {
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/d0726124343acd1bbf92387bb633e0d0/notes_pre_post/1040g3k031qdbbvv700205pvtql6insjr9jros10!nc_n_nwebp_prv_1"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/99bb80e7ff7ea936db15a3c890bb92f5/notes_pre_post/1040g3k031qdbbvv700205pvtql6insjr9jros10!nc_n_nwebp_mw_1"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/d0726124343acd1bbf92387bb633e0d0/notes_pre_post/1040g3k031qdbbvv700205pvtql6insjr9jros10!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/99bb80e7ff7ea936db15a3c890bb92f5/notes_pre_post/1040g3k031qdbbvv700205pvtql6insjr9jros10!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1440,
+              "width": 1080,
+              "url": "",
+              "traceId": ""
+            },
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+          },
+          "index": 0,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "2",
+              "sticky": false
+            },
+            "cover": {
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/3c5b7a46c3bf249baef92216078a91eb/notes_pre_post/1040g3k031qdbbvv7001g5pvtql6insjrrg2ccs0!nc_n_nwebp_prv_1"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/b7041958c236948f945f37a7be23d292/notes_pre_post/1040g3k031qdbbvv7001g5pvtql6insjrrg2ccs0!nc_n_nwebp_mw_1"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/3c5b7a46c3bf249baef92216078a91eb/notes_pre_post/1040g3k031qdbbvv7001g5pvtql6insjrrg2ccs0!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/b7041958c236948f945f37a7be23d292/notes_pre_post/1040g3k031qdbbvv7001g5pvtql6insjrrg2ccs0!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 3013,
+              "width": 2496,
+              "url": "",
+              "traceId": ""
+            },
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal",
+            "displayTitle": "ᥫᩣ 我趣 𓏽 芥末好康💗ཽ",
+            "user": {
+              "nickname": "娜娜",
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b"
+            }
+          },
+          "index": 1,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "displayTitle": "已经开始期待夏天了 ",
+            "user": {
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b",
+              "nickname": "娜娜"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "10+",
+              "sticky": false
+            },
+            "cover": {
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/7e4287fdf2d04af4faf6708a6924d4f8/notes_pre_post/1040g3k031qclcqsp7g005pvtql6insjrsf9mr9o!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/d7c232094ca65c493779cee40799cbd1/notes_pre_post/1040g3k031qclcqsp7g005pvtql6insjrsf9mr9o!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1440,
+              "width": 1080,
+              "url": "",
+              "traceId": "",
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/7e4287fdf2d04af4faf6708a6924d4f8/notes_pre_post/1040g3k031qclcqsp7g005pvtql6insjrsf9mr9o!nc_n_nwebp_prv_1"
+                },
+                {
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/d7c232094ca65c493779cee40799cbd1/notes_pre_post/1040g3k031qclcqsp7g005pvtql6insjrsf9mr9o!nc_n_nwebp_mw_1",
+                  "imageScene": "WB_DFT"
+                }
+              ]
+            },
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal"
+          },
+          "index": 2,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "cover": {
+              "traceId": "",
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/e21d6aae2f29a071c1a60e54453ae52c/notes_pre_post/1040g3k831qa6g2vc001g5pvtql6insjrec3qkf8!nc_n_nwebp_prv_1"
+                },
+                {
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/444bc48e2ebb2dd8934df527f48d4707/notes_pre_post/1040g3k831qa6g2vc001g5pvtql6insjrec3qkf8!nc_n_nwebp_mw_1",
+                  "imageScene": "WB_DFT"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/e21d6aae2f29a071c1a60e54453ae52c/notes_pre_post/1040g3k831qa6g2vc001g5pvtql6insjrec3qkf8!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/444bc48e2ebb2dd8934df527f48d4707/notes_pre_post/1040g3k831qa6g2vc001g5pvtql6insjrec3qkf8!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1620,
+              "width": 1080,
+              "url": ""
+            },
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal",
+            "displayTitle": "辣妹 ",
+            "user": {
+              "nickname": "娜娜",
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "4",
+              "sticky": false
+            }
+          },
+          "index": 3,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal",
+            "displayTitle": "生活中的治愈瞬间 ",
+            "user": {
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b",
+              "nickname": "娜娜",
+              "nickName": "娜娜"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "4",
+              "sticky": false
+            },
+            "cover": {
+              "url": "",
+              "traceId": "",
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/cfc31d318e3d7e1a2a0247270ea6fa86/notes_pre_post/1040g3k831q8mgpcn7o7g5pvtql6insjrc9jd9mo!nc_n_nwebp_prv_1"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/8ac563658a858c0cd4c3ffaad198e6b8/notes_pre_post/1040g3k831q8mgpcn7o7g5pvtql6insjrc9jd9mo!nc_n_nwebp_mw_1"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/cfc31d318e3d7e1a2a0247270ea6fa86/notes_pre_post/1040g3k831q8mgpcn7o7g5pvtql6insjrc9jd9mo!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/8ac563658a858c0cd4c3ffaad198e6b8/notes_pre_post/1040g3k831q8mgpcn7o7g5pvtql6insjrc9jd9mo!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1469,
+              "width": 1080
+            },
+            "noteId": ""
+          },
+          "index": 4,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal",
+            "displayTitle": "孤独即自由 ",
+            "user": {
+              "userId": "67fdd54d000000000a03f27b",
+              "nickname": "娜娜",
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g"
+            },
+            "interactInfo": {
+              "sticky": false,
+              "liked": false,
+              "likedCount": "4"
+            },
+            "cover": {
+              "fileId": "",
+              "height": 1440,
+              "width": 1080,
+              "url": "",
+              "traceId": "",
+              "infoList": [
+                {
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/887ac7979dfbc8bbef6c8dd791d5b063/notes_pre_post/1040g3k831q7gakf400705pvtql6insjr71piia8!nc_n_nwebp_prv_1",
+                  "imageScene": "WB_PRV"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/25d45fb55a729cf15de23e66bf52f4c8/notes_pre_post/1040g3k831q7gakf400705pvtql6insjr71piia8!nc_n_nwebp_mw_1"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/887ac7979dfbc8bbef6c8dd791d5b063/notes_pre_post/1040g3k831q7gakf400705pvtql6insjr71piia8!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/25d45fb55a729cf15de23e66bf52f4c8/notes_pre_post/1040g3k831q7gakf400705pvtql6insjr71piia8!nc_n_nwebp_mw_1"
+            },
+            "noteId": ""
+          },
+          "index": 5,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal",
+            "displayTitle": "治愈 ",
+            "user": {
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b",
+              "nickname": "娜娜"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "3",
+              "sticky": false
+            },
+            "cover": {
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/07eb00994bbc4ebe496af5b62f329d94/notes_pre_post/1040g3k831q67rl0a007g5pvtql6insjrnboikt0!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/ecec0d4eadbcc916c6c936fc4f784f63/notes_pre_post/1040g3k831q67rl0a007g5pvtql6insjrnboikt0!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1417,
+              "width": 1062,
+              "url": "",
+              "traceId": "",
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/07eb00994bbc4ebe496af5b62f329d94/notes_pre_post/1040g3k831q67rl0a007g5pvtql6insjrnboikt0!nc_n_nwebp_prv_1"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/ecec0d4eadbcc916c6c936fc4f784f63/notes_pre_post/1040g3k831q67rl0a007g5pvtql6insjrnboikt0!nc_n_nwebp_mw_1"
+                }
+              ]
+            }
+          },
+          "index": 6,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "type": "video",
+            "displayTitle": "我始终觉得 爱的本质就是心疼",
+            "user": {
+              "nickname": "娜娜",
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g",
+              "userId": "67fdd54d000000000a03f27b"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "0",
+              "sticky": false
+            },
+            "cover": {
+              "width": 720,
+              "url": "",
+              "traceId": "",
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/44e526018733f803ee3dd484fb4a8dda/1040g2sg31q0b09n7nu705pvtql6insjr16i70so!nc_n_nwebp_prv_1"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/662ee046f7372fcd95e3f621d40be7b9/1040g2sg31q0b09n7nu705pvtql6insjr16i70so!nc_n_nwebp_mw_1"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/44e526018733f803ee3dd484fb4a8dda/1040g2sg31q0b09n7nu705pvtql6insjr16i70so!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/662ee046f7372fcd95e3f621d40be7b9/1040g2sg31q0b09n7nu705pvtql6insjr16i70so!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1280
+            },
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+          },
+          "index": 7,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        },
+        {
+          "id": "",
+          "noteCard": {
+            "user": {
+              "userId": "67fdd54d000000000a03f27b",
+              "nickname": "娜娜",
+              "nickName": "娜娜",
+              "avatar": "https://sns-avatar-qc.xhscdn.com/avatar/1040g2jo31q00juaunu005pvtql6insjrjjg065g"
+            },
+            "interactInfo": {
+              "liked": false,
+              "likedCount": "6",
+              "sticky": false
+            },
+            "cover": {
+              "infoList": [
+                {
+                  "imageScene": "WB_PRV",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/ad32a2e968363e4ac17027747711d96f/notes_pre_post/1040g3k031q00ks8pno005pvtql6insjrq54p7p8!nc_n_nwebp_prv_1"
+                },
+                {
+                  "imageScene": "WB_DFT",
+                  "url": "http://sns-webpic-qc.xhscdn.com/202512232346/61059df8f533202c1ced4aaba5bfe9e4/notes_pre_post/1040g3k031q00ks8pno005pvtql6insjrq54p7p8!nc_n_nwebp_mw_1"
+                }
+              ],
+              "urlPre": "http://sns-webpic-qc.xhscdn.com/202512232346/ad32a2e968363e4ac17027747711d96f/notes_pre_post/1040g3k031q00ks8pno005pvtql6insjrq54p7p8!nc_n_nwebp_prv_1",
+              "urlDefault": "http://sns-webpic-qc.xhscdn.com/202512232346/61059df8f533202c1ced4aaba5bfe9e4/notes_pre_post/1040g3k031q00ks8pno005pvtql6insjrq54p7p8!nc_n_nwebp_mw_1",
+              "fileId": "",
+              "height": 1390,
+              "width": 1072,
+              "url": "",
+              "traceId": ""
+            },
+            "noteId": "",
+            "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ=",
+            "type": "normal",
+            "displayTitle": "微醺 "
+          },
+          "index": 8,
+          "exposed": false,
+          "ssrRendered": true,
+          "xsecToken": "ABhu_Cqz8_LewlXka4tu0shc33VhkpjmrkVR2iqfhTMKQ="
+        }
+      ],
+      [],
+      [],
+      []
+    ],
+    "isFetchingNotes": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "tabScrollTop": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "userFetchingStatus": "resolved",
+    "userNoteFetchingStatus": [
+      "resolved",
+      "",
+      "",
+      ""
+    ],
+    "bannedInfo": {
+      "userId": "",
+      "serverBanned": false,
+      "code": 0,
+      "showAlert": false,
+      "reason": "",
+      "api": ""
+    },
+    "firstFetchNote": false,
+    "noteQueries": [
+      {
+        "num": 30,
+        "cursor": "",
+        "userId": "67fdd54d000000000a03f27b",
+        "page": 1,
+        "hasMore": false
+      },
+      {
+        "num": 30,
+        "cursor": "",
+        "userId": "67fdd54d000000000a03f27b",
+        "page": 1,
+        "hasMore": true
+      },
+      {
+        "num": 30,
+        "cursor": "",
+        "userId": "67fdd54d000000000a03f27b",
+        "page": 1,
+        "hasMore": true
+      },
+      {
+        "num": 30,
+        "cursor": "",
+        "userId": "67fdd54d000000000a03f27b",
+        "page": 1,
+        "hasMore": true
+      }
+    ],
+    "pageScrolled": 0,
+    "activeSubTab": null,
+    "isOwnBoard": false
+  },
+  "board": {
+    "boardListData": {},
+    "isLoadingBoardList": false,
+    "boardDetails": {},
+    "boardFeedsMap": {},
+    "boardPageStatus": "pending",
+    "userBoardList": []
+  },
+  "login": {
+    "loginMethod": null,
+    "from": "",
+    "showLogin": false,
+    "agreed": false,
+    "showTooltip": false,
+    "loginData": {
+      "phone": "",
+      "authCode": ""
+    },
+    "errors": {
+      "phone": "",
+      "authCode": ""
+    },
+    "qrData": {
+      "backend": {
+        "qrId": "",
+        "code": ""
+      },
+      "image": "",
+      "status": "un_scanned"
+    },
+    "counter": null,
+    "inAntiSpamChecking": false,
+    "recentFrom": "",
+    "isObPagesVisible": false,
+    "obPageFillInProgress": null,
+    "verificationCodeStartTime": 0,
+    "ageSelectValue": "21",
+    "hobbySelectValue": [],
+    "genderSelectValue": null,
+    "inSpamCheckSendAuthCode": false,
+    "isRegFusing": false,
+    "loginStep": 0,
+    "isLogining": false,
+    "loginPadMountedTime": 0,
+    "loginTips": "登录后推荐更懂你的笔记",
+    "isRiskUser": false,
+    "closeLoginModal": false,
+    "traceId": "",
+    "inAntiSpamCheckLogin": false
+  },
+  "feed": {
+    "query": {
+      "cursorScore": "",
+      "num": 30,
+      "refreshType": 1,
+      "noteIndex": 0,
+      "unreadBeginNoteId": "",
+      "unreadEndNoteId": "",
+      "unreadNoteCount": 0,
+      "category": "homefeed_recommend",
+      "searchKey": "",
+      "needNum": 20,
+      "imageFormats": [],
+      "needFilterImage": false
+    },
+    "isFetching": false,
+    "isError": false,
+    "feedsWrapper": null,
+    "undertakeNote": null,
+    "feeds": [],
+    "currentChannel": "homefeed_recommend",
+    "unreadInfo": {
+      "cachedFeeds": [],
+      "unreadBeginNoteId": "",
+      "unreadEndNoteId": "",
+      "unreadNoteCount": 0,
+      "timestamp": 0
+    },
+    "validIds": {
+      "noteIds": []
+    },
+    "mfStatistics": {
+      "timestamp": 0,
+      "visitTimes": 0,
+      "readFeedCount": 0
+    },
+    "channels": null,
+    "isResourceDisplay": false,
+    "isActivityEnd": false,
+    "cancelFeedRequest": false,
+    "prefetchId": null,
+    "mfRequestMetaData": {
+      "start": null,
+      "lasting": null
+    },
+    "placeholderFeeds": [],
+    "feedsCacheLogInfo": {
+      "flag": "unknown",
+      "errorCode": 0,
+      "isHitMfCache": false,
+      "SSRDocumentChecked": false,
+      "SSRDocumentCheckedSuccess": false
+    },
+    "isUsingPlaceholderFeeds": false,
+    "placeholderFeedsConsumed": false,
+    "isReplace": false,
+    "isFirstSuccessFetched": false,
+    "imgNoteFilterStatus": "unchecked",
+    "ssrRequestStatus": 5,
+    "ssrRenderExtra": ""
+  },
+  "layout": {
+    "layoutInfoReady": false,
+    "columns": 6,
+    "columnsWithSidebar": 6,
+    "gap": {
+      "vertical": 12,
+      "horizontal": 24
+    },
+    "columnWidth": 0,
+    "interactionWidth": 0,
+    "widthType": "normal",
+    "bufferRow": 4
+  },
+  "aiAbExp": {},
+  "search": {
+    "state": "auto",
+    "searchContext": {
+      "keyword": "",
+      "page": 1,
+      "pageSize": 20,
+      "searchId": "",
+      "sort": "general",
+      "noteType": 0,
+      "extFlags": [],
+      "filters": [],
+      "geo": ""
+    },
+    "feeds": [],
+    "searchValue": "",
+    "suggestions": [],
+    "userInputSugTrigger": "",
+    "keywordFrom": 2,
+    "tagSearch": [],
+    "activeTagSearch": null,
+    "searchFeedsWrapper": null,
+    "currentSearchType": "all",
+    "hintWord": {
+      "title": "搜索小红书",
+      "searchWord": "小红书网页版",
+      "hintWordRequestId": "default",
+      "type": "default"
+    },
+    "sugType": null,
+    "queryTrendingInfo": null,
+    "queryTrendingParams": {
+      "source": "UserPage",
+      "searchType": "trend",
+      "lastQuery": "",
+      "lastQueryTime": 0,
+      "wordRequestSituation": "FIRST_ENTER",
+      "hintWord": "",
+      "hintWordType": "",
+      "hintWordRequestId": ""
+    },
+    "queryTrendingFetched": false,
+    "oneboxInfo": {},
+    "hasMore": true,
+    "firstEnterSearchPage": true,
+    "userLists": [],
+    "fetchUserListsStatus": "auto",
+    "isFetchingUserLists": false,
+    "hasMoreUser": true,
+    "searchCplId": null,
+    "wordRequestId": null,
+    "historyList": [],
+    "searchPageHasPrevRoute": false,
+    "searchHotSpots": [],
+    "hotspotQueryNoteStep": "display",
+    "hotspotQueryNoteIndex": 0,
+    "canShowHotspotQueryNote": true,
+    "forceHotspotSearch": false,
+    "searchCardHotSpots": [],
+    "isHotspotSearch": false,
+    "filters": null,
+    "activeFilters": [],
+    "filterParams": null,
+    "sessionId": "",
+    "rootSearchId": "",
+    "searchUserContext": {
+      "keyword": "",
+      "searchId": "",
+      "page": 1,
+      "pageSize": 15,
+      "bizType": "web_search_user",
+      "requestId": ""
+    },
+    "aiSearchAcrosssWeb": false,
+    "aiAcrosssWebActivedFromHeaderInput": false,
+    "aiSearchImageList": [],
+    "isSearchFromAiInput": false,
+    "currentUserMessageId": null,
+    "currentSearchRoundId": null,
+    "hasPreFetchedNotes": false,
+    "currentAnchorId": -1,
+    "isRoundSwitching": false
+  },
+  "conversation": {
+    "activeConversation": null,
+    "historyQuerys": [],
+    "currentActiveRoundId": null,
+    "isInitializing": false,
+    "coordinator": null
+  },
+  "traceSourceStore": {
+    "traceSourceInfo": null,
+    "traceSourceKeywordInfo": null,
+    "drawerPriorityMap": {
+      "traceSource": 10,
+      "traceSourceKeyword": 10
+    }
+  },
+  "aiSugHistory": {
+    "historyList": []
+  },
+  "AiGuideWords": {
+    "guideWords": null
+  },
+  "AiSugDataForChat": {
+    "guideWordsData": null
+  },
+  "activity": {
+    "isOpen": false,
+    "currentUrl": "",
+    "entryList": []
+  },
+  "note": {
+    "prevRouteData": {},
+    "prevRoute": "Empty",
+    "commentTarget": {},
+    "isImgFullscreen": false,
+    "gotoPage": "",
+    "firstNoteId": "",
+    "autoOpenNote": false,
+    "topCommentId": "",
+    "noteDetailMap": {
+      "null": {
+        "comments": {
+          "list": [],
+          "cursor": "",
+          "hasMore": true,
+          "loading": false,
+          "firstRequestFinish": false
+        },
+        "currentTime": 0,
+        "note": {}
+      }
+    },
+    "serverRequestInfo": {
+      "state": "success",
+      "errorCode": 0,
+      "errMsg": ""
+    },
+    "volume": 0,
+    "recommendVideoMap": {},
+    "videoFeedType": "note_source",
+    "rate": 1,
+    "currentNoteId": null,
+    "forceScrollToComment": false,
+    "mediaWidth": 450,
+    "noteHeight": 800
+  },
+  "nioStore": {
+    "collectionListDataSource": null,
+    "error": null
+  },
+  "notification": {
+    "isFetching": false,
+    "activeTabKey": -1,
+    "notificationCount": {
+      "unreadCount": 0,
+      "mentions": 0,
+      "likes": 0,
+      "connections": 0
+    },
+    "notificationMap": {
+      "mentions": {
+        "messageList": [],
+        "hasMore": true,
+        "cursor": ""
+      },
+      "likes": {
+        "messageList": [],
+        "hasMore": true,
+        "cursor": ""
+      },
+      "connections": {
+        "messageList": [],
+        "hasMore": true,
+        "cursor": ""
+      }
+    }
+  }
+}
