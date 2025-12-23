@@ -369,13 +369,13 @@ class XiaohongshuParser(BaseParser):
             self.log_debug(traceback.format_exc())
     
     def _determine_media_type(self, media_data: dict, download_urls: DownloadUrls) -> MediaType:
-        """"确定媒体类型"""
+        """确定媒体类型"""
         # 检查是否有实况图片
         if media_data.get("has_live_photo") or download_urls.live:
             return MediaType.LIVE_PHOTO
         
-        # 检查是否有视频 URLs
-        if download_urls.video:
+        # 检查是否有视频（但没有实况图片）
+        if download_urls.video and not download_urls.images:
             return MediaType.VIDEO
         
         # 默认为图片类型
