@@ -167,7 +167,59 @@ class AuthorCrawlerService {
   async crawlXiaohongshuAuthorWorks(authorId, config) {
     try {
       logger.info(`Starting Xiaohongshu author works crawl for: ${authorId}`);
-      
+
+      // 构建完整的博主URL
+      let authorUrl = authorId;
+      if (!authorId.includes('xiaohongshu.com')) {
+        authorUrl = `https://www.xiaohongshu.com/user/profile/${authorId}`;
+      }
+
+      // 优先使用新的下载服务（如果配置了 useDownloader）
+      if (config.useDownloader !== false) {
+        try {
+          logger.info('Using XiaohongshuDownloadService for downloading author notes');
+          const XiaohongshuDownloadService = require('./XiaohongshuDownloadService');
+
+          // 先获取笔记信息（不下载）
+          const infoResult = await XiaohongshuDownloadService.getAuthorNotesInfo(
+            authorUrl,
+            config.cookie || null
+          );
+
+          if (infoResult.success && infoResult.notes) {
+            const works = infoResult.notes.map((note, index) => ({
+              content_id: note.note_id || `xiaohongshu_${Date.now()}_${index}`,
+              title: note.title || '无标题',
+              author: note.author?.nickname || infoResult.author?.nickname || '未知作者',
+              description: note.content || '',
+              media_type: note.type || 'image',
+              cover_url: note.cover_image?.url || '',
+              media_url: '',
+              all_images: note.images?.map(img => img.url) || [],
+              all_videos: note.videos?.map(vid => vid.url) || [],
+              source_url: note.source_url || authorUrl,
+              created_at: note.publish_time ? new Date(note.publish_time) : new Date(),
+              platform: 'xiaohongshu',
+              has_live_photo: note.has_live_photo || false,
+              tags: note.tags || [],
+              view_count: note.interaction_stats?.view_count || 0,
+              like_count: note.interaction_stats?.like_count || 0,
+              comment_count: note.interaction_stats?.comment_count || 0,
+              share_count: note.interaction_stats?.share_count || 0,
+              collect_count: note.interaction_stats?.collect_count || 0
+            }));
+
+            logger.info(`Successfully retrieved ${works.length} notes for Xiaohongshu author: ${authorId}`);
+            return works;
+          }
+        } catch (downloadError) {
+          logger.warn('XiaohongshuDownloadService failed, falling back to puppeteer method:', downloadError.message);
+        }
+      }
+
+      // 回退到原有的 puppeteer 方法
+      logger.info('Falling back to puppeteer-based crawling method');
+
       // If authorId is a URL, extract the actual author ID
       let actualAuthorId = authorId;
       if (authorId.includes('xiaohongshu.com')) {
@@ -176,69 +228,69 @@ class AuthorCrawlerService {
           actualAuthorId = match[1];
         }
       }
-      
+
       // Setup browser with cookies if provided
       const { browser, page } = await this.setupBrowser('xiaohongshu', config);
-      
+
       // Navigate to author page
-      const authorUrl = `https://www.xiaohongshu.com/user/profile/${actualAuthorId}`;
-      await page.goto(authorUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-      
+      const targetUrl = `https://www.xiaohongshu.com/user/profile/${actualAuthorId}`;
+      await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+
       // Wait for notes to load
       await page.waitForSelector('.note-list', { timeout: 15000 }).catch(() => {
         logger.warn('Xiaohongshu note list not found, trying alternative selector');
         // Try alternative selector
         return page.waitForSelector('div[class*="note-item"]', { timeout: 10000 });
       });
-      
+
       // Scroll to load more notes
       await page.evaluate(async () => {
         const scrollToBottom = async () => {
           const distance = 200;
           const delay = 150;
           let lastHeight = document.body.scrollHeight;
-          
+
           for (let i = 0; i < 3; i++) {
             window.scrollBy(0, distance);
             await new Promise(resolve => setTimeout(resolve, delay));
-            
+
             const newHeight = document.body.scrollHeight;
             if (newHeight === lastHeight) break;
             lastHeight = newHeight;
           }
         };
-        
+
         await scrollToBottom();
       });
-      
+
       // Extract note URLs first
       const noteUrls = await page.evaluate(() => {
         const urls = [];
         const noteElements = document.querySelectorAll('a[href*="/explore/"]');
-        
+
         noteElements.forEach((linkEl) => {
           const href = linkEl.href;
           if (href && href.includes('/explore/') && !urls.includes(href)) {
             urls.push(href);
           }
         });
-        
+
         return urls.slice(0, 10); // Limit to 10 most recent notes
       });
-      
+
       await browser.close();
-      
+
       logger.info(`Found ${noteUrls.length} note URLs for Xiaohongshu author: ${actualAuthorId}`);
-      
+
       // Use our enhanced SDK to parse each note
       const works = [];
       const ParseService = require('./ParseService');
-      
+
       for (const noteUrl of noteUrls) {
         try {
           logger.info(`Parsing note: ${noteUrl}`);
           const parsedData = await ParseService.parseLink(noteUrl);
-          
+
           if (parsedData && parsedData.title) {
             works.push({
               content_id: parsedData.content_id || `xiaohongshu_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
@@ -264,15 +316,15 @@ class AuthorCrawlerService {
           // Continue with other notes
         }
       }
-      
+
       logger.info(`Successfully parsed ${works.length} notes for Xiaohongshu author: ${actualAuthorId}`);
-      
+
       // If no works found, return mock data as fallback
       if (works.length === 0) {
         logger.warn(`No notes found for Xiaohongshu author: ${actualAuthorId}, returning mock data`);
         return this.generateMockWorks('xiaohongshu', actualAuthorId, 3);
       }
-      
+
       return works;
     } catch (error) {
       logger.error('Failed to crawl Xiaohongshu author works:', error);

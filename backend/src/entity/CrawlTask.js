@@ -29,7 +29,7 @@ module.exports = new EntitySchema({
       type: 'varchar',
       length: 20,
       nullable: false,
-      enum: ['hourly', 'daily', 'weekly'],
+      enum: ['10min', '30min', 'hourly', '2hours', '6hours', '12hours', 'daily', 'weekly'],
     },
     status: {
       type: 'int',

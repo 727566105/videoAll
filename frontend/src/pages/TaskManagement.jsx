@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Card, Typography, Space, Table, Button, Tag, message, Modal, List, Empty, Spin, Form, Input, Select, InputNumber, notification } from 'antd';
+import { Card, Typography, Space, Table, Button, Tag, message, Modal, List, Empty, Spin, Form, Input, Select, InputNumber, notification, Switch } from 'antd';
 const { Text, Title } = Typography;
-import { 
-  PlayCircleOutlined, 
-  PauseCircleOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  FireOutlined, 
+import {
+  PlayCircleOutlined,
+  PauseCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FireOutlined,
   ClockCircleOutlined,
   LogoutOutlined,
-  ReloadOutlined, 
+  ReloadOutlined,
   PlusOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons';
 import apiService from '../services/api';
 
@@ -35,7 +36,8 @@ const TaskManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [currentTaskId, setCurrentTaskId] = useState(null);
-  
+  const [selectedPlatform, setSelectedPlatform] = useState(null);
+
 
   
   // Platform options for task form
@@ -133,6 +135,7 @@ const TaskManagement = () => {
   const showCreateTaskModal = () => {
     setIsEditing(false);
     setCurrentTaskId(null);
+    setSelectedPlatform(null);
     taskForm.resetFields();
     setTaskModalVisible(true);
   };
@@ -155,44 +158,74 @@ const TaskManagement = () => {
   const handleTaskFormSubmit = async (values) => {
     try {
       setFormLoading(true);
-      
-      // Prepare task data
+
+      // Prepare task data with config
       const taskData = {
-        ...values,
-        status: values.status ? 1 : 0
+        name: values.name,
+        platform: values.platform,
+        target_identifier: values.target_identifier,
+        frequency: values.frequency,
+        status: values.status ? 1 : 0,
+        config: {
+          cookie: values.cookie || null,
+          useDownloader: true
+        }
       };
-      
+
       let result;
+      const runImmediately = values.runImmediately || false;
+
       if (isEditing && currentTaskId) {
         // Edit existing task
         result = await apiService.tasks.update(currentTaskId, taskData);
         message.success('任务更新成功');
-        
+
         // Update local state
-        setAuthorTasks(prevTasks => prevTasks.map(task => 
-          task.id === currentTaskId ? { 
-            ...task, 
-            ...result.data, 
-            status: result.data.status === 1 ? '启用' : '禁用' 
+        setAuthorTasks(prevTasks => prevTasks.map(task =>
+          task.id === currentTaskId ? {
+            ...task,
+            ...result.data,
+            status: result.data.status === 1 ? '启用' : '禁用'
           } : task
         ));
+
+        // 编辑模式下，如果选择了立即执行
+        if (runImmediately) {
+          await apiService.tasks.runImmediately(currentTaskId);
+          message.success('任务已立即执行');
+          // 刷新任务列表
+          fetchAuthorTasks();
+        }
       } else {
         // Create new task
         result = await apiService.tasks.create(taskData);
         message.success('任务创建成功');
-        
+
         // Add new task to local state
-        setAuthorTasks(prevTasks => [
-          ...prevTasks, 
-          {
-            ...result.data,
-            status: result.data.status === 1 ? '启用' : '禁用',
-            last_run_at: result.data.last_run_at || '从未执行',
-            next_run_at: result.data.next_run_at || '即将执行'
+        const newTask = {
+          ...result.data,
+          status: result.data.status === 1 ? '启用' : '禁用',
+          last_run_at: result.data.last_run_at || '从未执行',
+          next_run_at: result.data.next_run_at || '即将执行'
+        };
+        setAuthorTasks(prevTasks => [...prevTasks, newTask]);
+
+        // 创建模式下，如果选择了立即执行
+        if (runImmediately && result.data?.id) {
+          message.loading('正在立即执行任务...', 0);
+          try {
+            await apiService.tasks.runImmediately(result.data.id);
+            message.destroy();
+            message.success('任务创建成功并已立即执行');
+            // 刷新任务列表以更新执行时间
+            fetchAuthorTasks();
+          } catch (runError) {
+            message.destroy();
+            message.warning('任务创建成功，但立即执行失败：' + (runError.response?.data?.message || runError.message));
           }
-        ]);
+        }
       }
-      
+
       // Close modal and reset form
       setTaskModalVisible(false);
       taskForm.resetFields();
@@ -465,7 +498,10 @@ const TaskManagement = () => {
             label="平台"
             rules={[{ required: true, message: '请选择平台' }]}
           >
-            <Select placeholder="请选择平台">
+            <Select
+              placeholder="请选择平台"
+              onChange={(value) => setSelectedPlatform(value)}
+            >
               {platformOptions.map(option => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
@@ -478,17 +514,31 @@ const TaskManagement = () => {
             name="target_identifier"
             label="博主链接或ID"
             rules={[
-              { required: true, message: '请输入博主链接或ID' }, 
+              { required: true, message: '请输入博主链接或ID' },
               { max: 500, message: '链接长度不能超过500个字符' }
             ]}
             help="支持小红书博主主页链接，例如：https://www.xiaohongshu.com/user/profile/5e7b8c9d0000000001000001"
           >
-            <Input.TextArea 
-              placeholder="请输入小红书博主主页链接或用户ID" 
+            <Input.TextArea
+              placeholder="请输入小红书博主主页链接或用户ID"
               rows={3}
               style={{ resize: 'vertical' }}
             />
           </Form.Item>
+
+          {selectedPlatform === 'xiaohongshu' && (
+            <Form.Item
+              name="cookie"
+              label="Cookie（可选）"
+              help="提供 Cookie 可以获取完整的笔记信息（高清图片、视频）。从浏览器开发者工具中获取。"
+            >
+              <Input.TextArea
+                placeholder="粘贴小红书 Cookie（选填）"
+                rows={3}
+                style={{ resize: 'vertical' }}
+              />
+            </Form.Item>
+          )}
 
           <Form.Item
             name="frequency"
@@ -514,6 +564,18 @@ const TaskManagement = () => {
               <Option value={1}>启用</Option>
               <Option value={0}>禁用</Option>
             </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="runImmediately"
+            label="立即执行"
+            valuePropName="checked"
+            tooltip="创建/更新任务后立即执行一次"
+          >
+            <Switch
+              checkedChildren={<ThunderboltOutlined />}
+              unCheckedChildren="等待定时执行"
+            />
           </Form.Item>
 
           <Form.Item style={{ marginTop: 24 }}>

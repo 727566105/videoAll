@@ -1,0 +1,14 @@
+{
+  "url": "",
+  "cookie": "",
+  "output_dir": "downloads",
+  "delay": 0.5,
+  "max_notes": null,
+  "_comment": {
+    "url": "博主主页URL，例如：https://www.xiaohongshu.com/user/profile/xxx",
+    "cookie": "小红书 Cookie，从浏览器开发者工具中获取",
+    "output_dir": "下载目录，默认：downloads",
+    "delay": "请求延迟（秒），避免请求过快被限制，默认：0.5",
+    "max_notes": "最大下载笔记数，null表示全部，例如：10 表示只下载前10条"
+  }
+}
