@@ -56,6 +56,11 @@ module.exports = new EntitySchema({
       nullable: true,
       comment: 'JSON array of all image URLs',
     },
+    all_videos: {
+      type: 'text',
+      nullable: true,
+      comment: 'JSON array of all video URLs',
+    },
     source_url: {
       type: 'varchar',
       length: 500,

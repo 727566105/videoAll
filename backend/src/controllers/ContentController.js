@@ -138,10 +138,11 @@ class ContentController {
         .take(parseInt(page_size))
         .getMany();
       
-      // Process all_images field - parse JSON strings to arrays
+      // Process all_images and all_videos fields - parse JSON strings to arrays
       const processedContents = contents.map(content => ({
         ...content,
-        all_images: content.all_images ? JSON.parse(content.all_images) : []
+        all_images: content.all_images ? JSON.parse(content.all_images) : [],
+        all_videos: content.all_videos ? JSON.parse(content.all_videos) : []
       }));
       
       // Prepare response data
@@ -687,11 +688,26 @@ class ContentController {
         return res.status(400).json({ message: '不支持的平台链接' });
       }
       
-      // Download all media files (images and live photos) with watermark removal
-      const downloadResult = await ParseService.downloadAllMedia(parsedData, platform, source_type, task_id);
-      
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
+      
+      // Check if content already exists
+      const existingContent = await contentRepository.findOne({
+        where: {
+          platform,
+          content_id: parsedData.content_id
+        }
+      });
+      
+      if (existingContent) {
+        return res.status(409).json({ 
+          message: '内容已存在，无需重复保存',
+          data: existingContent
+        });
+      }
+      
+      // Download all media files (images and live photos) with watermark removal
+      const downloadResult = await ParseService.downloadAllMedia(parsedData, platform, source_type, task_id);
       
       // Prepare content data for database
       const content = contentRepository.create({
@@ -704,6 +720,7 @@ class ContentController {
         file_path: downloadResult.mainImagePath,
         cover_url: parsedData.cover_url,
         all_images: parsedData.all_images ? JSON.stringify(parsedData.all_images) : null,
+        all_videos: parsedData.all_videos ? JSON.stringify(parsedData.all_videos) : null, // Add video URLs
         source_url: link,
         source_type: parseInt(source_type),
         task_id,

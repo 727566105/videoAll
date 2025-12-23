@@ -65,9 +65,13 @@ const ContentManagement = () => {
       dataIndex: 'media_type',
       key: 'media_type',
       render: (type, record) => {
-        const typeText = type === 'video' ? '视频' : '图片';
-        const imageCount = record.all_images && record.all_images.length > 0 ? record.all_images.length : 1;
-        return type === 'image' && imageCount > 1 ? `${typeText} (${imageCount}张)` : typeText;
+        if (type === 'video') {
+          const videoCount = record.all_videos && record.all_videos.length > 0 ? record.all_videos.length : 1;
+          return `视频 (${videoCount}个)`;
+        } else {
+          const imageCount = record.all_images && record.all_images.length > 0 ? record.all_images.length : 1;
+          return type === 'image' && imageCount > 1 ? `图片 (${imageCount}张)` : '图片';
+        }
       }
     },
     {
@@ -463,11 +467,53 @@ const ContentManagement = () => {
         {previewContent && (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           {previewContent.media_type === 'video' ? (
-            <video 
-              src={previewContent.file_path ? `/media/${previewContent.file_path}` : `/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.media_url || previewContent.cover_url)}`} 
-              controls 
-              style={{ width: '100%', maxHeight: '400px' }}
-            />
+            <div>
+              <h4>视频预览</h4>
+              {/* 主视频预览 */}
+              <video 
+                src={previewContent.file_path ? `/media/${previewContent.file_path}` : `/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.media_url || previewContent.cover_url)}`} 
+                controls 
+                style={{ width: '100%', maxHeight: '400px', marginBottom: '15px' }}
+              />
+              
+              {/* 显示所有视频URL */}
+              {previewContent.all_videos && previewContent.all_videos.length > 0 && (
+                <div>
+                  <h5>可用视频链接 ({previewContent.all_videos.length}个):</h5>
+                  <div style={{ backgroundColor: '#f9f9f9', padding: '15px', borderRadius: '8px' }}>
+                    {previewContent.all_videos.map((videoUrl, index) => (
+                      <div key={index} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        padding: '8px 0',
+                        borderBottom: index < previewContent.all_videos.length - 1 ? '1px solid #e8e8e8' : 'none'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 'bold' }}>
+                            视频 {index + 1}: 
+                          </span>
+                          <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>
+                            {videoUrl.includes('sns-video-hw') ? '主服务器' : 
+                             videoUrl.includes('sns-bak-v1') ? '备用服务器1' :
+                             videoUrl.includes('sns-bak-v6') ? '备用服务器6' : '其他服务器'}
+                          </span>
+                        </div>
+                        <Space>
+                          <Button 
+                            size="small" 
+                            type="link"
+                            onClick={() => window.open(videoUrl, '_blank')}
+                          >
+                            打开链接
+                          </Button>
+                        </Space>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               {/* 显示所有图片 */}
