@@ -278,6 +278,12 @@ const ContentManagement = () => {
 
   // Handle content preview
   const handlePreview = (record) => {
+    // 调试：打印预览数据
+    console.log('预览内容数据:', record);
+    console.log('all_videos 类型:', typeof record.all_videos);
+    console.log('all_videos 值:', record.all_videos);
+    console.log('all_videos 长度:', record.all_videos?.length);
+
     setPreviewContent(record);
     setPreviewVisible(true);
   };
@@ -516,11 +522,16 @@ const ContentManagement = () => {
                     共 {previewContent.all_videos.length} 个视频
                   </span>
                 </h4>
-                {/* 主视频预览 */}
+                {/* 主视频预览 - 使用代理 URL */}
                 <video
-                  src={previewContent.file_path ? `/media/${previewContent.file_path}` : `/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.media_url || previewContent.all_videos[0])}`}
+                  key={`main-video-${previewContent.all_videos[0]}`}
+                  src={`/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.all_videos[0])}`}
                   controls
                   style={{ width: '100%', maxHeight: '400px', borderRadius: 8 }}
+                  onError={(e) => {
+                    console.error('Video load error:', e.target.src);
+                    e.target.style.display = 'none';
+                  }}
                 />
 
                 {/* 多视频缩略图列表 */}
@@ -543,6 +554,7 @@ const ContentManagement = () => {
                             const videoEl = document.querySelector('video');
                             if (videoEl) {
                               videoEl.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
+                              videoEl.style.display = 'block';
                             }
                           }}
                         >
