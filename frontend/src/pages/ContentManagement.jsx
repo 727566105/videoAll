@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, EyeOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 
 const { Title } = Typography;
@@ -285,41 +285,82 @@ const ContentManagement = () => {
   // Handle content download
   const handleDownload = async (record) => {
     try {
-      const response = await apiService.content.download(record.id);
-      // Create download link and trigger download
+      const blob = await apiService.content.download(record.id);
+
+      // 从响应头获取文件名，或使用默认文件名
+      let fileName = `${record.title || 'content'}_${record.platform || 'unknown'}.zip`;
+
+      // 创建下载链接
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/zip' }));
       const link = document.createElement('a');
-      link.href = response.data.download_url;
-      link.download = response.data.file_name;
+      link.href = url;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      message.success('下载请求已发送');
+      window.URL.revokeObjectURL(url);
+
+      message.success('下载成功');
     } catch (error) {
       console.error('Download content error:', error);
       message.error(error.message || '下载失败');
     }
   };
 
-  // Handle batch export
-  const handleBatchExport = async () => {
+  // Handle batch download
+  const handleBatchDownload = async () => {
     if (selectedRowKeys.length === 0) {
-      message.warning('请选择要导出的内容');
+      message.warning('请选择要下载的内容');
       return;
     }
-    
-    try {
-      const response = await apiService.content.export({ ids: selectedRowKeys });
-      // Create download link and trigger download
-      const link = document.createElement('a');
-      link.href = response.data.download_url;
-      link.download = response.data.file_name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      message.success('导出请求已发送');
-    } catch (error) {
-      console.error('Batch export error:', error);
-      message.error(error.message || '导出失败');
+
+    // 获取选中的内容记录
+    const selectedContents = contentList.filter(item => selectedRowKeys.includes(item.id));
+
+    if (selectedContents.length === 0) {
+      message.warning('未找到选中的内容');
+      return;
+    }
+
+    message.info(`开始下载 ${selectedContents.length} 个文件...`);
+
+    // 逐个下载，避免浏览器阻止多个下载
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < selectedContents.length; i++) {
+      const record = selectedContents[i];
+      try {
+        const blob = await apiService.content.download(record.id);
+        const fileName = `${record.title || 'content'}_${record.platform || 'unknown'}.zip`;
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/zip' }));
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 延迟释放 URL，确保下载开始
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+        successCount++;
+
+        // 添加延迟，避免浏览器阻止多个下载
+        if (i < selectedContents.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      } catch (error) {
+        console.error(`Download ${record.id} error:`, error);
+        failCount++;
+      }
+    }
+
+    if (failCount === 0) {
+      message.success(`批量下载完成，共下载 ${successCount} 个文件`);
+    } else {
+      message.warning(`批量下载完成，成功 ${successCount} 个，失败 ${failCount} 个`);
     }
   };
 
@@ -413,21 +454,21 @@ const ContentManagement = () => {
       <Card>
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Space wrap style={{ justifyContent: 'flex-end' }}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               danger
               onClick={handleBatchDelete}
               disabled={selectedRowKeys.length === 0}
             >
               批量删除 ({selectedRowKeys.length})
             </Button>
-            <Button 
-              type="primary" 
-              icon={<FileExcelOutlined />}
-              onClick={handleBatchExport}
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={handleBatchDownload}
               disabled={selectedRowKeys.length === 0}
             >
-              批量导出 ({selectedRowKeys.length})
+              批量下载 ({selectedRowKeys.length})
             </Button>
           </Space>
           

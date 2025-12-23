@@ -302,8 +302,8 @@ class ContentController {
       // Write workbook to file
       await xlsx.writeFile(wb, filePath);
       
-      // Generate download URL (for local development, we'll just return the file path)
-      const downloadUrl = `/api/content/download-export?file=${fileName}`;
+      // Generate download URL
+      const downloadUrl = `/api/v1/content/download-export?file=${fileName}`;
       
       res.status(200).json({
         message: '导出成功',

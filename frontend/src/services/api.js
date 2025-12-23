@@ -173,7 +173,7 @@ const apiService = {
     delete: (id) => api.delete(`/content/${id}`),
     batchDelete: (data) => api.post('/content/batch-delete', data),
     export: (data) => api.post('/content/export', data),
-    download: (id) => api.post('/content/download', { id }),
+    download: (id) => api.post('/content/download', { id }, { responseType: 'blob' }),
     downloadByUrl: (data) => api.post('/content/download-by-url', data),
     save: (data) => api.post('/content/save', data)
   },
