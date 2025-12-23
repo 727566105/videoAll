@@ -72,6 +72,34 @@ module.exports = new EntitySchema({
       enum: [1, 2], // 1-单链接解析，2-监控任务
       default: 1,
     },
+    like_count: {
+      type: 'int',
+      nullable: true,
+      default: 0,
+      comment: '点赞数量',
+    },
+    comment_count: {
+      type: 'int',
+      nullable: true,
+      default: 0,
+      comment: '评论数量',
+    },
+    share_count: {
+      type: 'int',
+      nullable: true,
+      default: 0,
+      comment: '分享数量',
+    },
+    publish_time: {
+      type: 'timestamp',
+      nullable: true,
+      comment: '发布时间',
+    },
+    tags: {
+      type: 'text',
+      nullable: true,
+      comment: 'JSON array of tags',
+    },
     created_at: {
       type: 'timestamp',
       default: () => 'CURRENT_TIMESTAMP',

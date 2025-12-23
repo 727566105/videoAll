@@ -1,5 +1,6 @@
 const { AppDataSource } = require('../utils/db');
 const ParseService = require('../services/ParseService');
+const MediaDownloadService = require('../services/MediaDownloadService');
 const fs = require('fs-extra');
 const path = require('path');
 const CacheService = require('../services/CacheService');
@@ -376,43 +377,86 @@ class ContentController {
         return res.status(404).json({ message: '内容不存在' });
       }
       
-      // Construct file path
-      const filePath = path.join(process.env.STORAGE_ROOT_PATH, content.file_path);
+      // Check if file_path is a directory (new format) or single file (old format)
+      let filePath = content.file_path;
       
-      // Check if file exists
+      // If file_path is not an absolute path, make it relative to storage root
+      if (!path.isAbsolute(filePath)) {
+        filePath = path.join(process.env.STORAGE_ROOT_PATH || process.cwd(), filePath);
+      }
+      
+      // Check if path exists
       if (!await fs.pathExists(filePath)) {
         return res.status(404).json({ message: '文件不存在' });
       }
       
-      // Determine file extension and set appropriate Content-Type
-      const fileExtension = path.extname(filePath).toLowerCase();
-      let contentType = 'application/octet-stream';
+      // Check if it's a directory (new format with multiple files)
+      const stats = await fs.stat(filePath);
       
-      if (fileExtension === '.mp4') {
-        contentType = 'video/mp4';
-      } else if (fileExtension === '.jpg' || fileExtension === '.jpeg') {
-        contentType = 'image/jpeg';
-      } else if (fileExtension === '.png') {
-        contentType = 'image/png';
-      } else if (fileExtension === '.gif') {
-        contentType = 'image/gif';
+      if (stats.isDirectory()) {
+        // For directories, create a zip file with all media files
+        const archiver = require('archiver');
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        
+        // Set response headers for zip download
+        const zipFileName = `${content.title || 'content'}_${content.platform || 'unknown'}_${content.id}.zip`;
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(zipFileName)}`);
+        
+        // Pipe archive to response
+        archive.pipe(res);
+        
+        // Add all files from the directory to the archive
+        const files = await fs.readdir(filePath);
+        
+        for (const file of files) {
+          const fullPath = path.join(filePath, file);
+          const fileStats = await fs.stat(fullPath);
+          if (fileStats.isFile()) {
+            archive.file(fullPath, { name: file });
+          }
+        }
+        
+        // Finalize the archive
+        await archive.finalize();
+        
+      } else {
+        // Single file (old format)
+        // Determine file extension and set appropriate Content-Type
+        const fileExtension = path.extname(filePath).toLowerCase();
+        let contentType = 'application/octet-stream';
+        
+        if (fileExtension === '.mp4') {
+          contentType = 'video/mp4';
+        } else if (fileExtension === '.jpg' || fileExtension === '.jpeg') {
+          contentType = 'image/jpeg';
+        } else if (fileExtension === '.png') {
+          contentType = 'image/png';
+        } else if (fileExtension === '.gif') {
+          contentType = 'image/gif';
+        }
+        
+        // Extract original filename from content
+        const fileName = `${content.title || 'content'}_${content.platform || 'unknown'}_${content.id}${fileExtension}`;
+        
+        // Set headers and send file
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(fileName)}`);
+        res.sendFile(filePath, (err) => {
+          if (err) {
+            console.error('Send file error:', err);
+            if (!res.headersSent) {
+              res.status(500).json({ message: '文件下载失败' });
+            }
+          }
+        });
       }
       
-      // Extract original filename from content
-      const fileName = `${content.title || 'content'}_${content.platform || 'unknown'}_${content.id}${fileExtension}`;
-      
-      // Set headers and send file
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Disposition', `attachment; filename=${encodeURIComponent(fileName)}`);
-      res.sendFile(filePath, (err) => {
-        if (err) {
-          console.error('Send file error:', err);
-          res.status(500).json({ message: '文件下载失败' });
-        }
-      });
     } catch (error) {
       console.error('Download content error:', error);
-      res.status(500).json({ message: '文件下载失败' });
+      if (!res.headersSent) {
+        res.status(500).json({ message: '文件下载失败' });
+      }
     }
   }
 
@@ -691,7 +735,7 @@ class ContentController {
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
       
-      // Check if content already exists
+      // Check if content already exists in database
       const existingContent = await contentRepository.findOne({
         where: {
           platform,
@@ -706,8 +750,40 @@ class ContentController {
         });
       }
       
-      // Download all media files (images and live photos) with watermark removal
-      const downloadResult = await ParseService.downloadAllMedia(parsedData, platform, source_type, task_id);
+      // Check if content already exists in file system
+      const contentExists = await MediaDownloadService.checkContentExists(platform, parsedData.content_id);
+      if (contentExists) {
+        console.log('内容文件已存在，跳过下载');
+      }
+      
+      // Download and save content to file system
+      let downloadResult = null;
+      if (!contentExists) {
+        try {
+          downloadResult = await MediaDownloadService.downloadAndSaveContent(parsedData, platform, link);
+          console.log('内容下载完成:', downloadResult.folderName);
+        } catch (downloadError) {
+          console.error('下载内容失败:', downloadError);
+          // 继续保存到数据库，即使下载失败
+          downloadResult = {
+            success: false,
+            error: downloadError.message,
+            contentDir: MediaDownloadService.getContentPath(platform, parsedData.title, parsedData.content_id),
+            downloadedFiles: [],
+            totalFiles: 0,
+            successfulFiles: 0
+          };
+        }
+      } else {
+        downloadResult = {
+          success: true,
+          contentDir: MediaDownloadService.getContentPath(platform, parsedData.title, parsedData.content_id),
+          downloadedFiles: [],
+          totalFiles: 0,
+          successfulFiles: 0,
+          message: '文件已存在，跳过下载'
+        };
+      }
       
       // Prepare content data for database
       const content = contentRepository.create({
@@ -717,25 +793,50 @@ class ContentController {
         author: parsedData.author,
         description: parsedData.description || '',
         media_type: parsedData.media_type,
-        file_path: downloadResult.mainImagePath,
+        file_path: downloadResult.contentDir, // 保存文件夹路径而不是单个文件路径
         cover_url: parsedData.cover_url,
         all_images: parsedData.all_images ? JSON.stringify(parsedData.all_images) : null,
-        all_videos: parsedData.all_videos ? JSON.stringify(parsedData.all_videos) : null, // Add video URLs
+        all_videos: parsedData.all_videos ? JSON.stringify(parsedData.all_videos) : null,
         source_url: link,
         source_type: parseInt(source_type),
         task_id,
+        like_count: parsedData.like_count || 0,
+        comment_count: parsedData.comment_count || 0,
+        share_count: parsedData.share_count || 0,
+        publish_time: parsedData.publish_time ? new Date(parsedData.publish_time) : null,
+        tags: parsedData.tags ? JSON.stringify(parsedData.tags) : null,
         created_at: new Date()
       });
       
       // Save to database
       await contentRepository.save(content);
       
+      // Prepare response message
+      let message = '内容保存成功';
+      if (downloadResult.success) {
+        message += `，共下载${downloadResult.successfulFiles}个文件`;
+        if (downloadResult.totalFiles > downloadResult.successfulFiles) {
+          message += `（${downloadResult.totalFiles - downloadResult.successfulFiles}个文件下载失败）`;
+        }
+      } else if (downloadResult.error) {
+        message += `，但文件下载失败: ${downloadResult.error}`;
+      } else if (downloadResult.message) {
+        message += `，${downloadResult.message}`;
+      }
+      
       res.status(201).json({
-        message: `内容保存成功，共下载${downloadResult.totalFiles}个文件`,
+        message,
         data: {
           ...content,
-          downloadedFiles: downloadResult.downloadedFiles.length,
-          totalFiles: downloadResult.totalFiles
+          all_images: parsedData.all_images || [],
+          all_videos: parsedData.all_videos || [],
+          downloadResult: {
+            success: downloadResult.success,
+            contentDir: downloadResult.contentDir,
+            downloadedFiles: downloadResult.downloadedFiles?.length || 0,
+            totalFiles: downloadResult.totalFiles || 0,
+            successfulFiles: downloadResult.successfulFiles || 0
+          }
         }
       });
     } catch (error) {

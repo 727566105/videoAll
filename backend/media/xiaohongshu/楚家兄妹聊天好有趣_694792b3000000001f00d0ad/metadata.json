@@ -1,0 +1,81 @@
+{
+  "title": "楚家兄妹聊天好有趣",
+  "author": "腾讯视频",
+  "platform": "xiaohongshu",
+  "content_id": "694792b3000000001f00d0ad",
+  "description": "",
+  "media_type": "video",
+  "source_url": "https://www.xiaohongshu.com/explore/694792b3000000001f00d0ad?xsec_token=ABnSe2gs9TQq8zZXCCO0X57xjqoY7v4X9B7yNiTGymcUw=&xsec_source=pc_feed",
+  "cover_url": "http://sns-webpic-qc.xhscdn.com/202512231717/7e9d58d3874673a2115a73232b45c681/1040g00831qbgqbp37o605n2lhan49ndott1mdfg!nd_dft_wlteh_jpg_3",
+  "all_images": [
+    "http://sns-webpic-qc.xhscdn.com/202512231717/7e9d58d3874673a2115a73232b45c681/1040g00831qbgqbp37o605n2lhan49ndott1mdfg!nd_dft_wlteh_jpg_3",
+    "https://sns-avatar-qc.xhscdn.com/avatar/66052b910d12070001217959.jpg"
+  ],
+  "all_videos": [
+    "http://sns-video-qc.xhscdn.com/stream/1/110/258/01e94792b21ab89e010370019b3f95402f_258.mp4?sign=dbd994834785ed84002fade4bf38da7c&t=694efb75",
+    "http://sns-bak-v6.xhscdn.com/stream/1/110/258/01e94792b21ab89e010370019b3f95402f_258.mp4"
+  ],
+  "has_live_photo": false,
+  "like_count": null,
+  "comment_count": null,
+  "share_count": null,
+  "tags": [],
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "image_1.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/xiaohongshu/楚家兄妹聊天好有趣_694792b3000000001f00d0ad/image_1.jpg",
+      "fileSize": 157249,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "image",
+      "index": 1,
+      "originalUrl": "http://sns-webpic-qc.xhscdn.com/202512231717/7e9d58d3874673a2115a73232b45c681/1040g00831qbgqbp37o605n2lhan49ndott1mdfg!nd_dft_wlteh_jpg_3"
+    },
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/xiaohongshu/楚家兄妹聊天好有趣_694792b3000000001f00d0ad/cover.jpg",
+      "fileSize": 157249,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://sns-webpic-qc.xhscdn.com/202512231717/7e9d58d3874673a2115a73232b45c681/1040g00831qbgqbp37o605n2lhan49ndott1mdfg!nd_dft_wlteh_jpg_3"
+    },
+    {
+      "success": true,
+      "filename": "image_2.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/xiaohongshu/楚家兄妹聊天好有趣_694792b3000000001f00d0ad/image_2.jpg",
+      "fileSize": 18539,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "image",
+      "index": 2,
+      "originalUrl": "https://sns-avatar-qc.xhscdn.com/avatar/66052b910d12070001217959.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_2.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/xiaohongshu/楚家兄妹聊天好有趣_694792b3000000001f00d0ad/video_2.mp4",
+      "fileSize": 9120291,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 2,
+      "originalUrl": "http://sns-bak-v6.xhscdn.com/stream/1/110/258/01e94792b21ab89e010370019b3f95402f_258.mp4"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/xiaohongshu/楚家兄妹聊天好有趣_694792b3000000001f00d0ad/video_1.mp4",
+      "fileSize": 9120291,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "http://sns-video-qc.xhscdn.com/stream/1/110/258/01e94792b21ab89e010370019b3f95402f_258.mp4?sign=dbd994834785ed84002fade4bf38da7c&t=694efb75"
+    }
+  ],
+  "download_time": "2025-12-23T09:17:42.809Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/xiaohongshu/楚家兄妹聊天好有趣_694792b3000000001f00d0ad"
+}
