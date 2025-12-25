@@ -33,16 +33,7 @@ class MediaDownloadService {
       // 准备下载的文件列表
       const downloadTasks = [];
       const downloadedFiles = [];
-      
-      // 下载封面图片
-      if (parsedData.cover_url) {
-        downloadTasks.push({
-          url: parsedData.cover_url,
-          type: 'cover',
-          filename: 'cover'
-        });
-      }
-      
+
       // 下载所有图片
       if (parsedData.all_images && parsedData.all_images.length > 0) {
         parsedData.all_images.forEach((imageUrl, index) => {
@@ -53,6 +44,24 @@ class MediaDownloadService {
             index: index + 1
           });
         });
+      }
+
+      // 下载封面图片（仅在封面不在图片列表中时下载）
+      if (parsedData.cover_url) {
+        // 检查封面URL是否已在图片列表中
+        const coverImageIndex = parsedData.all_images?.findIndex(imgUrl => imgUrl === parsedData.cover_url);
+
+        if (coverImageIndex !== undefined && coverImageIndex >= 0) {
+          // 封面已在图片列表中，跳过下载 cover.jpg（节省空间）
+          console.log(`封面图与图片${coverImageIndex + 1}相同，跳过创建 cover.jpg，节省磁盘空间`);
+        } else {
+          // 封面不在图片列表中，正常下载
+          downloadTasks.push({
+            url: parsedData.cover_url,
+            type: 'cover',
+            filename: 'cover'
+          });
+        }
       }
       
       // 下载所有视频
@@ -100,9 +109,9 @@ class MediaDownloadService {
       
       const downloadResults = await Promise.all(downloadPromises);
       const successfulDownloads = downloadResults.filter(result => result.success);
-      
+
       console.log(`成功下载 ${successfulDownloads.length}/${downloadTasks.length} 个文件`);
-      
+
       // 创建元数据JSON文件
       const metadata = {
         title: parsedData.title,

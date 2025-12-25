@@ -172,7 +172,7 @@ class ParseService {
     return filename.replace(/[\\/:*?"<>|]/g, '_').substring(0, 50);
   }
 
-  // URL去重 - 使用基础URL（去除查询参数）进行比较
+  // URL去重 - 使用文件标识符进行比较，支持小红书主备服务器去重
   static deduplicateUrls(urlList) {
     if (!Array.isArray(urlList)) return [];
 
@@ -182,14 +182,28 @@ class ParseService {
     for (const url of urlList) {
       if (!url || typeof url !== 'string') continue;
 
-      // 提取基础URL（去除查询参数和片段）
-      const baseUrl = url.split('?')[0].split('#')[0];
+      // 提取文件标识符（URL路径中的文件名部分）
+      // 例如：从 http://sns-video-hs.xhscdn.com/stream/1/110/258/01e94ce73c1d5de3010370019b546c3462_258.mp4
+      // 提取：01e94ce73c1d5de3010370019b546c3462_258.mp4
+      let fileIdentifier = null;
+      try {
+        const urlPath = new URL(url).pathname;
+        // 获取路径的最后一部分（文件名）
+        const fileName = urlPath.split('/').pop();
+        if (fileName) {
+          fileIdentifier = fileName;
+        }
+      } catch (e) {
+        // URL解析失败，使用完整URL作为标识符
+        const baseUrl = url.split('?')[0].split('#')[0];
+        fileIdentifier = baseUrl;
+      }
 
-      if (baseUrl && !seen.has(baseUrl)) {
-        seen.add(baseUrl);
+      if (fileIdentifier && !seen.has(fileIdentifier)) {
+        seen.add(fileIdentifier);
         result.push(url);
-      } else if (baseUrl) {
-        console.log(`去除重复URL: ${url}`);
+      } else if (fileIdentifier) {
+        console.log(`去除重复URL (文件标识符: ${fileIdentifier}): ${url}`);
       }
     }
 

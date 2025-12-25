@@ -7,7 +7,14 @@
       "Bash(python3:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(md5:*)",
+      "Bash(done:*)",
+      "Bash(for:*)",
+      "Bash(do if [ -f \"$dircover.jpg\" ])",
+      "Bash([:*)",
+      "Bash(then echo \"$dir\")",
+      "Bash(fi:*)"
     ]
   }
 }
