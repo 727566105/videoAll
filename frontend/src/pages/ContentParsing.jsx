@@ -355,6 +355,38 @@ const ContentParsing = () => {
     }
   };
 
+  // Helper function to extract URLs from mixed text
+  const extractUrlsFromText = (text) => {
+    if (!text || typeof text !== 'string') return [];
+
+    // 支持多种链接格式的正则表达式
+    const patterns = [
+      // 标准HTTP/HTTPS链接（支持中文参数和路径）
+      /https?:\/\/[^\s\u4e00-\u9fa5\)\]}》】，。！？；：""''`~]+[^\s\)\]}》】，。！？；：""''`~]*/gi,
+      // 小红书短链接 xhslink.com
+      /https?:\/\/xhslink\.com\/[a-zA-Z0-9]+/gi,
+      // 小红书完整链接
+      /https?:\/\/[a-z]*\.?xiaohongshu\.com\/[^\s\u4e00-\u9fa5]*/gi,
+      // 抖音链接
+      /https?:\/\/[a-z]*\.?douyin\.com\/[^\s\u4e00-\u9fa5]*/gi,
+    ];
+
+    const urls = new Set();
+
+    patterns.forEach(pattern => {
+      const matches = text.match(pattern);
+      if (matches) {
+        matches.forEach(url => {
+          // 清理URL末尾可能的中文标点
+          const cleanUrl = url.replace(/[》】，。！？；：""''`~]+$/, '');
+          urls.add(cleanUrl);
+        });
+      }
+    });
+
+    return Array.from(urls);
+  };
+
   const handleParse = async (values) => {
     try {
       setLoading(true);
@@ -362,16 +394,49 @@ const ContentParsing = () => {
       setProgress(10);
       setParsedResult(null);
       let link = values.link;
-      console.log('Original parse link:', link);
-      
-      // Extract URL from text if it contains more than just a URL
-      const urlRegex = /https?:\/\/[^\s)\]]+/g;
-      const extractedUrls = link.match(urlRegex);
-      if (extractedUrls && extractedUrls.length > 0) {
-        link = extractedUrls[0];
-        console.log('Extracted URL:', link);
+
+      console.log('📝 原始输入内容:', link);
+
+      // 检测输入是否包含中文字符（可能是混合文本）
+      const hasChinese = /[\u4e00-\u9fa5]/.test(link);
+      console.log('🔤 包含中文:', hasChinese);
+
+      // 从混合文本中提取链接
+      const extractedUrls = extractUrlsFromText(link);
+
+      if (extractedUrls.length > 0) {
+        console.log('🔗 提取到的链接:', extractedUrls);
+
+        // 优先使用小红书链接
+        const xiaohongshuUrls = extractedUrls.filter(url =>
+          url.includes('xiaohongshu.com') || url.includes('xhslink.com')
+        );
+
+        if (xiaohongshuUrls.length > 0) {
+          link = xiaohongshuUrls[0];
+          console.log('✅ 使用小红书链接:', link);
+
+          if (extractedUrls.length > 1) {
+            message.info(`已从文本中提取小红书链接，忽略其他 ${extractedUrls.length - 1} 个链接`);
+          }
+        } else {
+          link = extractedUrls[0];
+          console.log('✅ 使用提取的链接:', link);
+
+          if (hasChinese) {
+            message.info(`已从文本中提取链接: ${link.substring(0, 50)}...`);
+          }
+        }
+      } else if (hasChinese) {
+        console.warn('⚠️ 检测到中文但未找到有效链接');
+        message.warning('未在文本中找到有效的链接，请检查输入内容');
+        setLoading(false);
+        setProcessingStatus('failed');
+        return;
       }
-      
+
+      console.log('🎯 最终使用的链接:', link);
+
       // Check if it's a Xiaohongshu URL
       const isXiaohongshuUrl = link.includes('xiaohongshu.com') || link.includes('xhslink.com');
       
@@ -516,19 +581,35 @@ const ContentParsing = () => {
           <Form.Item
             name="link"
             rules={[
-              { required: true, message: '请输入作品链接!' },
-              { type: 'url', message: '请输入有效的URL!' }
+              {
+                required: true,
+                message: '请输入作品链接或包含链接的文本!',
+                validator: (_, value) => {
+                  if (!value || !value.trim()) {
+                    return Promise.reject('请输入作品链接或包含链接的文本');
+                  }
+
+                  // 检查是否包含链接
+                  const hasLink = /https?:\/\/[^\s]+/.test(value);
+
+                  // 如果不包含链接，提示用户
+                  if (!hasLink) {
+                    return Promise.reject('输入内容中未找到有效链接，请检查后重试');
+                  }
+
+                  return Promise.resolve();
+                }
+              }
             ]}
             style={{ flex: 1, marginRight: 16 }}
-          >
-            <Input 
-              placeholder="请输入抖音、小红书等平台作品链接"
-              style={{ fontSize: 16, padding: '8px 16px' }}
-              allowClear
-              suffix={
-                <Button 
-                  type="text" 
-                  icon={<FileTextOutlined />} 
+            extra={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                <span style={{ fontSize: 12, color: '#999' }}>
+                  💡 提示：可以直接粘贴包含链接的文本，系统会自动提取链接
+                </span>
+                <Button
+                  type="text"
+                  icon={<FileTextOutlined />}
                   onClick={async () => {
                     try {
                       const text = await navigator.clipboard.readText();
@@ -543,11 +624,20 @@ const ContentParsing = () => {
                       message.error('无法访问剪贴板，请手动粘贴');
                     }
                   }}
-                  style={{ color: '#1890ff', margin: 0, padding: '0 8px' }}
+                  style={{ color: '#1890ff' }}
                   title="粘贴剪贴板内容"
                   size="small"
-                />
-              }
+                >
+                  粘贴剪贴板
+                </Button>
+              </div>
+            }
+          >
+            <Input.TextArea
+              placeholder="支持以下输入方式：&#10;1. 直接粘贴链接：http://xhslink.com/xxx&#10;2. 粘贴包含链接的文本：袜子挂好了吗 我要来啰🎅🏻 http://xhslink.com/xxx 复制后打开【小红书】查看笔记！"
+              autoSize={{ minRows: 2, maxRows: 6 }}
+              style={{ fontSize: 14, padding: '8px 16px' }}
+              allowClear
             />
           </Form.Item>
           <Form.Item>
