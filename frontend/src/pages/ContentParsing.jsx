@@ -505,7 +505,7 @@ const ContentParsing = () => {
   };
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Card title="输入链接">
         <Form
           form={form}
@@ -568,7 +568,7 @@ const ContentParsing = () => {
       {processingStatus && (
         <Card title={processingStatus === 'processing' ? '解析中' : processingStatus === 'completed' ? '解析成功' : '解析失败'}>
           {processingStatus === 'processing' && (
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
               <div>
                 <h4>正在解析链接，请稍候...</h4>
               </div>
@@ -595,7 +595,7 @@ const ContentParsing = () => {
           )}
           
           {parsedResult && (processingStatus === 'completed' || processingStatus === 'processing') && (
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
               <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                 <div>
                   <img 

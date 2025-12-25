@@ -387,7 +387,7 @@ const TaskManagement = () => {
   }, []);
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Space wrap style={{ justifyContent: 'flex-end', width: '100%' }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={showCreateTaskModal}>
           创建监控任务
@@ -426,7 +426,7 @@ const TaskManagement = () => {
                 <List.Item
                   key={log.id}
                   extra={
-                    <Space direction="vertical" align="end">
+                    <Space orientation="vertical" align="end">
                       <Tag color={log.status === 'success' ? 'success' : log.status === 'running' ? 'processing' : 'error'}>
                         {log.status === 'success' ? '成功' : log.status === 'running' ? '运行中' : '失败'}
                       </Tag>
@@ -439,7 +439,7 @@ const TaskManagement = () => {
                   <List.Item.Meta
                     title={<Text strong>{log.task_name}</Text>}
                     description={
-                      <Space direction="vertical" size="small">
+                      <Space orientation="vertical" size="small">
                         <div>平台：{log.platform}</div>
                         <div>执行时间：{formatExecutionTime(log.execution_time)}</div>
                         <div>开始时间：{log.start_time}</div>

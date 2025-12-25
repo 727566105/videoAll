@@ -149,7 +149,7 @@ const HotSearch = () => {
   }, [selectedPlatform, selectedDate]);
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Card title="筛选条件">
         <Space wrap>
           <Select 
@@ -258,7 +258,7 @@ const HotSearch = () => {
       >
         <Spin spinning={relatedContentLoading}>
           {relatedContent.length > 0 ? (
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Space orientation="vertical" size="large" style={{ width: '100%' }}>
               <Collapse defaultActiveKey={[]} style={{ border: 'none' }}>
                 {relatedContent.map((item) => (
                   <Collapse.Panel

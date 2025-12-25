@@ -167,7 +167,7 @@ const Dashboard = () => {
 
   return (
     <div>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <Title level={3}>仪表盘</Title>
           <Button 

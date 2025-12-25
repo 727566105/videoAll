@@ -196,7 +196,7 @@ const SystemConfig = () => {
   }, []);
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Tabs defaultActiveKey="cookies">
         {/* Platform Account Configuration Tab */}
         <TabPane tab={<span><KeyOutlined />平台账户配置</span>} key="cookies">

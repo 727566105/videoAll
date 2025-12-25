@@ -437,7 +437,7 @@ const ContentManagement = () => {
   }, []); // Empty dependency array ensures this runs only once on mount
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Card title="筛选条件">
         <Space wrap>
           <Input 
@@ -514,7 +514,7 @@ const ContentManagement = () => {
       </Card>
       
       <Card>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
           <Space wrap style={{ justifyContent: 'flex-end' }}>
             <Button
               type="primary"
@@ -575,7 +575,7 @@ const ContentManagement = () => {
         width={900}
       >
         {previewContent && (
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
             {/* 操作栏 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
               <Space>

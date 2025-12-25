@@ -145,7 +145,7 @@ const Login = ({ onLogin }) => {
     <Card 
       style={{ width: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
       title={
-        <Space direction="vertical" align="center" size="small" style={{ width: '100%' }}>
+        <Space orientation="vertical" align="center" size="small" style={{ width: '100%' }}>
           <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
             内容管理系统
           </Title>

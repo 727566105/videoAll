@@ -48,7 +48,7 @@ const PersonalProfile = () => {
         }
         loading={loading}
       >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           <div>
             <Text strong>用户名: </Text>
             <Text style={{ fontSize: '16px' }}>{user.username}</Text>

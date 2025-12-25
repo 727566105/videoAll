@@ -46,7 +46,7 @@ const ApiDebugger = () => {
 
   return (
     <Card title="API 调试器" style={{ margin: '20px' }}>
-      <Space direction="vertical" style={{ width: '100%' }}>
+      <Space orientation="vertical" style={{ width: '100%' }}>
         <Space>
           <Button 
             type="primary" 
