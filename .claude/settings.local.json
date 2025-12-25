@@ -14,7 +14,8 @@
       "Bash(do if [ -f \"$dircover.jpg\" ])",
       "Bash([:*)",
       "Bash(then echo \"$dir\")",
-      "Bash(fi:*)"
+      "Bash(fi:*)",
+      "Bash(xargs:*)"
     ]
   }
 }

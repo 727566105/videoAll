@@ -67,25 +67,30 @@ class ParseService {
     if (sdkResult.success && sdkResult.data) {
       // 这是增强解析器的响应格式
       actualResult = sdkResult.data;
-      
+
       // 转换videos数组格式
       if (actualResult.videos && Array.isArray(actualResult.videos)) {
         actualResult.download_urls = actualResult.download_urls || {};
         actualResult.download_urls.video = actualResult.videos.map(v => v.url);
       }
-      
+
       // 转换images数组格式
       if (actualResult.images && Array.isArray(actualResult.images)) {
         actualResult.download_urls = actualResult.download_urls || {};
         actualResult.download_urls.images = actualResult.images.map(i => i.url);
       }
-      
+
       // 映射其他字段
       actualResult.platform = 'xiaohongshu';
       actualResult.author = actualResult.author?.nickname || actualResult.author || '未知作者';
       actualResult.like_count = actualResult.interaction_stats?.like_count;
       actualResult.comment_count = actualResult.interaction_stats?.comment_count;
       actualResult.share_count = actualResult.interaction_stats?.share_count;
+
+      // 修复描述字段：增强解析器使用 'content' 字段
+      if (actualResult.content !== undefined) {
+        actualResult.description = actualResult.content;
+      }
     }
     
     // 平台映射

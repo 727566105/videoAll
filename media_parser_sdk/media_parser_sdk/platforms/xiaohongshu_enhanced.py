@@ -579,6 +579,7 @@ def extract_xiaohongshu_note_sync(url: str) -> XiaohongshuExtractResult:
                     data={
                         "note_id": media_info.note_id,
                         "title": media_info.title,
+                        "content": media_info.description or "",  # 添加描述字段
                         "author": {"nickname": media_info.author},
                         "images": [{"url": i} for i in (media_info.download_urls.images or [])],
                         "videos": [{"url": v} for v in (media_info.download_urls.video or [])],

@@ -51,10 +51,19 @@ const ContentManagement = () => {
       dataIndex: 'title',
       key: 'title',
       ellipsis: true,
+      width: 250,
       render: (title, record) => (
-        <Space>
+        <Space direction="vertical" size={0}>
           <span>{title}</span>
           {record.is_missing && <Tag color="error">已消失</Tag>}
+          {/* 描述预览 - 显示前50个字符 */}
+          {record.description && (
+            <span style={{ fontSize: 12, color: '#999' }}>
+              {record.description.length > 50
+                ? record.description.substring(0, 50) + '...'
+                : record.description}
+            </span>
+          )}
         </Space>
       )
     },
@@ -712,15 +721,33 @@ const ContentManagement = () => {
 
             <div style={{ marginBottom: '16px' }}>
               <h4>基本信息</h4>
-              <div>作者: {previewContent.author || '未知'}</div>
-              <div>平台: {previewContent.platform || '未知'}</div>
-              <div>类型: {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
-              <div>来源: {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
-              <div>采集时间: {new Date(previewContent.created_at).toLocaleString()}</div>
-              {previewContent.publish_time && (
-                <div>发布时间: {new Date(previewContent.publish_time).toLocaleString()}</div>
-              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 16px' }}>
+                <div><span style={{ color: '#666' }}>作者:</span> {previewContent.author || '未知'}</div>
+                <div><span style={{ color: '#666' }}>平台:</span> {previewContent.platform || '未知'}</div>
+                <div><span style={{ color: '#666' }}>类型:</span> {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
+                <div><span style={{ color: '#666' }}>来源:</span> {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
+                <div><span style={{ color: '#666' }}>采集时间:</span> {new Date(previewContent.created_at).toLocaleString()}</div>
+                {previewContent.publish_time && (
+                  <div><span style={{ color: '#666' }}>发布时间:</span> {new Date(previewContent.publish_time).toLocaleString()}</div>
+                )}
+              </div>
             </div>
+
+            {/* 描述信息 - 放在基本信息之前，更突出 */}
+            {previewContent.description && (
+              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '8px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '8px', color: '#52c41a' }}>📝 内容描述</h4>
+                <p style={{
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  lineHeight: '1.6',
+                  color: '#262626'
+                }}>
+                  {previewContent.description}
+                </p>
+              </div>
+            )}
 
             {/* 统计数据 */}
             {(previewContent.like_count || previewContent.collect_count ||
@@ -760,12 +787,6 @@ const ContentManagement = () => {
                     </Space>
                   )}
                 </Space>
-              </div>
-            )}
-            {previewContent.description && (
-              <div>
-                <h4>描述</h4>
-                <p>{previewContent.description}</p>
               </div>
             )}
             {previewContent.source_url && (
