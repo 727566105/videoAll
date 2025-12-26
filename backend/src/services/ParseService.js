@@ -219,7 +219,7 @@ class ParseService {
   static detectPlatform(url) {
     if (url.includes('douyin.com') || url.includes('tiktok.com')) {
       return 'douyin';
-    } else if (url.includes('xiaohongshu.com')) {
+    } else if (url.includes('xiaohongshu.com') || url.includes('xhslink.com')) {
       return 'xiaohongshu';
     } else if (url.includes('kuaishou.com')) {
       return 'kuaishou';

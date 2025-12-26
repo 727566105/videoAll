@@ -606,7 +606,7 @@ const ContentParsing = () => {
             style={{ flex: 1, marginRight: 16 }}
             extra={
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                <span style={{ fontSize: 12, color: token?.colorTextQuaternary }}>
+                <span style={{ fontSize: 12, color: token.colorTextQuaternary }}>
                   💡 提示：可以直接粘贴包含链接的文本，系统会自动提取链接
                 </span>
                 <Button
@@ -626,7 +626,7 @@ const ContentParsing = () => {
                       message.error('无法访问剪贴板，请手动粘贴');
                     }
                   }}
-                  style={{ color: token?.colorPrimary }}
+                  style={{ color: token.colorPrimary }}
                   title="粘贴剪贴板内容"
                   size="small"
                 >
@@ -665,7 +665,7 @@ const ContentParsing = () => {
                 <h4>正在解析链接，请稍候...</h4>
               </div>
               <div style={{ width: '100%' }}>
-                <div style={{ width: '100%', height: 20, backgroundColor: token?.colorFillQuaternary, borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: 20, backgroundColor: token.colorFillQuaternary, borderRadius: 10, overflow: 'hidden' }}>
                   <div 
                     style={{ 
                       width: `${progress}%`, 
@@ -676,7 +676,7 @@ const ContentParsing = () => {
                     }}
                   ></div>
                 </div>
-                <div style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: token?.colorTextTertiary }}>
+                <div style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: token.colorTextTertiary }}>
                   {progress}%
                 </div>
               </div>
@@ -706,15 +706,15 @@ const ContentParsing = () => {
                     <p>图片数量：{parsedResult.all_images.length} 张</p>
                   )}
                   {parsedResult.all_videos && parsedResult.all_videos.length > 0 && (
-                    <p style={{ color: token?.colorError, fontWeight: 'bold' }}>🎥 视频数量：{parsedResult.all_videos.length} 个</p>
+                    <p style={{ color: token.colorError, fontWeight: 'bold' }}>🎥 视频数量：{parsedResult.all_videos.length} 个</p>
                   )}
                   {parsedResult.has_live_photo && (
-                    <p style={{ color: token?.colorPrimary, fontWeight: 'bold' }}>🎬 包含实况图片</p>
+                    <p style={{ color: token.colorPrimary, fontWeight: 'bold' }}>🎬 包含实况图片</p>
                   )}
                   {parsedResult.enhanced && (
-                    <div style={{ marginTop: 12, padding: 8, backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: 4 }}>
-                      <p style={{ color: token?.colorSuccess, fontWeight: 'bold', margin: 0 }}>✨ 增强解析成功</p>
-                      <div style={{ fontSize: 12, color: token?.colorTextTertiary, marginTop: 4 }}>
+                    <div style={{ marginTop: 12, padding: 8, backgroundColor: `${token.colorSuccess}10`, border: `1px solid ${token.colorSuccess}`, borderRadius: 4 }}>
+                      <p style={{ color: token.colorSuccess, fontWeight: 'bold', margin: 0 }}>✨ 增强解析成功</p>
+                      <div style={{ fontSize: 12, color: token.colorTextTertiary, marginTop: 4 }}>
                         {parsedResult.like_count > 0 && <span>👍 {parsedResult.like_count} </span>}
                         {parsedResult.collect_count > 0 && <span>⭐ {parsedResult.collect_count} </span>}
                         {parsedResult.comment_count > 0 && <span>💬 {parsedResult.comment_count} </span>}
@@ -722,9 +722,9 @@ const ContentParsing = () => {
                       </div>
                       {parsedResult.tags && parsedResult.tags.length > 0 && (
                         <div style={{ marginTop: 4 }}>
-                          <span style={{ fontSize: 12, color: token?.colorTextTertiary }}>标签：</span>
+                          <span style={{ fontSize: 12, color: token.colorTextTertiary }}>标签：</span>
                           {parsedResult.tags.map((tag, index) => (
-                            <span key={index} style={{ fontSize: 12, color: token?.colorPrimary, marginRight: 8 }}>#{tag}</span>
+                            <span key={index} style={{ fontSize: 12, color: token.colorPrimary, marginRight: 8 }}>#{tag}</span>
                           ))}
                         </div>
                       )}
@@ -757,11 +757,11 @@ const ContentParsing = () => {
                     percent={downloadProgress} 
                     status={downloadStatus === 'failed' ? 'exception' : downloadStatus === 'completed' ? 'success' : 'active'} 
                     strokeColor={{
-                      '0%': token?.colorPrimary,
-                      '100%': token?.colorSuccess,
+                      '0%': token.colorPrimary,
+                      '100%': token.colorSuccess,
                     }}
                   />
-                  <div style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: token?.colorTextTertiary }}>
+                  <div style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: token.colorTextTertiary }}>
                     {downloadStatus === 'downloading' ? '正在下载...' : 
                      downloadStatus === 'completed' ? '下载完成！' : 
                      downloadStatus === 'failed' ? '下载失败！' : ''}
@@ -774,13 +774,13 @@ const ContentParsing = () => {
                 <div style={{ marginTop: 20, width: '100%' }}>
                   <h4>
                     🎥 视频预览
-                    <span style={{ color: token?.colorError, marginLeft: 8, fontSize: 14 }}>
+                    <span style={{ color: token.colorError, marginLeft: 8, fontSize: 14 }}>
                       共 {parsedResult.all_videos.length} 个视频
                     </span>
                   </h4>
 
                   {/* 主视频播放器 */}
-                  <div style={{ display: 'flex', justifyContent: 'center', backgroundColor: token?.colorFillTertiary, borderRadius: 8, padding: 20, marginBottom: 15 }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', backgroundColor: token.colorFillTertiary, borderRadius: 8, padding: 20, marginBottom: 15 }}>
                     <video
                       src={getProxyVideoUrl(parsedResult.media_url || parsedResult.all_videos[0] || (parsedResult.file_path ? `/media/${parsedResult.file_path}` : ''))}
                       controls
@@ -795,7 +795,7 @@ const ContentParsing = () => {
                   {/* 多视频缩略图列表 */}
                   {parsedResult.all_videos.length > 1 && (
                     <div style={{ marginTop: 15 }}>
-                      <div style={{ fontSize: 13, color: token?.colorTextTertiary, marginBottom: 8 }}>更多视频：</div>
+                      <div style={{ fontSize: 13, color: token.colorTextTertiary, marginBottom: 8 }}>更多视频：</div>
                       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 10 }}>
                         {parsedResult.all_videos.slice(1).map((videoUrl, index) => (
                           <div
@@ -805,7 +805,7 @@ const ContentParsing = () => {
                               cursor: 'pointer',
                               borderRadius: 8,
                               overflow: 'hidden',
-                              border: `2px solid ${token?.colorBorderSecondary}`,
+                              border: `2px solid ${token.colorBorderSecondary}`,
                               transition: 'all 0.3s'
                             }}
                             onClick={() => {
@@ -816,10 +816,10 @@ const ContentParsing = () => {
                               }
                             }}
                             onMouseEnter={(e) => {
-                              e.target.style.borderColor = token?.colorPrimary;
+                              e.target.style.borderColor = token.colorPrimary;
                             }}
                             onMouseLeave={(e) => {
-                              e.target.style.borderColor = token?.colorBorderSecondary;
+                              e.target.style.borderColor = token.colorBorderSecondary;
                             }}
                           >
                             <video
@@ -827,7 +827,7 @@ const ContentParsing = () => {
                               style={{ width: 160, height: 120, objectFit: 'cover', display: 'block' }}
                               muted
                             />
-                            <div style={{ padding: '6px 10px', backgroundColor: token?.colorBgContainer, fontSize: 12, color: token?.colorTextTertiary, textAlign: 'center' }}>
+                            <div style={{ padding: '6px 10px', backgroundColor: token.colorBgContainer, fontSize: 12, color: token.colorTextTertiary, textAlign: 'center' }}>
                               视频 {index + 2}
                             </div>
                           </div>
@@ -843,11 +843,11 @@ const ContentParsing = () => {
                 <div style={{ marginTop: parsedResult.all_videos && parsedResult.all_videos.length > 0 ? 20 : 0, width: '100%' }}>
                   <h4>
                     📸 图片预览
-                    <span style={{ color: token?.colorPrimary, marginLeft: 8, fontSize: 14 }}>
+                    <span style={{ color: token.colorPrimary, marginLeft: 8, fontSize: 14 }}>
                       共 {parsedResult.all_images.length} 张
                     </span>
                     {parsedResult.has_live_photo && (
-                      <span style={{ color: token?.colorSuccess, marginLeft: 8, fontSize: 13 }}>
+                      <span style={{ color: token.colorSuccess, marginLeft: 8, fontSize: 13 }}>
                         🎬 包含实况图片
                       </span>
                     )}
@@ -857,7 +857,7 @@ const ContentParsing = () => {
                     gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
                     gap: 12,
                     padding: 15,
-                    backgroundColor: token?.colorFillSecondary,
+                    backgroundColor: token.colorFillSecondary,
                     borderRadius: 8
                   }}>
                     {parsedResult.all_images.map((imgUrl, index) => (
@@ -871,21 +871,21 @@ const ContentParsing = () => {
                             objectFit: 'cover',
                             borderRadius: 8,
                             cursor: 'pointer',
-                            border: `2px solid ${token?.colorBorderSecondary}`,
+                            border: `2px solid ${token.colorBorderSecondary}`,
                             transition: 'all 0.3s'
                           }}
                           onClick={() => handlePreview(imgUrl, index)}
                           onError={handleImageError}
                           onMouseEnter={(e) => {
-                            e.target.style.borderColor = token?.colorPrimary;
+                            e.target.style.borderColor = token.colorPrimary;
                             e.target.style.transform = 'scale(1.02)';
                           }}
                           onMouseLeave={(e) => {
-                            e.target.style.borderColor = token?.colorBorderSecondary;
+                            e.target.style.borderColor = token.colorBorderSecondary;
                             e.target.style.transform = 'scale(1)';
                           }}
                         />
-                        <div style={{ fontSize: 12, color: token?.colorTextTertiary, marginTop: 6 }}>
+                        <div style={{ fontSize: 12, color: token.colorTextTertiary, marginTop: 6 }}>
                           图片 {index + 1}
                         </div>
                       </div>
@@ -924,7 +924,7 @@ const ContentParsing = () => {
         onCancel={handlePreviewCancel}
         width="80%"
         style={{ top: 20 }}
-        bodyStyle={{ padding: 0, textAlign: 'center', backgroundColor: token?.colorFillTertiary }}
+        bodyStyle={{ padding: 0, textAlign: 'center', backgroundColor: token.colorFillTertiary }}
       >
         <Image
           src={previewImage}

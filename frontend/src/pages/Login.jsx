@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Form, Input, Button, Card, Typography, Space, Checkbox, Alert, Spin, Modal, message } from 'antd';
+import { Form, Input, Button, Card, Typography, Space, Checkbox, Alert, Spin, Modal, message, App } from 'antd';
 import { LockOutlined, UserOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
@@ -13,6 +13,7 @@ import {
 const { Title, Text } = Typography;
 
 const Login = ({ onLogin }) => {
+  const { token } = App.useApp();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -156,10 +157,10 @@ const Login = ({ onLogin }) => {
 
   if (checkingSystem) {
     return (
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+      <Card style={{ width: 400, boxShadow: token.boxShadowSecondary }}>
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 16, color: token.colorTextSecondary }}>
             <Text>正在检查系统状态...</Text>
           </div>
         </div>
@@ -169,15 +170,15 @@ const Login = ({ onLogin }) => {
 
   return (
     <Card
-      style={{ width: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
+      style={{ width: 400, boxShadow: token.boxShadowSecondary }}
       title={
         <Space orientation="vertical" align="center" size="small" style={{ width: '100%' }}>
-          <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
+          <Title level={2} style={{ margin: 0, color: token.colorPrimary }}>
             内容管理系统
           </Title>
           {isInitialSetup && (
             <Space>
-              <SettingOutlined style={{ color: '#52c41a' }} />
+              <SettingOutlined style={{ color: token.colorSuccess }} />
               <Text type="success">系统初始化</Text>
             </Space>
           )}

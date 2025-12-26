@@ -455,7 +455,7 @@ const TaskManagement = () => {
                           <div>更新内容：{log.updated_count}</div>
                         )}
                         {log.error && (
-                          <div style={{ color: token?.colorError }}>错误信息：{log.error}</div>
+                          <div style={{ color: token.colorError }}>错误信息：{log.error}</div>
                         )}
                       </Space>
                     }

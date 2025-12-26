@@ -273,7 +273,7 @@ const SystemConfig = () => {
           </Card>
 
           <Card title="合规提示" style={{ marginTop: '16px' }}>
-            <div style={{ padding: '16px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '4px' }}>
+            <div style={{ padding: '16px', backgroundColor: `${token.colorSuccess}10`, border: `1px solid ${token.colorSuccess}`, borderRadius: '4px' }}>
               <p style={{ margin: 0 }}>
                 <strong>重要提示：</strong> 使用本系统时，请确保遵守以下规定：
               </p>

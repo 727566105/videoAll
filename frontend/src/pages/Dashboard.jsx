@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Card, Typography, Space, Statistic, Spin, Button, message, Row, Col } from 'antd';
+import { useState, useEffect, useMemo } from 'react';
+import { Card, Typography, Space, Statistic, Spin, Button, message, Row, Col, App } from 'antd';
 import { VideoCameraOutlined, PictureOutlined, PlusOutlined, ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Pie, Column, Line } from '@ant-design/charts';
 import apiService from '../services/api';
@@ -7,6 +7,7 @@ import apiService from '../services/api';
 const { Title } = Typography;
 
 const Dashboard = () => {
+  const { token } = App.useApp();
   const [stats, setStats] = useState({
     total: 0,
     videoCount: 0,
@@ -78,18 +79,16 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Chart configurations
-  const pieConfig = {
+  // Chart configurations - 使用 useMemo 优化性能并处理 token 可能为 undefined 的情况
+  const pieConfig = useMemo(() => ({
     data: platformDistribution,
     angleField: 'value',
     colorField: 'type',
     radius: 0.8,
     label: {
-      type: 'inner',
-      offset: '-30%',
       content: ({ percent }) => `${(percent * 100).toFixed(0)}%`,
       style: {
-        fill: '#fff',
+        fill: token?.colorBgElevated || '#fff',
         fontSize: 14,
         textAlign: 'center'
       }
@@ -98,58 +97,31 @@ const Dashboard = () => {
       fields: ['type', 'value'],
       formatter: (datum) => {
         return { name: datum.type, value: datum.value };
-      },
-      domStyles: {
-        'g2-tooltip': {
-          backgroundColor: '#fff',
-          color: '#000',
-          border: '1px solid #d9d9d9',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-        }
-      },
-      customContent: (title, data) => {
-        if (!data || data.length === 0) return '';
-        const item = data[0];
-        return `
-          <div style="
-            padding: 8px 12px;
-            background: #fff;
-            border: 1px solid #d9d9d9;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            font-size: 14px;
-            color: #000;
-          ">
-            <div style="margin-bottom: 4px; font-weight: 500;">${item.name}</div>
-            <div>数量: <strong>${item.value}</strong></div>
-          </div>
-        `;
       }
     },
     interactions: [
       { type: 'element-active' },
       { type: 'tooltip' }
     ],
-  };
+  }), [platformDistribution, token]);
 
-  const columnConfig = {
+  const columnConfig = useMemo(() => ({
     data: contentTypeComparison,
     xField: 'type',
     yField: 'value',
     colorField: 'type',
     label: {
-      position: 'middle',
       style: {
-        fill: '#FFFFFF',
-        opacity: 0.6,
+        fill: token?.colorBgElevated || '#fff',
+        opacity: 0.85,
       },
     },
     interactions: [
       { type: 'element-active' },
     ],
-  };
+  }), [contentTypeComparison, token]);
 
-  const lineConfig = {
+  const lineConfig = useMemo(() => ({
     data: recentTrend,
     xField: 'date',
     yField: 'count',
@@ -157,13 +129,13 @@ const Dashboard = () => {
     smooth: true,
     label: {
       style: {
-        fill: '#aaa',
+        fill: token?.colorTextSecondary || 'rgba(0,0,0,0.45)',
       },
     },
     interactions: [
       { type: 'element-active' },
     ],
-  };
+  }), [recentTrend, token]);
 
   return (
     <div>

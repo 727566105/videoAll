@@ -69,7 +69,7 @@ const ContentManagement = () => {
           {record.is_missing && <Tag color="error">已消失</Tag>}
           {/* 描述预览 - 显示前50个字符 */}
           {record.description && (
-            <span style={{ fontSize: 12, color: token?.colorTextQuaternary }}>
+            <span style={{ fontSize: 12, color: token.colorTextQuaternary }}>
               {record.description.length > 50
                 ? record.description.substring(0, 50) + '...'
                 : record.description}
@@ -526,7 +526,7 @@ const ContentManagement = () => {
             {getFilterStatusText()}
           </span>
           {total > 0 && (
-            <span style={{ marginLeft: '8px', color: token?.colorTextTertiary }}>
+            <span style={{ marginLeft: '8px', color: token.colorTextTertiary }}>
               (共 {total} 条记录)
             </span>
           )}
@@ -621,7 +621,7 @@ const ContentManagement = () => {
               <div>
                 <h4>
                   🎥 视频预览
-                  <span style={{ color: token?.colorError, marginLeft: 8, fontSize: 14 }}>
+                  <span style={{ color: token.colorError, marginLeft: 8, fontSize: 14 }}>
                     共 {previewContent.all_videos.length} 个视频
                   </span>
                 </h4>
@@ -640,7 +640,7 @@ const ContentManagement = () => {
                 {/* 多视频缩略图列表 */}
                 {previewContent.all_videos.length > 1 && (
                   <div style={{ marginTop: 15 }}>
-                    <div style={{ fontSize: 13, color: token?.colorTextTertiary, marginBottom: 8 }}>更多视频：</div>
+                    <div style={{ fontSize: 13, color: token.colorTextTertiary, marginBottom: 8 }}>更多视频：</div>
                     <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 10 }}>
                       {previewContent.all_videos.slice(1).map((videoUrl, index) => (
                         <div
@@ -650,7 +650,7 @@ const ContentManagement = () => {
                             cursor: 'pointer',
                             borderRadius: 8,
                             overflow: 'hidden',
-                            border: `2px solid ${token?.colorBorderSecondary}`,
+                            border: `2px solid ${token.colorBorderSecondary}`,
                             transition: 'all 0.3s'
                           }}
                           onClick={() => {
@@ -674,7 +674,7 @@ const ContentManagement = () => {
                               e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
                             }}
                           />
-                          <div style={{ padding: '4px 8px', backgroundColor: token?.colorBgContainer, fontSize: 11, color: token?.colorTextTertiary, textAlign: 'center' }}>
+                          <div style={{ padding: '4px 8px', backgroundColor: token.colorBgContainer, fontSize: 11, color: token.colorTextTertiary, textAlign: 'center' }}>
                             视频 {index + 2}
                           </div>
                         </div>
@@ -690,7 +690,7 @@ const ContentManagement = () => {
               <div style={{ marginTop: previewContent.all_videos && previewContent.all_videos.length > 0 ? 15 : 0 }}>
                 <h4>
                   📸 图片预览
-                  <span style={{ color: token?.colorPrimary, marginLeft: 8, fontSize: 14 }}>
+                  <span style={{ color: token.colorPrimary, marginLeft: 8, fontSize: 14 }}>
                     共 {previewContent.all_images.length} 张
                   </span>
                 </h4>
@@ -701,7 +701,7 @@ const ContentManagement = () => {
                   maxHeight: '400px',
                   overflowY: 'auto',
                   padding: '10px',
-                  backgroundColor: token?.colorFillSecondary,
+                  backgroundColor: token.colorFillSecondary,
                   borderRadius: '8px'
                 }}>
                   {previewContent.all_images.map((imgUrl, index) => (
@@ -722,7 +722,7 @@ const ContentManagement = () => {
                           e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(imgUrl)}`;
                         }}
                       />
-                      <div style={{ fontSize: '11px', color: token?.colorTextTertiary, marginTop: '4px' }}>
+                      <div style={{ fontSize: '11px', color: token.colorTextTertiary, marginTop: '4px' }}>
                         图片 {index + 1}
                       </div>
                     </div>
@@ -749,21 +749,21 @@ const ContentManagement = () => {
             <div style={{ marginBottom: '16px' }}>
               <h4>基本信息</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 16px' }}>
-                <div><span style={{ color: token?.colorTextTertiary }}>作者:</span> {previewContent.author || '未知'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>平台:</span> {previewContent.platform || '未知'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>类型:</span> {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>来源:</span> {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>采集时间:</span> {new Date(previewContent.created_at).toLocaleString()}</div>
+                <div><span style={{ color: token.colorTextTertiary }}>作者:</span> {previewContent.author || '未知'}</div>
+                <div><span style={{ color: token.colorTextTertiary }}>平台:</span> {previewContent.platform || '未知'}</div>
+                <div><span style={{ color: token.colorTextTertiary }}>类型:</span> {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
+                <div><span style={{ color: token.colorTextTertiary }}>来源:</span> {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
+                <div><span style={{ color: token.colorTextTertiary }}>采集时间:</span> {new Date(previewContent.created_at).toLocaleString()}</div>
                 {previewContent.publish_time && (
-                  <div><span style={{ color: token?.colorTextTertiary }}>发布时间:</span> {new Date(previewContent.publish_time).toLocaleString()}</div>
+                  <div><span style={{ color: token.colorTextTertiary }}>发布时间:</span> {new Date(previewContent.publish_time).toLocaleString()}</div>
                 )}
               </div>
             </div>
 
             {/* 描述信息 - 放在基本信息之前，更突出 */}
             {previewContent.description && (
-              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '8px' }}>
-                <h4 style={{ marginTop: 0, marginBottom: '8px', color: token?.colorSuccess }}>📝 内容描述</h4>
+              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: `${token.colorSuccess}10`, border: `1px solid ${token.colorSuccess}`, borderRadius: '8px' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '8px', color: token.colorSuccess }}>📝 内容描述</h4>
                 <p style={{
                   margin: 0,
                   whiteSpace: 'pre-wrap',

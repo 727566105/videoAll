@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, ConfigProvider, Dropdown, Space, Avatar } from 'antd';
+import { Layout, Menu, ConfigProvider, Dropdown, Space, Avatar, App as AntdApp } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import {
   HomeOutlined,
@@ -16,7 +16,7 @@ import {
 } from '@ant-design/icons';
 import './App.css';
 import { useState } from 'react';
-import { themes } from './config/themes';
+import { themes, themeTransitionConfig } from './config/themes';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import apiService from './services/api';
 
@@ -138,7 +138,21 @@ function App() {
         {isAuthenticated ? (
           <>
             <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed}>
-              <div className="logo" style={{ height: '32px', margin: '16px', background: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <div className="logo" style={{
+                height: '32px',
+                margin: '16px',
+                background: currentTheme === 'dark'
+                  ? 'rgba(255, 255, 255, 0.2)'
+                  : 'rgba(0, 0, 0, 0.05)',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: currentTheme === 'dark' ? '#fff' : 'rgba(0, 0, 0, 0.88)',
+                fontWeight: 600,
+                fontSize: '14px',
+                transition: 'all 0.3s ease'
+              }}>
                 内容管理系统
               </div>
               <Menu 
@@ -150,13 +164,13 @@ function App() {
               />
             </Sider>
             <Layout>
-              <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
-                <h1 style={{ margin: 0, fontSize: '18px', color: currentTheme === 'dark' ? '#40a9ff' : '#1890ff' }}></h1>
+              <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', boxShadow: currentTheme === 'dark' ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.1)', background: currentTheme === 'dark' ? '#1f1f1f' : '#fff' }}>
+                <h1 style={{ margin: 0, fontSize: '18px', color: currentTheme === 'dark' ? '#40a9ff' : '#1677ff' }}></h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <ThemeSwitcher currentTheme={currentTheme} onThemeChange={handleThemeChange} />
                   {currentUser && (
                     <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-                      <Space style={{ cursor: 'pointer', color: currentTheme === 'dark' ? '#fff' : '#000' }}>
+                      <Space style={{ cursor: 'pointer', color: currentTheme === 'dark' ? '#fff' : 'rgba(0, 0, 0, 0.88)' }}>
                         <Avatar icon={<UserOutlined />} size="small" />
                         <span>{currentUser.username}</span>
                         <DownOutlined />
@@ -198,10 +212,18 @@ function App() {
   };
 
   return (
-    <ConfigProvider locale={zhCN} theme={themes[currentTheme]}>
-      <Router>
-        <RouterWrapper />
-      </Router>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        ...themes[currentTheme],
+        ...themeTransitionConfig,
+      }}
+    >
+      <AntdApp>
+        <Router>
+          <RouterWrapper />
+        </Router>
+      </AntdApp>
     </ConfigProvider>
   );
 }
