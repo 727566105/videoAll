@@ -15,7 +15,10 @@
       "Bash([:*)",
       "Bash(then echo \"$dir\")",
       "Bash(fi:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(pm2 list:*)",
+      "Bash(kill:*)",
+      "Bash(lsof:*)"
     ]
   }
 }
