@@ -929,6 +929,145 @@ class ContentController {
       res.status(500).json({ message: `保存失败: ${error.message}` });
     }
   }
+
+  // 访问本地媒体文件（封面、图片、视频等）
+  static async getLocalMedia(req, res) {
+    try {
+      const { id } = req.params;
+      const { type = 'cover', index } = req.query; // type: cover, image, video
+
+      // 获取内容记录
+      const contentRepository = AppDataSource.getRepository('Content');
+      const content = await contentRepository.findOne({ where: { id } });
+
+      if (!content) {
+        return res.status(404).json({ message: '内容不存在' });
+      }
+
+      // 使用数据库中的完整路径（已经包含完整路径信息）
+      const contentDir = content.file_path;
+
+      // 尝试读取 metadata.json
+      const metadataPath = path.join(contentDir, 'metadata.json');
+      let metadata = null;
+
+      try {
+        const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+        metadata = JSON.parse(metadataContent);
+      } catch (err) {
+        console.error('读取 metadata.json 失败:', err.message);
+      }
+
+      let localFilePath = null;
+      let contentType = 'image/jpeg'; // 默认内容类型
+
+      if (metadata && metadata.downloaded_files && metadata.downloaded_files.length > 0) {
+        // 从 metadata 中查找对应的本地文件
+        if (type === 'cover') {
+          // cover.jpg 已被全局删除，直接使用第一张图片 (image_1, index=1) 作为主封面
+          const firstImageFile = metadata.downloaded_files.find(f => f.type === 'image' && f.index === 1);
+          if (firstImageFile && firstImageFile.filePath && await fs.pathExists(firstImageFile.filePath)) {
+            localFilePath = firstImageFile.filePath;
+          } else {
+            // 如果第一张图片不存在，尝试查找任何可用的图片
+            const anyImageFile = metadata.downloaded_files.find(f => f.type === 'image');
+            if (anyImageFile && anyImageFile.filePath) {
+              localFilePath = anyImageFile.filePath;
+            }
+          }
+        } else if (type === 'image' && index !== undefined) {
+          const imageFile = metadata.downloaded_files.find(
+            f => f.type === 'image' && f.index === parseInt(index)
+          );
+          if (imageFile && imageFile.filePath) {
+            localFilePath = imageFile.filePath;
+          }
+        } else if (type === 'video' && index !== undefined) {
+          const videoFile = metadata.downloaded_files.find(
+            f => f.type === 'video' && f.index === parseInt(index)
+          );
+          if (videoFile && videoFile.filePath) {
+            localFilePath = videoFile.filePath;
+            contentType = 'video/mp4';
+          }
+        }
+      }
+
+      // 如果没有找到 metadata 中的文件，使用传统文件名规则
+      if (!localFilePath) {
+        if (type === 'cover') {
+          // cover.jpg 已被全局删除，使用 image_1.jpg
+          localFilePath = path.join(contentDir, 'image_1.jpg');
+        } else if (type === 'image' && index !== undefined) {
+          localFilePath = path.join(contentDir, `image_${index}.jpg`);
+        } else if (type === 'video' && index !== undefined) {
+          localFilePath = path.join(contentDir, `video_${index}.mp4`);
+          contentType = 'video/mp4';
+        }
+      }
+
+      // 检查文件是否存在
+      if (!localFilePath || !await fs.pathExists(localFilePath)) {
+        console.log('本地文件不存在，返回占位图:', localFilePath);
+        // 返回 SVG 占位图
+        const svgPlaceholder = `<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#f0f0f0"/><text x="75" y="75" font-size="12" text-anchor="middle" fill="#999">暂无本地图片</text></svg>`;
+        res.setHeader('Content-Type', 'image/svg+xml');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        return res.send(svgPlaceholder);
+      }
+
+      // 根据文件扩展名确定 Content-Type
+      const ext = path.extname(localFilePath).toLowerCase();
+      if (ext === '.png') {
+        contentType = 'image/png';
+      } else if (ext === '.gif') {
+        contentType = 'image/gif';
+      } else if (ext === '.webp') {
+        contentType = 'image/webp';
+      } else if (ext === '.mp4') {
+        contentType = 'video/mp4';
+      } else if (ext === '.mov') {
+        contentType = 'video/quicktime';
+      }
+
+      // 获取文件统计信息用于缓存控制
+      const stats = fs.statSync(localFilePath);
+      const etag = `"${stats.mtime.getTime()}"`;
+      const lastModified = stats.mtime.toUTCString();
+
+      // 检查客户端的If-None-Match或If-Modified-Since头
+      const clientETag = req.get('If-None-Match');
+      const clientLastModified = req.get('If-Modified-Since');
+
+      // 如果客户端缓存仍然有效，返回304
+      if ((clientETag && clientETag === etag) ||
+          (clientLastModified && new Date(clientLastModified) >= stats.mtime)) {
+        return res.status(304).end();
+      }
+
+      // 设置缓存头并返回文件
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate'); // 缓存1小时，必须重新验证
+      res.setHeader('Last-Modified', lastModified);
+      res.setHeader('ETag', etag);
+      res.setHeader('Access-Control-Allow-Origin', '*'); // 允许所有来源访问
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.sendFile(localFilePath, (err) => {
+        if (err) {
+          console.error('发送本地文件错误:', err);
+          if (!res.headersSent) {
+            res.status(500).json({ message: '文件读取失败' });
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('获取本地媒体文件错误:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ message: '获取本地文件失败' });
+      }
+    }
+  }
 }
 
 module.exports = ContentController;

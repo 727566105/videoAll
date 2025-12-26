@@ -15,6 +15,9 @@ router.get('/proxy-download', ContentController.proxyDownload);
 // Proxy image for frontend display (bypass CORS)
 router.get('/proxy-image', ContentController.proxyImage);
 
+// 访问本地媒体文件（优先使用本地文件）
+router.get('/:id/local-media', ContentController.getLocalMedia);
+
 // Download exported Excel file
 router.get('/download-export', ContentController.downloadExport);
 

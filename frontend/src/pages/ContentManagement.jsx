@@ -34,17 +34,27 @@ const ContentManagement = () => {
       title: '封面',
       dataIndex: 'cover_url',
       key: 'cover_url',
-      render: (cover_url, record) => (
-        <img
-          src={`/api/v1/content/proxy-image?url=${encodeURIComponent(cover_url)}`}
-          alt="封面"
-          style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
-          onClick={() => handlePreview(record)}
-          onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/80x60?text=加载失败';
-          }}
-        />
-      )
+      width: 100, // 设置固定宽度
+      render: (cover_url, record) => {
+        // 优先使用本地图片：GET /api/v1/content/:id/local-media?type=cover
+        const localCoverUrl = `/api/v1/content/${record.id}/local-media?type=cover`;
+
+        return (
+          <img
+            src={localCoverUrl}
+            alt="封面"
+            style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+            onClick={() => handlePreview(record)}
+            onError={(e) => {
+              console.log('本地封面加载失败，使用远程代理');
+              e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(cover_url)}`;
+              e.target.onError = () => {
+                e.target.src = 'https://via.placeholder.com/80x60?text=加载失败';
+              };
+            }}
+          />
+        );
+      }
     },
     {
       title: '标题',
@@ -144,13 +154,13 @@ const ContentManagement = () => {
   const getContentList = async () => {
     try {
       setLoading(true);
-      
+
       // Build query params - only include non-empty values to ensure proper filtering
       const params = {
         page: pagination.current,
         page_size: pagination.pageSize
       };
-      
+
       // Only add filter parameters if they have values (not empty strings or null)
       if (filters.keyword && filters.keyword.trim()) {
         params.keyword = filters.keyword.trim();
@@ -164,16 +174,16 @@ const ContentManagement = () => {
       if (filters.source_type) {
         params.source_type = filters.source_type;
       }
-      
+
       // Add date range if selected
       if (filters.date_range && filters.date_range.length === 2) {
         params.start_date = filters.date_range[0].format('YYYY-MM-DD');
         params.end_date = filters.date_range[1].format('YYYY-MM-DD');
       }
-      
+
       // Call backend API
       const result = await apiService.content.getList(params);
-      
+
       // Update state with real data or fallback structure
       const contentData = result.data || result;
       setContentList(contentData.list || []);
@@ -614,15 +624,15 @@ const ContentManagement = () => {
                     共 {previewContent.all_videos.length} 个视频
                   </span>
                 </h4>
-                {/* 主视频预览 - 使用代理 URL */}
+                {/* 主视频预览 - 优先使用本地文件 */}
                 <video
                   key={`main-video-${previewContent.all_videos[0]}`}
-                  src={`/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.all_videos[0])}`}
+                  src={`/api/v1/content/${previewContent.id}/local-media?type=video&index=1`}
                   controls
                   style={{ width: '100%', maxHeight: '400px', borderRadius: 8 }}
                   onError={(e) => {
-                    console.error('Video load error:', e.target.src);
-                    e.target.style.display = 'none';
+                    console.log('本地视频加载失败，使用远程代理');
+                    e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.all_videos[0])}`;
                   }}
                 />
 
@@ -644,16 +654,24 @@ const ContentManagement = () => {
                           }}
                           onClick={() => {
                             const videoEl = document.querySelector('video');
+                            const localVideoUrl = `/api/v1/content/${previewContent.id}/local-media?type=video&index=${index + 2}`;
                             if (videoEl) {
-                              videoEl.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
+                              videoEl.src = localVideoUrl;
                               videoEl.style.display = 'block';
+                              videoEl.onerror = () => {
+                                console.log('本地视频加载失败，使用远程代理');
+                                videoEl.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
+                              };
                             }
                           }}
                         >
                           <video
-                            src={`/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`}
+                            src={`/api/v1/content/${previewContent.id}/local-media?type=video&index=${index + 2}`}
                             style={{ width: 120, height: 90, objectFit: 'cover', display: 'block' }}
                             muted
+                            onError={(e) => {
+                              e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
+                            }}
                           />
                           <div style={{ padding: '4px 8px', backgroundColor: '#fff', fontSize: 11, color: '#666', textAlign: 'center' }}>
                             视频 {index + 2}
@@ -688,7 +706,7 @@ const ContentManagement = () => {
                   {previewContent.all_images.map((imgUrl, index) => (
                     <div key={index} style={{ textAlign: 'center' }}>
                       <Image
-                        src={`/api/v1/content/proxy-image?url=${encodeURIComponent(imgUrl)}`}
+                        src={`/api/v1/content/${previewContent.id}/local-media?type=image&index=${index + 1}`}
                         alt={`图片 ${index + 1}`}
                         style={{
                           width: '100%',
@@ -698,6 +716,10 @@ const ContentManagement = () => {
                           cursor: 'pointer'
                         }}
                         fallback="https://via.placeholder.com/120x120?text=加载失败"
+                        onError={(e) => {
+                          console.log('本地图片加载失败，使用远程代理');
+                          e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(imgUrl)}`;
+                        }}
                       />
                       <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>
                         图片 {index + 1}
@@ -712,10 +734,14 @@ const ContentManagement = () => {
             {(!previewContent.all_videos || previewContent.all_videos.length === 0) &&
              (!previewContent.all_images || previewContent.all_images.length === 0) && (
               <Image
-                src={`/api/v1/content/proxy-image?url=${encodeURIComponent(previewContent.cover_url)}`}
+                src={`/api/v1/content/${previewContent.id}/local-media?type=cover`}
                 alt={previewContent.title}
                 style={{ maxWidth: '100%', maxHeight: '400px' }}
                 fallback="https://via.placeholder.com/400x300?text=图片加载失败"
+                onError={(e) => {
+                  console.log('本地封面加载失败，使用远程代理');
+                  e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(previewContent.cover_url)}`;
+                }}
               />
             )}
 
