@@ -43,10 +43,13 @@ const Login = ({ onLogin }) => {
         const credentials = JSON.parse(saved);
         // 简单的解密（实际项目中应使用更安全的加密方式）
         credentials.password = atob(credentials.password);
+        console.log('✅ 成功获取已保存的登录凭证');
         return credentials;
+      } else {
+        console.log('ℹ️ localStorage 中没有保存的登录凭证');
       }
     } catch (error) {
-      console.error('Failed to get saved credentials:', error);
+      console.error('❌ 获取已保存凭证失败:', error);
     }
     return null;
   };
@@ -54,21 +57,25 @@ const Login = ({ onLogin }) => {
   // 保存登录凭证
   const saveCredentials = (values) => {
     try {
+      console.log('🔐 开始保存登录凭证:', { username: values.username, remember: values.remember });
       const credentials = {
         username: values.username,
         // 简单的加密（实际项目中应使用更安全的加密方式，如bcrypt或使用专门的加密库）
         password: btoa(values.password)
       };
       localStorage.setItem('savedCredentials', JSON.stringify(credentials));
+      console.log('✅ 登录凭证已保存到 localStorage');
     } catch (error) {
-      console.error('Failed to save credentials:', error);
+      console.error('❌ 保存登录凭证失败:', error);
     }
   };
 
   // 清除已保存的登录凭证
   const clearSavedCredentials = () => {
+    console.log('🗑️ 清除已保存的登录凭证');
     localStorage.removeItem('savedCredentials');
     form.setFieldsValue({ username: '', password: '', remember: false });
+    console.log('✅ 已清除凭证并重置表单');
   };
 
   // 自动填充登录凭证
@@ -81,6 +88,9 @@ const Login = ({ onLogin }) => {
           password: credentials.password,
           remember: true
         });
+        console.log('✅ 已自动填充保存的登录凭证');
+      } else {
+        console.log('ℹ️ 未找到保存的登录凭证');
       }
     }
   }, [form, isInitialSetup]);
@@ -88,7 +98,13 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-      
+
+      console.log('📝 登录表单提交:', {
+        username: values.username,
+        remember: values.remember,
+        isInitialSetup
+      });
+
       let response;
       if (isInitialSetup) {
         // Initial system setup
@@ -103,25 +119,33 @@ const Login = ({ onLogin }) => {
           password: values.password
         });
       }
-      
+
       // Store user info and token in localStorage
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      
+
       // 保存登录凭证（如果用户勾选了"记住密码"）
-      if (values.remember && !isInitialSetup) {
+      console.log('🔍 检查是否需要保存凭证:', {
+        rememberValue: values.remember,
+        shouldSave: values.remember === true && !isInitialSetup,
+        isInitialSetup
+      });
+
+      if (values.remember === true && !isInitialSetup) {
+        console.log('✅ 用户勾选了记住密码，开始保存...');
         saveCredentials(values);
-      } else if (!isInitialSetup) {
+      } else if (!isInitialSetup && values.remember === false) {
+        console.log('🗑️ 用户未勾选记住密码，清除已保存的凭证');
         clearSavedCredentials();
       }
-      
+
       // Call onLogin prop to update parent component state
       onLogin(response.data.user);
-      
+
       // Navigate to dashboard after successful login/setup
       navigate('/dashboard');
     } catch (error) {
-      console.error('Login/Setup error:', error);
+      console.error('❌ 登录/设置错误:', error);
       // Error is already handled by the API interceptor
     } finally {
       setLoading(false);
@@ -171,7 +195,6 @@ const Login = ({ onLogin }) => {
       <Form
         form={form}
         name={isInitialSetup ? "initial-setup" : "login"}
-        initialValues={{ remember: false }}
         onFinish={handleSubmit}
         style={{ maxWidth: 360, margin: '0 auto' }}
       >
