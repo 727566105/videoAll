@@ -1,8 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Space, Checkbox, Alert, Spin } from 'antd';
+import { useState, useEffect, useRef } from 'react';
+import { Form, Input, Button, Card, Typography, Space, Checkbox, Alert, Spin, Modal, message } from 'antd';
 import { LockOutlined, UserOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
+import {
+  saveCredentials,
+  getSavedCredentials,
+  clearCredentials,
+  getCredentialsDaysRemaining
+} from '../utils/credentials';
 
 const { Title, Text } = Typography;
 
@@ -13,6 +19,10 @@ const Login = ({ onLogin }) => {
   const [checkingSystem, setCheckingSystem] = useState(true);
   const [systemStatus, setSystemStatus] = useState(null);
   const [isInitialSetup, setIsInitialSetup] = useState(false);
+
+  // 使用 useRef 避免竞态条件
+  const isInitializedRef = useRef(false);
+  const previousRememberStateRef = useRef(null);
 
   // Check system status on component mount
   useEffect(() => {
@@ -35,62 +45,50 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  // 获取已保存的登录凭证
-  const getSavedCredentials = () => {
-    try {
-      const saved = localStorage.getItem('savedCredentials');
-      if (saved) {
-        const credentials = JSON.parse(saved);
-        // 简单的解密（实际项目中应使用更安全的加密方式）
-        credentials.password = atob(credentials.password);
-        console.log('✅ 成功获取已保存的登录凭证');
-        return credentials;
-      } else {
-        console.log('ℹ️ localStorage 中没有保存的登录凭证');
-      }
-    } catch (error) {
-      console.error('❌ 获取已保存凭证失败:', error);
-    }
-    return null;
-  };
-
-  // 保存登录凭证
-  const saveCredentials = (values) => {
-    try {
-      console.log('🔐 开始保存登录凭证:', { username: values.username, remember: values.remember });
-      const credentials = {
-        username: values.username,
-        // 简单的加密（实际项目中应使用更安全的加密方式，如bcrypt或使用专门的加密库）
-        password: btoa(values.password)
-      };
-      localStorage.setItem('savedCredentials', JSON.stringify(credentials));
-      console.log('✅ 登录凭证已保存到 localStorage');
-    } catch (error) {
-      console.error('❌ 保存登录凭证失败:', error);
-    }
-  };
-
   // 清除已保存的登录凭证
   const clearSavedCredentials = () => {
-    console.log('🗑️ 清除已保存的登录凭证');
-    localStorage.removeItem('savedCredentials');
-    form.setFieldsValue({ username: '', password: '', remember: false });
-    console.log('✅ 已清除凭证并重置表单');
+    Modal.confirm({
+      title: '确认清除',
+      content: '确定要清除已保存的登录凭证吗？清除后需要重新输入用户名和密码。',
+      okText: '确定',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: () => {
+        try {
+          clearCredentials();
+          // 只清除密码，保留用户名（提升用户体验）
+          form.setFieldsValue({ password: '', remember: false });
+          previousRememberStateRef.current = false;
+          message.success('已清除已保存的密码');
+        } catch (error) {
+          message.error('清除失败，请重试');
+        }
+      }
+    });
   };
 
-  // 自动填充登录凭证
+  // 自动填充登录凭证（使用 ref 避免竞态条件）
   useEffect(() => {
-    if (!isInitialSetup) {
+    if (!isInitialSetup && !isInitializedRef.current) {
+      isInitializedRef.current = true;
+
       const credentials = getSavedCredentials();
       if (credentials) {
         form.setFieldsValue({
           username: credentials.username,
           password: credentials.password,
-          remember: true
+          remember: credentials.remember
         });
-        console.log('✅ 已自动填充保存的登录凭证');
+        previousRememberStateRef.current = credentials.remember;
+
+        // 显示凭证有效期提示
+        const daysRemaining = getCredentialsDaysRemaining();
+        if (daysRemaining !== null) {
+          message.info(`已自动填充登录凭证（剩余 ${daysRemaining} 天有效）`, 2);
+        }
       } else {
-        console.log('ℹ️ 未找到保存的登录凭证');
+        form.setFieldsValue({ remember: false });
+        previousRememberStateRef.current = false;
       }
     }
   }, [form, isInitialSetup]);
@@ -98,12 +96,6 @@ const Login = ({ onLogin }) => {
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-
-      console.log('📝 登录表单提交:', {
-        username: values.username,
-        remember: values.remember,
-        isInitialSetup
-      });
 
       let response;
       if (isInitialSetup) {
@@ -124,19 +116,29 @@ const Login = ({ onLogin }) => {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      // 保存登录凭证（如果用户勾选了"记住密码"）
-      console.log('🔍 检查是否需要保存凭证:', {
-        rememberValue: values.remember,
-        shouldSave: values.remember === true && !isInitialSetup,
-        isInitialSetup
-      });
+      // 处理"记住密码"逻辑（修复状态管理）
+      if (!isInitialSetup) {
+        const currentState = values.remember;
+        const previousState = previousRememberStateRef.current;
 
-      if (values.remember === true && !isInitialSetup) {
-        console.log('✅ 用户勾选了记住密码，开始保存...');
-        saveCredentials(values);
-      } else if (!isInitialSetup && values.remember === false) {
-        console.log('🗑️ 用户未勾选记住密码，清除已保存的凭证');
-        clearSavedCredentials();
+        if (currentState === true) {
+          // 勾选了记住密码：保存凭证
+          try {
+            saveCredentials(values);
+            previousRememberStateRef.current = true;
+            message.success('登录凭证已保存，下次访问将自动填充');
+          } catch (error) {
+            // 保存失败不影响登录
+            console.error('保存凭证失败:', error);
+            message.warning('登录成功，但凭证保存失败：' + error.message);
+          }
+        } else if (currentState === false && previousState === true) {
+          // 明确取消了记住密码：清除凭证
+          clearCredentials();
+          previousRememberStateRef.current = false;
+          message.info('已取消记住密码，已清除保存的凭证');
+        }
+        // 其他情况：状态未改变，不操作
       }
 
       // Call onLogin prop to update parent component state
@@ -145,7 +147,7 @@ const Login = ({ onLogin }) => {
       // Navigate to dashboard after successful login/setup
       navigate('/dashboard');
     } catch (error) {
-      console.error('❌ 登录/设置错误:', error);
+      console.error('登录/设置错误:', error);
       // Error is already handled by the API interceptor
     } finally {
       setLoading(false);
@@ -166,7 +168,7 @@ const Login = ({ onLogin }) => {
   }
 
   return (
-    <Card 
+    <Card
       style={{ width: 400, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}
       title={
         <Space orientation="vertical" align="center" size="small" style={{ width: '100%' }}>
@@ -206,13 +208,13 @@ const Login = ({ onLogin }) => {
             { max: 20, message: '用户名不能超过20个字符!' }
           ]}
         >
-          <Input 
-            prefix={<UserOutlined className="site-form-item-icon" />} 
+          <Input
+            prefix={<UserOutlined className="site-form-item-icon" />}
             placeholder={isInitialSetup ? "管理员用户名" : "用户名"}
             size="large"
           />
         </Form.Item>
-        
+
         <Form.Item
           name="password"
           rules={[
@@ -234,11 +236,11 @@ const Login = ({ onLogin }) => {
             wrapperCol={{ offset: 0, span: 24 }}
           >
             <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-              <Checkbox>记住密码</Checkbox>
-              <Button 
-                type="link" 
-                size="small" 
-                icon={<DeleteOutlined />} 
+              <Checkbox>记住密码（7天）</Checkbox>
+              <Button
+                type="link"
+                size="small"
+                icon={<DeleteOutlined />}
                 onClick={clearSavedCredentials}
               >
                 清除已保存密码
@@ -248,9 +250,9 @@ const Login = ({ onLogin }) => {
         )}
 
         <Form.Item>
-          <Button 
-            type="primary" 
-            htmlType="submit" 
+          <Button
+            type="primary"
+            htmlType="submit"
             loading={loading}
             style={{ width: '100%', height: 40, fontSize: 16 }}
           >

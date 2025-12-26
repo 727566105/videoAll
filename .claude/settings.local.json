@@ -23,7 +23,9 @@
       "Bash(psql:*)",
       "Bash(mongosh:*)",
       "Bash(xxd:*)",
-      "Bash(\"http://localhost:3000/api/v1/content/2100bdd1-9aef-48ea-bbb4-60f9ab875ac0/local-media?type=cover\" )"
+      "Bash(\"http://localhost:3000/api/v1/content/2100bdd1-9aef-48ea-bbb4-60f9ab875ac0/local-media?type=cover\" )",
+      "Bash(npm install:*)",
+      "Bash(npm run build)"
     ]
   }
 }
