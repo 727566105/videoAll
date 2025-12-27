@@ -197,10 +197,17 @@ const apiService = {
     deletePlatformCookie: (id) => api.delete(`/config/platform-cookies/${id}`),
     testPlatformCookie: (id) => api.post(`/config/platform-cookies/${id}/test`),
     autoFetchCookie: (platform, headless = false) => api.get(`/config/platform-cookies/auto-fetch/${platform}`, { params: { headless }, timeout: 120000 }),
-    
+
     // System settings
     getSystemSettings: () => api.get('/config/system'),
-    updateSystemSettings: (data) => api.put('/config/system', data)
+    updateSystemSettings: (data) => api.put('/config/system', data),
+
+    // Download settings
+    downloadSettings: {
+      get: () => api.get('/config/download-settings'),
+      update: (data) => api.put('/config/download-settings', data),
+      getQualityOptions: (platform) => api.get(`/config/download-settings/quality-options/${platform}`)
+    }
   }
 };
 

@@ -2,9 +2,15 @@ const express = require('express');
 const router = express.Router();
 const PlatformCookieController = require('../controllers/PlatformCookieController');
 const SystemSettingsController = require('../controllers/SystemSettingsController');
+const DownloadSettingsController = require('../controllers/DownloadSettingsController');
 const { authenticate, authorize } = require('../middleware/auth');
 
-// All routes are protected by authentication
+// ========== 公开接口（无需认证） ==========
+// 获取平台支持的画质选项
+router.get('/download-settings/quality-options/:platform', DownloadSettingsController.getQualityOptions);
+
+// ========== 以下接口需要认证 ==========
+// All routes below are protected by authentication
 router.use(authenticate);
 
 // ========== Platform Cookie Management Routes (TypeORM) ==========
@@ -40,5 +46,12 @@ router.get('/system', SystemSettingsController.getSystemSettings);
 
 // Update system settings (admin only)
 router.put('/system', authorize(['admin']), SystemSettingsController.updateSystemSettings);
+
+// ========== Download Settings Routes ==========
+// Get all platform download settings (需要登录，不需要admin)
+router.get('/download-settings', DownloadSettingsController.getDownloadSettings);
+
+// Update platform download settings (需要admin权限)
+router.put('/download-settings', authorize(['admin']), DownloadSettingsController.updateDownloadSettings);
 
 module.exports = router;

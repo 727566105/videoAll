@@ -77,9 +77,10 @@ class ParseService {
           sdkCommand.push('--cookie', cookie);
         }
 
-        // 可选：添加清晰度参数（默认1080P）
-        // const quality = '1080P'; // 可以从系统配置读取
-        // sdkCommand.push('--quality', quality);
+        // 从平台Cookie配置中读取用户偏好画质
+        const preferredQuality = await this.getPreferredQuality('bilibili');
+        sdkCommand.push('--quality', preferredQuality);
+        console.log(`使用偏好画质: ${preferredQuality}`);
       }
       
       // 使用Python SDK解析链接
@@ -342,6 +343,35 @@ class ParseService {
     } catch (error) {
       console.error('处理媒体文件信息失败:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 获取平台的偏好画质设置
+   * @param {string} platform - 平台名称（如 'bilibili'）
+   * @returns {Promise<string>} 偏好画质（如 '1080P'、'4K'）
+   */
+  static async getPreferredQuality(platform) {
+    try {
+      const { AppDataSource } = require('../utils/db');
+      const PlatformCookie = AppDataSource.getRepository('PlatformCookie');
+
+      // 查找该平台最新的有效Cookie配置
+      const config = await PlatformCookie.findOne({
+        where: { platform, is_valid: true },
+        order: { created_at: 'DESC' }
+      });
+
+      // 如果配置中有偏好画质，返回它
+      if (config?.preferences?.[platform]?.preferred_quality) {
+        return config.preferences[platform].preferred_quality;
+      }
+
+      // 默认返回1080P
+      return '1080P';
+    } catch (error) {
+      console.error('获取偏好画质失败:', error);
+      return '1080P';
     }
   }
 }

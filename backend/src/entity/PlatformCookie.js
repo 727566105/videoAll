@@ -36,6 +36,11 @@ module.exports = new EntitySchema({
       type: 'timestamp',
       default: () => 'CURRENT_TIMESTAMP',
     },
+    preferences: {
+      type: 'json',
+      nullable: true,
+      comment: '用户偏好设置（JSON格式）'
+    },
   },
   indices: [
     {

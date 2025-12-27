@@ -151,8 +151,8 @@ const ContentManagement = () => {
     onChange: setSelectedRowKeys
   };
 
-  // Get content list from backend
-  const getContentList = async () => {
+  // Get content list from backend (带重试机制)
+  const getContentList = async (retryCount = 0) => {
     try {
       setLoading(true);
 
@@ -191,10 +191,40 @@ const ContentManagement = () => {
       setTotal(contentData.total || 0);
     } catch (error) {
       console.error('Get content list error:', error);
+
+      // 对于临时性错误，自动重试（最多2次）
+      const isRetryableError =
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ECONNRESET' ||
+        error.response?.status >= 500;
+
+      if (isRetryableError && retryCount < 2) {
+        console.log(`重试获取列表... (${retryCount + 1}/2)`);
+        setTimeout(() => {
+          getContentList(retryCount + 1);
+        }, 1000 * (retryCount + 1)); // 递增延迟：1秒、2秒
+        return;
+      }
+
+      // 根据错误类型提供更详细的提示
+      let errorMessage = '获取内容列表失败';
+
+      if (error.message) {
+        errorMessage += `: ${error.message}`;
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage += ': 后端服务未启动，请先启动后端服务';
+      } else if (error.code === 'ETIMEDOUT') {
+        errorMessage += ': 请求超时，请检查网络连接或稍后重试';
+      } else if (error.response?.status === 500) {
+        errorMessage += ': 服务器内部错误，请稍后重试';
+      } else if (error.response?.status === 503) {
+        errorMessage += ': 数据库连接不可用，请检查数据库服务';
+      }
+
       // Show empty list when API fails instead of mock data
       setContentList([]);
       setTotal(0);
-      message.error('获取内容列表失败，请检查后端服务是否正常运行');
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }

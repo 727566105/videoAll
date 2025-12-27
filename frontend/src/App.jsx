@@ -12,7 +12,8 @@ import {
   LogoutOutlined,
   KeyOutlined,
   TeamOutlined,
-  DownOutlined
+  DownOutlined,
+  DownloadOutlined
 } from '@ant-design/icons';
 import './App.css';
 import { useState } from 'react';
@@ -30,6 +31,7 @@ import HotSearch from './pages/HotSearch';
 import SystemConfig from './pages/SystemConfig';
 import UserManagement from './pages/UserManagement';
 import PersonalProfile from './pages/PersonalProfile';
+import DownloadSettings from './pages/DownloadSettings';
 
 const { Header, Content, Sider } = Layout;
 
@@ -41,6 +43,7 @@ const getMenuItems = (userRole) => {
     { key: '/content', icon: <VideoCameraOutlined />, label: '内容管理' },
     { key: '/tasks', icon: <ScheduleOutlined />, label: '任务调度' },
     { key: '/hotsearch', icon: <BarChartOutlined />, label: '平台热搜' },
+    { key: '/download-settings', icon: <DownloadOutlined />, label: '下载设置' },
     { key: '/config', icon: <SettingOutlined />, label: '系统配置' },
   ];
 
@@ -189,6 +192,7 @@ function App() {
                   <Route path="/content" element={<ProtectedRoute isAuthenticated={isAuthenticated}><ContentManagement /></ProtectedRoute>} />
                   <Route path="/tasks" element={<ProtectedRoute isAuthenticated={isAuthenticated}><TaskManagement /></ProtectedRoute>} />
                   <Route path="/hotsearch" element={<ProtectedRoute isAuthenticated={isAuthenticated}><HotSearch /></ProtectedRoute>} />
+                  <Route path="/download-settings" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DownloadSettings /></ProtectedRoute>} />
                   <Route path="/config" element={<ProtectedRoute isAuthenticated={isAuthenticated}><SystemConfig /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute isAuthenticated={isAuthenticated}><PersonalProfile /></ProtectedRoute>} />
                   {currentUser?.role === 'admin' && (

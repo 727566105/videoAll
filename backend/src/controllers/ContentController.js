@@ -208,7 +208,10 @@ class ContentController {
       
       // Delete from database
       await contentRepository.delete(id);
-      
+
+      // 清除内容列表缓存
+      CacheService.flush();
+
       // Delete file from disk
       const filePath = path.join(process.env.STORAGE_ROOT_PATH, content.file_path);
       try {
@@ -287,6 +290,9 @@ class ContentController {
 
       await contentRepository.save(updatedContent);
 
+      // 清除内容列表缓存
+      CacheService.flush();
+
       res.status(200).json({
         success: true,
         message: '统计数据已更新',
@@ -323,7 +329,10 @@ class ContentController {
       
       // Delete from database
       await contentRepository.delete(ids);
-      
+
+      // 清除内容列表缓存
+      CacheService.flush();
+
       // Delete files from disk
       for (const content of contents) {
         const filePath = path.join(process.env.STORAGE_ROOT_PATH, content.file_path);
@@ -919,7 +928,10 @@ class ContentController {
       
       // Save to database
       await contentRepository.save(content);
-      
+
+      // 清除内容列表缓存
+      CacheService.flush();
+
       // Prepare response message
       let message = '内容保存成功';
       if (downloadResult.success) {
