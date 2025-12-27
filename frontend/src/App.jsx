@@ -13,7 +13,8 @@ import {
   KeyOutlined,
   TeamOutlined,
   DownOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  TagsOutlined
 } from '@ant-design/icons';
 import './App.css';
 import { useState } from 'react';
@@ -26,6 +27,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ContentParsing from './pages/ContentParsing';
 import ContentManagement from './pages/ContentManagement';
+import TagManagement from './pages/TagManagement';
 import TaskManagement from './pages/TaskManagement';
 import HotSearch from './pages/HotSearch';
 import SystemConfig from './pages/SystemConfig';
@@ -41,6 +43,7 @@ const getMenuItems = (userRole) => {
     { key: '/dashboard', icon: <HomeOutlined />, label: '仪表盘' },
     { key: '/parsing', icon: <FileSearchOutlined />, label: '单作品解析' },
     { key: '/content', icon: <VideoCameraOutlined />, label: '内容管理' },
+    { key: '/tags', icon: <TagsOutlined />, label: '标签管理' },
     { key: '/tasks', icon: <ScheduleOutlined />, label: '任务调度' },
     { key: '/hotsearch', icon: <BarChartOutlined />, label: '平台热搜' },
     { key: '/download-settings', icon: <DownloadOutlined />, label: '下载设置' },
@@ -190,6 +193,7 @@ function App() {
                   <Route path="/dashboard" element={<ProtectedRoute isAuthenticated={isAuthenticated}><Dashboard /></ProtectedRoute>} />
                   <Route path="/parsing" element={<ProtectedRoute isAuthenticated={isAuthenticated}><ContentParsing /></ProtectedRoute>} />
                   <Route path="/content" element={<ProtectedRoute isAuthenticated={isAuthenticated}><ContentManagement /></ProtectedRoute>} />
+                  <Route path="/tags" element={<ProtectedRoute isAuthenticated={isAuthenticated}><TagManagement /></ProtectedRoute>} />
                   <Route path="/tasks" element={<ProtectedRoute isAuthenticated={isAuthenticated}><TaskManagement /></ProtectedRoute>} />
                   <Route path="/hotsearch" element={<ProtectedRoute isAuthenticated={isAuthenticated}><HotSearch /></ProtectedRoute>} />
                   <Route path="/download-settings" element={<ProtectedRoute isAuthenticated={isAuthenticated}><DownloadSettings /></ProtectedRoute>} />

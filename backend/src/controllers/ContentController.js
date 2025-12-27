@@ -10,13 +10,16 @@ const axios = require('axios');
 class ContentController {
   // Parse content from link
   static async parseContent(req, res) {
+    let link = null;  // 在外部声明，确保catch块中可以访问
+
     try {
-      const { link } = req.body;
-      
+      const { link: requestLink } = req.body;
+      link = requestLink;  // 赋值给外部变量
+
       if (!link) {
         return res.status(400).json({ message: '请提供作品链接' });
       }
-      
+
       // Parse link only - no media download
       const parsedData = await ParseService.parseLink(link);
       
@@ -54,7 +57,33 @@ class ContentController {
       });
     } catch (error) {
       console.error('Parse content error:', error);
-      
+      console.error('Error stack:', error.stack);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+
+      // 记录到专门的错误日志文件 - 使用 JSON 确保完整记录
+      const fs = require('fs-extra');
+      const path = require('path');
+      const errorLogPath = path.join(__dirname, '../../logs/parse-error.log');
+      try {
+        const errorInfo = {
+          timestamp: new Date().toISOString(),
+          link: link,
+          error: {
+            message: error.message,
+            name: error.name,
+            stack: error.stack,
+            code: error.code,
+            // 完整的错误对象
+            full: JSON.stringify(error, Object.getOwnPropertyNames(error))
+          }
+        };
+        fs.appendFileSync(errorLogPath, '\n' + JSON.stringify(errorInfo, null, 2) + '\n---\n');
+        console.log('Parse error logged to:', errorLogPath);
+      } catch (logError) {
+        console.error('Failed to write parse error log:', logError);
+      }
+
       // Provide more detailed error messages based on error type
       let errorMessage = '解析失败';
       if (error.message) {

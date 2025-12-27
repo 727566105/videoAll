@@ -104,16 +104,23 @@ class ParseService {
   // 执行Python SDK包装器
   static executePythonSDK(args) {
     return new Promise((resolve, reject) => {
-      const command = `python3 ${this.SDK_WRAPPER_PATH} ${args.join(' ')}`;
+      // 正确地引用URL参数，防止Shell注入和参数分割问题
+      const command = `python3 ${this.SDK_WRAPPER_PATH} ${args.map(arg => {
+        // 如果参数包含特殊Shell字符，用引号包裹
+        if (arg.includes('&') || arg.includes('|') || arg.includes('>') || arg.includes('<') || arg.includes(' ')) {
+          return `"${arg.replace(/"/g, '\\"')}"`;
+        }
+        return arg;
+      }).join(' ')}`;
       console.log(`执行SDK命令: ${command}`);
-      
-      exec(command, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 10 }, (error, stdout, stderr) => {
+
+      exec(command, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 10, timeout: 120000 }, (error, stdout, stderr) => {
         if (error) {
           console.error('SDK执行错误:', stderr || error.message);
           reject(new Error(stderr || error.message));
           return;
         }
-        
+
         try {
           const result = JSON.parse(stdout);
           resolve(result);
@@ -130,7 +137,7 @@ class ParseService {
     // 处理增强解析器的响应格式
     let actualResult = sdkResult;
     if (sdkResult.success && sdkResult.data) {
-      // 这是增强解析器的响应格式
+      // 这是增强解析器的响应格式，使用sdkResult.data
       actualResult = sdkResult.data;
 
       // 转换videos数组格式
@@ -146,7 +153,7 @@ class ParseService {
       }
 
       // 映射其他字段
-      // 保留原始平台标识（小红书或抖音）
+      // 保留原始平台标识
       if (!actualResult.platform || actualResult.platform === 'unknown') {
         actualResult.platform = 'xiaohongshu';
       }

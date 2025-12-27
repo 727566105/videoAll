@@ -94,33 +94,50 @@ class TaskSchedulerService {
 
   // Execute hotsearch crawl task
   async executeHotsearchTask() {
+    let taskLog;
+    const startTime = Date.now();
+
     try {
       // Create task log for hotsearch crawl
-      const taskLog = new TaskLog({
+      taskLog = TaskLogRepository.create({
         task_name: '每日热搜抓取',
         platform: 'all',
         start_time: new Date(),
         status: 'running',
         type: 'hotsearch'
       });
-      await taskLog.save();
-      
+      await TaskLogRepository.save(taskLog);
+
       // Fetch hotsearch data for all platforms
       const results = await HotsearchService.fetchAllHotsearch();
-      
+
       // Update task log with success status
-      await TaskLog.findByIdAndUpdate(taskLog._id, {
-        end_time: new Date(),
+      const endTime = new Date();
+      const executionTime = endTime - startTime;
+      await TaskLogRepository.update(taskLog.id, {
+        end_time: endTime,
         status: 'success',
         result: results,
-        execution_time: Date.now() - taskLog.start_time,
+        execution_time: executionTime,
         crawled_count: results.length
       });
-      
+
       return { success: true, results };
     } catch (error) {
       logger.error('Failed to execute hotsearch task:', error);
+
       // Update task log with failed status
+      if (taskLog) {
+        const endTime = new Date();
+        const executionTime = endTime - startTime;
+        await TaskLogRepository.update(taskLog.id, {
+          end_time: endTime,
+          status: 'failed',
+          error: error.message,
+          execution_time: executionTime
+        });
+      }
+
       return { success: false, error: error.message };
     }
   }
@@ -252,7 +269,7 @@ class TaskSchedulerService {
       console.log(`Found ${authorWorks.length} works for author ${target_identifier}`);
       
       // Check for new works and save to database
-      const result = await this.saveNewWorks(authorWorks, task._id);
+      const result = await this.saveNewWorks(authorWorks, task.id);
       
       return {
         crawled_count: authorWorks.length,
