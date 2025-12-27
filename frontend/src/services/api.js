@@ -196,6 +196,7 @@ const apiService = {
     updatePlatformCookie: (id, data) => api.put(`/config/platform-cookies/${id}`, data),
     deletePlatformCookie: (id) => api.delete(`/config/platform-cookies/${id}`),
     testPlatformCookie: (id) => api.post(`/config/platform-cookies/${id}/test`),
+    autoFetchCookie: (platform, headless = false) => api.get(`/config/platform-cookies/auto-fetch/${platform}`, { params: { headless }, timeout: 120000 }),
     
     // System settings
     getSystemSettings: () => api.get('/config/system'),

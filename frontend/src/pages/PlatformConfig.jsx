@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Card, Typography, Table, Button, Modal, Form, Input, Select, message, Space, Switch, Tag, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined, KeyOutlined } from '@ant-design/icons';
+import { Card, Typography, Table, Button, Modal, Form, Input, Select, message, Space, Switch, Tag, Popconfirm, Alert, Spin } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined, KeyOutlined, ThunderboltOutlined, LoadingOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 
 const { Title, Text } = Typography;
@@ -14,6 +14,9 @@ const PlatformConfig = () => {
   const [form] = Form.useForm();
   const [currentPlatform, setCurrentPlatform] = useState(null);
   const [modalTitle, setModalTitle] = useState('添加平台账户');
+  const [autoFetching, setAutoFetching] = useState(false);
+  const [autoFetchMessage, setAutoFetchMessage] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState('');
 
   // 支持的平台列表
   const supportedPlatforms = [
@@ -125,7 +128,14 @@ const PlatformConfig = () => {
     setCurrentPlatform(null);
     setModalTitle('添加平台账户');
     form.resetFields();
+    setSelectedPlatform('');
+    setAutoFetchMessage('');
     setModalVisible(true);
+  };
+
+  // 平台选择变化
+  const handlePlatformChange = (value) => {
+    setSelectedPlatform(value);
   };
 
   // 编辑平台配置
@@ -193,6 +203,53 @@ const PlatformConfig = () => {
     setModalVisible(false);
     form.resetFields();
     setCurrentPlatform(null);
+    setSelectedPlatform('');
+    setAutoFetchMessage('');
+  };
+
+  // 自动获取Cookie
+  const handleAutoFetch = async () => {
+    const platform = selectedPlatform;
+
+    if (!platform) {
+      message.warning('请先选择平台');
+      return;
+    }
+
+    // 检查平台是否支持自动获取
+    const supportedPlatforms = ['douyin', 'xiaohongshu'];
+    if (!supportedPlatforms.includes(platform)) {
+      message.warning(`暂不支持自动获取${platform}的Cookie，请手动获取`);
+      return;
+    }
+
+    setAutoFetching(true);
+    setAutoFetchMessage('正在启动浏览器，请扫码登录（60秒）...');
+
+    try {
+      const response = await apiService.config.autoFetchCookie(platform, false);
+
+      console.log('🍪 Cookie获取响应:', response);
+
+      // 检查响应数据结构
+      if (response && response.data && response.data.cookie) {
+        // 自动填充Cookie到表单
+        form.setFieldValue('cookies', response.data.cookie);
+
+        setAutoFetchMessage('');
+        message.success(`Cookie获取成功！长度: ${response.data.length} 字符`);
+      } else {
+        console.error('❌ 响应数据格式不正确:', response);
+        setAutoFetchMessage('');
+        message.error('Cookie获取失败：返回数据格式不正确');
+      }
+    } catch (error) {
+      console.error('❌ 自动获取Cookie失败:', error);
+      setAutoFetchMessage('');
+      message.error(`自动获取失败: ${error.message}`);
+    } finally {
+      setAutoFetching(false);
+    }
   };
 
   useEffect(() => {
@@ -253,7 +310,10 @@ const PlatformConfig = () => {
             label="平台"
             rules={[{ required: true, message: '请选择平台' }]}
           >
-            <Select placeholder="选择平台">
+            <Select
+              placeholder="选择平台"
+              onChange={handlePlatformChange}
+            >
               {supportedPlatforms.map(platform => (
                 <Option key={platform.value} value={platform.value}>
                   <Space>
@@ -281,8 +341,45 @@ const PlatformConfig = () => {
             <TextArea
               rows={6}
               placeholder="请输入完整的Cookie字符串，格式如：name1=value1; name2=value2; ..."
+              disabled={autoFetching}
             />
           </Form.Item>
+
+          {/* 自动获取Cookie提示 */}
+          {selectedPlatform && ['douyin', 'xiaohongshu'].includes(selectedPlatform) && (
+            <Alert
+              message={
+                <div>
+                  <p style={{ margin: 0 }}>
+                    <strong>💡 快捷方式：</strong>
+                    支持"一键获取Cookie"功能，点击下方按钮自动打开浏览器获取Cookie
+                  </p>
+                  {autoFetchMessage && (
+                    <p style={{ margin: '8px 0 0 0', color: '#1890ff' }}>
+                      <LoadingOutlined /> {autoFetchMessage}
+                    </p>
+                  )}
+                </div>
+              }
+              type="info"
+              showIcon
+              style={{ marginBottom: '16px' }}
+            />
+          )}
+
+          {/* 自动获取按钮 */}
+          {selectedPlatform && ['douyin', 'xiaohongshu'].includes(selectedPlatform) && (
+            <Button
+              type="dashed"
+              icon={autoFetching ? <LoadingOutlined /> : <ThunderboltOutlined />}
+              onClick={handleAutoFetch}
+              loading={autoFetching}
+              block
+              style={{ marginBottom: '16px' }}
+            >
+              {autoFetching ? '正在获取Cookie...' : '一键获取Cookie'}
+            </Button>
+          )}
 
           <div style={{ marginTop: '24px', textAlign: 'right' }}>
             <Space>

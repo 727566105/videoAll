@@ -592,10 +592,22 @@ class ContentController {
         return res.status(400).json({ message: '不支持的URL协议' });
       }
       
-      // Dynamic Referer header based on the target URL
-      const referer = `${parsedUrl.protocol}//${parsedUrl.host}/`;
+      // Smart Referer selection based on domain
+      let referer = `${parsedUrl.protocol}//${parsedUrl.host}/`;
+
+      // Special handling for known platforms
+      if (parsedUrl.host.includes('xhscdn.com') || parsedUrl.host.includes('xiaohongshu.com')) {
+        referer = 'https://www.xiaohongshu.com/';
+      } else if (parsedUrl.host.includes('bilibili.com') || parsedUrl.host.includes('bili')) {
+        referer = 'https://www.bilibili.com/';
+      } else if (parsedUrl.host.includes('douyin.com') || parsedUrl.host.includes('iesdouyin.com')) {
+        referer = 'https://www.douyin.com/';
+      } else if (parsedUrl.host.includes('kuaishou.com') || parsedUrl.host.includes('kwai')) {
+        referer = 'https://www.kuaishou.com/';
+      }
+
       console.log('ProxyDownload: Using Referer:', referer);
-      
+
       // Set a timeout for the request (20 seconds)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -603,7 +615,7 @@ class ContentController {
           reject(new Error('下载超时'));
         }, 20000);
       });
-      
+
       // Fetch the file from the external URL with follow redirects enabled
       const axiosResponse = await Promise.race([
         axios.get(url, {
@@ -611,7 +623,7 @@ class ContentController {
           maxRedirects: 5, // Follow up to 5 redirects
           headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://www.xiaohongshu.com/',
+            'Referer': referer, // 使用动态生成的Referer
             'Accept': 'image/webp,image/apng,image/svg+xml,image/*,video/*,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -715,10 +727,22 @@ class ContentController {
         return res.send(svgPlaceholder);
       }
       
-      // Dynamic Referer header based on the target URL
-      const referer = `${parsedUrl.protocol}//${parsedUrl.host}/`;
+      // Smart Referer selection based on domain
+      let referer = `${parsedUrl.protocol}//${parsedUrl.host}/`;
+
+      // Special handling for known platforms
+      if (parsedUrl.host.includes('xhscdn.com') || parsedUrl.host.includes('xiaohongshu.com')) {
+        referer = 'https://www.xiaohongshu.com/';
+      } else if (parsedUrl.host.includes('bilibili.com') || parsedUrl.host.includes('bili')) {
+        referer = 'https://www.bilibili.com/';
+      } else if (parsedUrl.host.includes('douyin.com') || parsedUrl.host.includes('iesdouyin.com')) {
+        referer = 'https://www.douyin.com/';
+      } else if (parsedUrl.host.includes('kuaishou.com') || parsedUrl.host.includes('kwai')) {
+        referer = 'https://www.kuaishou.com/';
+      }
+
       console.log('ProxyImage: Using Referer:', referer);
-      
+
       // Set a timeout for the request (20 seconds)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -726,15 +750,15 @@ class ContentController {
           reject(new Error('图片加载超时'));
         }, 20000);
       });
-      
+
       // Fetch the image from the external URL with follow redirects enabled
       const axiosResponse = await Promise.race([
-        axios.get(url, { 
+        axios.get(url, {
           responseType: 'stream',
           maxRedirects: 5, // Follow up to 5 redirects
           headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://www.xiaohongshu.com/',
+            'Referer': referer, // 使用动态生成的Referer
             'Accept': 'image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -964,15 +988,21 @@ class ContentController {
       if (metadata && metadata.downloaded_files && metadata.downloaded_files.length > 0) {
         // 从 metadata 中查找对应的本地文件
         if (type === 'cover') {
-          // cover.jpg 已被全局删除，直接使用第一张图片 (image_1, index=1) 作为主封面
-          const firstImageFile = metadata.downloaded_files.find(f => f.type === 'image' && f.index === 1);
-          if (firstImageFile && firstImageFile.filePath && await fs.pathExists(firstImageFile.filePath)) {
-            localFilePath = firstImageFile.filePath;
+          // 优先查找 type='cover' 的文件
+          const coverFile = metadata.downloaded_files.find(f => f.type === 'cover');
+          if (coverFile && coverFile.filePath && await fs.pathExists(coverFile.filePath)) {
+            localFilePath = coverFile.filePath;
           } else {
-            // 如果第一张图片不存在，尝试查找任何可用的图片
-            const anyImageFile = metadata.downloaded_files.find(f => f.type === 'image');
-            if (anyImageFile && anyImageFile.filePath) {
-              localFilePath = anyImageFile.filePath;
+            // 如果没有 cover.jpg，尝试使用第一张图片 (image_1, index=1) 作为主封面
+            const firstImageFile = metadata.downloaded_files.find(f => f.type === 'image' && f.index === 1);
+            if (firstImageFile && firstImageFile.filePath && await fs.pathExists(firstImageFile.filePath)) {
+              localFilePath = firstImageFile.filePath;
+            } else {
+              // 如果第一张图片不存在，尝试查找任何可用的图片
+              const anyImageFile = metadata.downloaded_files.find(f => f.type === 'image');
+              if (anyImageFile && anyImageFile.filePath) {
+                localFilePath = anyImageFile.filePath;
+              }
             }
           }
         } else if (type === 'image' && index !== undefined) {

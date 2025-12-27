@@ -169,11 +169,33 @@ class MediaDownloadService {
   static async downloadFile(url, dir, filename, type) {
     try {
       console.log(`开始下载文件: ${filename} from ${url}`);
-      
+
+      // 根据URL智能选择Referer
+      let referer = 'https://www.xiaohongshu.com/'; // 默认值
+      try {
+        const parsedUrl = new URL(url);
+        referer = `${parsedUrl.protocol}//${parsedUrl.host}/`;
+
+        // 特殊处理已知平台的资源
+        if (parsedUrl.host.includes('xhscdn.com') || parsedUrl.host.includes('xiaohongshu.com')) {
+          referer = 'https://www.xiaohongshu.com/';
+        } else if (parsedUrl.host.includes('bilibili.com') || parsedUrl.host.includes('bili')) {
+          referer = 'https://www.bilibili.com/';
+        } else if (parsedUrl.host.includes('douyin.com') || parsedUrl.host.includes('iesdouyin.com')) {
+          referer = 'https://www.douyin.com/';
+        } else if (parsedUrl.host.includes('kuaishou.com') || parsedUrl.host.includes('kwai')) {
+          referer = 'https://www.kuaishou.com/';
+        }
+
+        console.log(`使用智能Referer: ${referer}`);
+      } catch (e) {
+        console.log('无法解析URL，使用默认Referer');
+      }
+
       // 设置请求头，模拟浏览器请求
       const headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://www.xiaohongshu.com/',
+        'Referer': referer, // 使用动态生成的Referer
         'Accept': 'image/webp,image/apng,image/svg+xml,image/*,video/*,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -182,7 +204,7 @@ class MediaDownloadService {
         'Sec-Fetch-Mode': 'no-cors',
         'Sec-Fetch-Site': 'cross-site'
       };
-      
+
       // 发送请求
       const response = await axios.get(url, {
         responseType: 'stream',

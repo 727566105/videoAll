@@ -11,6 +11,12 @@ from media_parser_sdk.platforms.xiaohongshu_enhanced import (
     extract_xiaohongshu_author_notes_sync
 )
 
+# 导入抖音增强解析器
+from media_parser_sdk.platforms.douyin_enhanced import DouyinEnhancedParser
+
+# 导入哔哩哔哩增强解析器
+from media_parser_sdk.platforms.bilibili_enhanced import BilibiliEnhancedParser
+
 # 便捷函数包装
 def extract_xiaohongshu_note_sync_wrapper(url, cookie=None):
     """提取小红书笔记信息 - 包装函数"""
@@ -23,6 +29,42 @@ def extract_xiaohongshu_author_sync_wrapper(url, cookie=None):
 def extract_xiaohongshu_author_notes_sync_wrapper(url, max_notes=None, cookie=None):
     """提取小红书博主所有笔记 - 包装函数"""
     return extract_xiaohongshu_author_notes_sync(url, max_notes=max_notes, fetch_detail=True, cookie=cookie)
+
+# 抖音解析包装函数
+def extract_douyin_video_sync_wrapper(url, cookie=None):
+    """提取抖音视频信息 - 包装函数"""
+    parser = DouyinEnhancedParser(logger=None, cookie=cookie)
+    media_info = parser.parse(url)
+
+    if media_info:
+        return {
+            "success": True,
+            "result_type": "video",
+            "data": media_info.to_dict()
+        }
+    else:
+        return {
+            "success": False,
+            "error": "解析失败，无法获取视频信息"
+        }
+
+# 哔哩哔哩解析包装函数
+def extract_bilibili_video_sync_wrapper(url, cookie=None, quality='1080P'):
+    """提取哔哩哔哩视频信息 - 包装函数"""
+    parser = BilibiliEnhancedParser(logger=None, cookie=cookie)
+    media_info = parser.parse(url, preferred_quality=quality)
+
+    if media_info:
+        return {
+            "success": True,
+            "result_type": "video",
+            "data": media_info.to_dict()
+        }
+    else:
+        return {
+            "success": False,
+            "error": "解析失败，无法获取视频信息"
+        }
 
 
 def show_cookie_help():
@@ -72,6 +114,8 @@ def main():
     python wrapper.py xiaohongshu_note <url>
     python wrapper.py xiaohongshu_author <url> [--cookie "你的Cookie"]
     python wrapper.py xiaohongshu_author_notes <url> [max_notes] [--cookie "你的Cookie"]
+    python wrapper.py douyin_video <url> [--cookie "你的Cookie"]
+    python wrapper.py bilibili_video <url> [--cookie "你的Cookie"] [--quality "1080P"]
     python wrapper.py --cookie-help
     """
     if len(sys.argv) < 2:
@@ -92,6 +136,16 @@ def main():
         if idx + 1 < len(sys.argv):
             cookie = sys.argv[idx + 1]
             # 从参数列表中移除 cookie 相关参数
+            sys.argv.pop(idx + 1)
+            sys.argv.pop(idx)
+
+    # 解析清晰度参数（用于哔哩哔哩）
+    quality = '1080P'
+    if "--quality" in sys.argv:
+        idx = sys.argv.index("--quality")
+        if idx + 1 < len(sys.argv):
+            quality = sys.argv[idx + 1]
+            # 从参数列表中移除 quality 相关参数
             sys.argv.pop(idx + 1)
             sys.argv.pop(idx)
 
@@ -213,6 +267,28 @@ def main():
                     "success": False,
                     "error": result.error_message
                 }, ensure_ascii=False))
+        except Exception as e:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+
+    elif command == "douyin_video":
+        if len(sys.argv) < 3:
+            print(json.dumps({"error": "缺少URL参数"}))
+            sys.exit(1)
+        url = sys.argv[2]
+        try:
+            result = extract_douyin_video_sync_wrapper(url, cookie)
+            print(json.dumps(result, ensure_ascii=False, default=str))
+        except Exception as e:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+
+    elif command == "bilibili_video":
+        if len(sys.argv) < 3:
+            print(json.dumps({"error": "缺少URL参数"}))
+            sys.exit(1)
+        url = sys.argv[2]
+        try:
+            result = extract_bilibili_video_sync_wrapper(url, cookie, quality)
+            print(json.dumps(result, ensure_ascii=False, default=str))
         except Exception as e:
             print(json.dumps({"error": str(e)}, ensure_ascii=False))
 

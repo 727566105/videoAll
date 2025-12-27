@@ -70,7 +70,14 @@ class MediaInfo(BaseModel):
     comment_count: Optional[int] = Field(None, description="评论数")
     share_count: Optional[int] = Field(None, description="分享数")
     view_count: Optional[int] = Field(None, description="浏览数")
-    
+
+    # 哔哩哔哩特有字段
+    danmaku_count: Optional[int] = Field(None, description="弹幕数（B站）")
+    coin_count: Optional[int] = Field(None, description="投币数（B站）")
+
+    # 视频时长（秒，适用于视频类内容）
+    duration: Optional[int] = Field(None, description="视频时长（秒）")
+
     # 时间信息
     publish_time: Optional[datetime] = Field(None, description="发布时间")
     parse_time: datetime = Field(default_factory=datetime.now, description="解析时间")

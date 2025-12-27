@@ -2,20 +2,84 @@ const path = require('path');
 const { exec } = require('child_process');
 const { AppDataSource } = require('../utils/db');
 const storageService = require('./StorageService');
+const EncryptionService = require('../utils/encryption');
 
 class ParseService {
   // Python SDK包装器路径
   static SDK_WRAPPER_PATH = path.join(__dirname, '../../../media_parser_sdk/wrapper.py');
+
+  // 获取平台Cookie
+  static async getPlatformCookie(platform) {
+    try {
+      const platformCookieRepository = AppDataSource.getRepository('PlatformCookie');
+
+      // 查找该平台最新且有效的Cookie
+      const cookieRecord = await platformCookieRepository.findOne({
+        where: {
+          platform: platform,
+          is_valid: true
+        },
+        order: {
+          last_checked_at: 'DESC'
+        }
+      });
+
+      if (cookieRecord) {
+        // 解密Cookie
+        const cookie = EncryptionService.decrypt(cookieRecord.cookies_encrypted);
+        console.log(`✓ 使用${platform}平台Cookie (账户: ${cookieRecord.account_alias})`);
+        return cookie;
+      } else {
+        console.log(`⚠ 未找到${platform}平台的有效Cookie，将使用无Cookie模式`);
+        return null;
+      }
+    } catch (error) {
+      console.warn(`Cookie获取失败: ${error.message}`);
+      return null;
+    }
+  }
 
   // Parse link from different platforms using Python SDK
   static async parseLink(link) {
     try {
       // 检测平台并选择合适的SDK命令
       let sdkCommand = ['parse', link];
-      
+
       // 对小红书使用增强解析器
       if (link.includes('xiaohongshu.com') || link.includes('xhslink.com')) {
         sdkCommand = ['xiaohongshu_note', link];
+
+        // 可选：为小红书添加Cookie支持
+        const cookie = await this.getPlatformCookie('xiaohongshu');
+        if (cookie) {
+          sdkCommand.push('--cookie', cookie);
+        }
+      }
+
+      // 对抖音使用增强解析器
+      else if (link.includes('douyin.com') || link.includes('tiktok.com') || link.includes('iesdouyin.com')) {
+        sdkCommand = ['douyin_video', link];
+
+        // 自动获取并添加Cookie（提高成功率到80-95%）
+        const cookie = await this.getPlatformCookie('douyin');
+        if (cookie) {
+          sdkCommand.push('--cookie', cookie);
+        }
+      }
+
+      // 对哔哩哔哩使用增强解析器
+      else if (link.includes('bilibili.com') || link.includes('b23.tv')) {
+        sdkCommand = ['bilibili_video', link];
+
+        // 自动获取并添加Cookie（提高解析成功率）
+        const cookie = await this.getPlatformCookie('bilibili');
+        if (cookie) {
+          sdkCommand.push('--cookie', cookie);
+        }
+
+        // 可选：添加清晰度参数（默认1080P）
+        // const quality = '1080P'; // 可以从系统配置读取
+        // sdkCommand.push('--quality', quality);
       }
       
       // 使用Python SDK解析链接
@@ -81,11 +145,27 @@ class ParseService {
       }
 
       // 映射其他字段
-      actualResult.platform = 'xiaohongshu';
+      // 保留原始平台标识（小红书或抖音）
+      if (!actualResult.platform || actualResult.platform === 'unknown') {
+        actualResult.platform = 'xiaohongshu';
+      }
+
       actualResult.author = actualResult.author?.nickname || actualResult.author || '未知作者';
-      actualResult.like_count = actualResult.interaction_stats?.like_count;
-      actualResult.comment_count = actualResult.interaction_stats?.comment_count;
-      actualResult.share_count = actualResult.interaction_stats?.share_count;
+
+      // 小红书特有的字段映射
+      if (actualResult.platform === 'xiaohongshu') {
+        actualResult.like_count = actualResult.interaction_stats?.like_count;
+        actualResult.comment_count = actualResult.interaction_stats?.comment_count;
+        actualResult.share_count = actualResult.interaction_stats?.share_count;
+      }
+      // 抖音字段已在SDK中处理，这里不需要额外映射
+
+      // 哔哩哔哩特有的字段映射
+      if (actualResult.platform === 'bilibili') {
+        actualResult.danmaku_count = actualResult.danmaku_count || 0;  // 弹幕数
+        actualResult.coin_count = actualResult.coin_count || 0;        // 投币数
+        // duration字段已在SDK中处理（视频时长，单位：秒）
+      }
 
       // 修复描述字段：增强解析器使用 'content' 字段
       if (actualResult.content !== undefined) {
@@ -168,7 +248,11 @@ class ParseService {
       share_count: actualResult.share_count,
       view_count: actualResult.view_count,
       has_live_photo: actualResult.has_live_photo || false,
-      publish_time: actualResult.publish_time ? new Date(actualResult.publish_time) : null
+      publish_time: actualResult.publish_time ? new Date(actualResult.publish_time) : null,
+      // 哔哩哔哩特有字段
+      danmaku_count: actualResult.danmaku_count,
+      coin_count: actualResult.coin_count,
+      duration: actualResult.duration
     };
   }
 
@@ -223,7 +307,7 @@ class ParseService {
       return 'xiaohongshu';
     } else if (url.includes('kuaishou.com')) {
       return 'kuaishou';
-    } else if (url.includes('bilibili.com')) {
+    } else if (url.includes('bilibili.com') || url.includes('b23.tv')) {
       return 'bilibili';
     } else if (url.includes('weibo.com')) {
       return 'weibo';

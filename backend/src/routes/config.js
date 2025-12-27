@@ -31,6 +31,9 @@ router.post('/platform-cookies/:id/test', PlatformCookieController.testPlatformC
 // Batch test all platform cookies
 router.post('/platform-cookies/batch-test', authorize(['admin']), PlatformCookieController.batchTestPlatformCookies);
 
+// Auto fetch cookie for a platform
+router.get('/platform-cookies/auto-fetch/:platform', authorize(['admin']), PlatformCookieController.autoFetchCookie);
+
 // ========== System Settings Routes (TypeORM) ==========
 // Get system settings
 router.get('/system', SystemSettingsController.getSystemSettings);
