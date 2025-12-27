@@ -172,7 +172,14 @@ const apiService = {
     getContentTypeComparison: () => api.get('/dashboard/content-type-comparison'),
     getRecentTrend: () => api.get('/dashboard/recent-trend')
   },
-  
+
+  // Download settings
+  downloadSettings: {
+    get: () => api.get('/config/download-settings'),
+    update: (data) => api.put('/config/download-settings', data),
+    getQualityOptions: (platform) => api.get(`/config/download-settings/quality-options/${platform}`)
+  },
+
   // System configuration management
   config: {
     // User management
@@ -200,14 +207,7 @@ const apiService = {
 
     // System settings
     getSystemSettings: () => api.get('/config/system'),
-    updateSystemSettings: (data) => api.put('/config/system', data),
-
-    // Download settings
-    downloadSettings: {
-      get: () => api.get('/config/download-settings'),
-      update: (data) => api.put('/config/download-settings', data),
-      getQualityOptions: (platform) => api.get(`/config/download-settings/quality-options/${platform}`)
-    }
+    updateSystemSettings: (data) => api.put('/config/system', data)
   }
 };
 

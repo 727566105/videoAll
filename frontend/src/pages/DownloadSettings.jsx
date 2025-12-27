@@ -10,19 +10,39 @@ const DownloadSettings = () => {
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(''); // 调试信息
 
   // 获取下载设置
   const fetchSettings = async () => {
     try {
       setLoading(true);
+      console.log('开始获取下载设置...');
+
       const response = await apiService.downloadSettings.get();
-      console.log('下载设置响应:', response);
-      setSettings(response.data || {});
+      console.log('下载设置API响应:', response);
+      console.log('设置数据:', response.data);
+
+      // response已经包含 { message, data } 结构
+      if (response && response.data) {
+        setSettings(response.data);
+      } else {
+        console.warn('响应格式异常，使用默认值');
+        setDebugInfo(`响应格式异常: ${JSON.stringify(response)}`);
+        setSettings({
+          bilibili: {
+            preferred_quality: '1080P',
+            auto_fallback: true
+          }
+        });
+      }
     } catch (error) {
       console.error('获取下载设置失败:', error);
-      console.error('错误详情:', error.response?.data);
+      console.error('错误类型:', error.name);
+      console.error('错误消息:', error.message);
+      console.error('响应状态:', error.response?.status);
+      console.error('响应数据:', error.response?.data);
 
-      // 即使获取失败也设置默认值，避免页面完全无法使用
+      // 设置默认值
       setSettings({
         bilibili: {
           preferred_quality: '1080P',
@@ -30,9 +50,21 @@ const DownloadSettings = () => {
         }
       });
 
-      // 只在不是401错误时显示提示
-      if (error.response?.status !== 401) {
-        message.error(error.response?.data?.message || '获取下载设置失败，使用默认配置');
+      // 只在不是401错误且不是网络错误时显示提示
+      if (error.response?.status === 401) {
+        // 401错误由拦截器处理，会重定向到登录页
+        console.log('401认证错误，将重定向到登录页');
+        setDebugInfo('认证失败，将重定向到登录页');
+      } else if (error.message === '网络连接失败，请检查后端服务是否正常运行') {
+        // 网络错误
+        console.log('网络连接错误');
+        setDebugInfo('网络连接失败，请检查后端服务');
+      } else {
+        // 其他错误才显示提示
+        const errorMsg = error.message || '获取下载设置失败，使用默认配置';
+        console.log('显示错误提示:', errorMsg);
+        setDebugInfo(`错误: ${errorMsg} (状态码: ${error.response?.status || 'N/A'})`);
+        message.error(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -82,6 +114,17 @@ const DownloadSettings = () => {
         </div>
 
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          {/* 调试信息 */}
+          {debugInfo && (
+            <Alert
+              message="调试信息"
+              description={debugInfo}
+              type="warning"
+              closable
+              onClose={() => setDebugInfo('')}
+            />
+          )}
+
           {/* 哔哩哔哩画质设置 */}
           <Card
             title="📺 哔哩哔哩"
