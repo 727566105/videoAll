@@ -15,14 +15,24 @@ from ..exceptions import ParseError, NetworkError
 
 class XiaohongshuParser(BaseParser):
     """小红书平台解析器"""
-    
-    def __init__(self, logger=None):
+
+    def __init__(self, logger=None, cookie: str = None):
+        """
+        初始化小红书解析器
+
+        Args:
+            logger: 日志记录器
+            cookie: 小红书Cookie（可选，有助于提高解析成功率，尤其是实况图片）
+        """
         super().__init__(logger)
+        self.cookie = cookie
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Referer": "https://www.xiaohongshu.com/",
             "Accept-Language": "zh-CN,zh;q=0.9"
         }
+        if cookie:
+            self.headers["Cookie"] = cookie
     
     def is_supported_url(self, url: str) -> bool:
         """检查是否支持该URL"""
@@ -79,11 +89,49 @@ class XiaohongshuParser(BaseParser):
     def _get_html(self, url: str) -> str:
         """获取网页HTML内容"""
         try:
-            with httpx.Client(headers=self.headers, timeout=15, follow_redirects=True) as client:
+            # 保留原始 URL 的所有参数
+            self.log_debug(f"请求 URL: {url}")
+            self.log_debug(f"Cookie 状态: {'已提供' if self.cookie else '未提供'}")
+
+            # 增强请求头，模拟真实浏览器
+            enhanced_headers = self.headers.copy()
+            enhanced_headers.update({
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Cache-Control": "max-age=0",
+                "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": '"macOS"',
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+                "Upgrade-Insecure-Requests": "1",
+            })
+
+            with httpx.Client(headers=enhanced_headers, timeout=15, follow_redirects=True) as client:
                 response = client.get(url)
+
+                # 检查响应状态
+                if response.status_code == 403:
+                    self.log_warning("收到 403 禁止访问，可能需要有效的 Cookie")
+                elif response.status_code == 404:
+                    self.log_warning("页面不存在或需要登录")
+
                 response.raise_for_status()
+
+                # 检查是否是错误页面
+                html_lower = response.text.lower()
+                if "你访问的页面不见了" in response.text or "页面找不到" in response.text:
+                    self.log_error("获取到错误页面：页面不存在或需要登录")
+                    if not self.cookie:
+                        self.log_warning("💡 提示：提供 Cookie 可能能解决这个问题")
+                        self.log_warning("   获取方式：浏览器 F12 -> Network -> 复制 Request Header 中的 Cookie")
+                    raise NetworkError(f"页面访问受限（可能需要提供 Cookie）", url=url)
+
                 return response.text
         except httpx.HTTPError as e:
+            self.log_error(f"网络请求失败: {str(e)}")
             raise NetworkError(f"网络请求失败: {str(e)}", url=url)
     
     def _extract_media_info(self, html: str) -> Optional[dict]:
@@ -134,7 +182,16 @@ class XiaohongshuParser(BaseParser):
             title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE)
             if title_match:
                 media_data["title"] = title_match.group(1).replace(" - 小红书", "")
-            
+
+            # 检查是否是错误页面
+            if "你访问的页面不见了" in html or "页面找不到" in html:
+                self.log_error("获取到错误页面：页面不存在或需要登录")
+                self.log_warning(f"页面标题: {media_data.get('title')}")
+                if not self.cookie:
+                    self.log_warning("💡 提示：提供 Cookie 可能能解决这个问题")
+                    self.log_warning("   获取方式：浏览器 F12 -> Network -> 复制 Request Header 中的 Cookie")
+                    self.log_warning("   使用方式：XiaohongshuParser(cookie='你的Cookie')")
+
             return media_data
             
         except Exception as e:
@@ -377,31 +434,58 @@ class XiaohongshuParser(BaseParser):
                         
                         # 提取实况图片的视频URL（增强逻辑）
                         live_photo = image_item.get("livePhoto") or image_item.get("live_photo") or image_item.get("livephoto")
+
+                        # 新增：检查更多可能的字段
+                        if not live_photo:
+                            # 检查 infoList 中是否有实况图片信息
+                            info_list = image_item.get("infoList", [])
+                            if info_list:
+                                for info in info_list:
+                                    if isinstance(info, dict):
+                                        # 检查各种可能的实况图片标记
+                                        if info.get("livePhoto") or info.get("live_photo"):
+                                            live_photo = info
+                                            self.log_debug(f"从 infoList 找到实况图片数据")
+                                            break
+
                         if live_photo:
                             self.log_debug(f"找到实况图片数据: {live_photo}")
                             if isinstance(live_photo, dict):
-                                # 直接从livePhoto对象中获取videoUrl
-                                video_url = live_photo.get("videoUrl")
+                                # 尝试多种可能的视频URL字段
+                                video_url = (live_photo.get("videoUrl") or
+                                            live_photo.get("video_url") or
+                                            live_photo.get("url") or
+                                            live_photo.get("video") or
+                                            live_photo.get("media") or
+                                            live_photo.get("stream"))
+
                                 if video_url:
-                                    clean_url = self.clean_url(video_url)
-                                    download_urls.live.append(clean_url)
-                                    self.log_debug(f"提取到实况图片URL: {clean_url}")
-                                # 尝试获取其他可能的实况图片URL字段
+                                    # video_url 可能是一个对象，需要进一步处理
+                                    if isinstance(video_url, dict):
+                                        self.log_debug(f"实况图片URL是字典类型，尝试提取: {list(video_url.keys())}")
+                                        # 尝试从对象中提取实际的 URL
+                                        video_url = (video_url.get("masterUrl") or
+                                                    video_url.get("url") or
+                                                    video_url.get("defaultUrl"))
+
+                                    if video_url and isinstance(video_url, str):
+                                        clean_url = self.clean_url(video_url)
+                                        if clean_url not in download_urls.live:
+                                            download_urls.live.append(clean_url)
+                                            self.log_info(f"✓ 成功提取实况图片URL: {clean_url}")
+                                    else:
+                                        self.log_debug(f"实况图片URL不是字符串类型: {type(video_url)}, 值: {video_url}")
                                 else:
-                                    self.log_debug(f"livePhoto对象没有videoUrl字段，检查其他字段: {list(live_photo.keys())}")
-                                    # 检查其他可能的视频URL字段
-                                    for field in ["url", "video_url", "live_url"]:
-                                        if field in live_photo:
-                                            url = live_photo.get(field)
-                                            if url:
-                                                clean_url = self.clean_url(url)
-                                                download_urls.live.append(clean_url)
-                                                self.log_debug(f"从{field}字段提取到实况图片URL: {clean_url}")
+                                    self.log_debug(f"livePhoto对象中的字段: {list(live_photo.keys())}")
                             elif isinstance(live_photo, str):
                                 # 实况图片可能直接是字符串URL
                                 clean_url = self.clean_url(live_photo)
-                                download_urls.live.append(clean_url)
-                                self.log_debug(f"提取到实况图片URL（字符串）: {clean_url}")
+                                if clean_url not in download_urls.live:
+                                    download_urls.live.append(clean_url)
+                                    self.log_info(f"✓ 成功提取实况图片URL（字符串）: {clean_url}")
+                        else:
+                            # 调试信息：记录图片项的所有字段，帮助识别新的数据结构
+                            self.log_debug(f"图片项字段: {list(image_item.keys())}")
         
         except Exception as e:
             self.log_debug(f"从note_data提取URL失败: {str(e)}")

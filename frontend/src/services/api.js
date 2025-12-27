@@ -220,6 +220,33 @@ const apiService = {
     addTagsToContent: (data) => api.post('/tags/content/tags/add', data),
     removeTagsFromContent: (data) => api.post('/tags/content/tags/remove', data),
     batchUpdateTags: (data) => api.post('/tags/content/tags/batch', data)
+  },
+
+  // AI configuration management
+  aiConfig: {
+    getConfigs: () => api.get('/ai-config'),
+    getConfigById: (id) => api.get(`/ai-config/${id}`),
+    getActiveConfig: () => api.get('/ai-config/active'),
+    createConfig: (data) => api.post('/ai-config', data),
+    updateConfig: (id, data) => api.put(`/ai-config/${id}`, data),
+    deleteConfig: (id) => api.delete(`/ai-config/${id}`),
+    testConnection: (id) => api.post(`/ai-config/${id}/test`),
+    getProviders: () => api.get('/ai-config/meta/providers'),
+    getConfigTemplate: (provider) => api.get(`/ai-config/meta/templates/${provider}`)
+  },
+
+  // AI content analysis
+  aiAnalysis: {
+    // 分析单个内容
+    analyzeContent: (id) => api.post(`/content/${id}/ai-analyze`),
+    // 获取内容AI状态
+    getContentStatus: (id) => api.get(`/content/${id}/ai-status`),
+    // 确认AI标签
+    confirmTags: (id, data) => api.post(`/content/${id}/ai-tags/confirm`, data),
+    // 获取待确认标签
+    getPendingTags: (id) => api.get(`/content/${id}/ai-tags/pending`),
+    // 获取AI标签统计
+    getTagStats: () => api.get('/content/ai-tags/stats')
   }
 };
 

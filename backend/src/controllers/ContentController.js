@@ -1,6 +1,8 @@
 const { AppDataSource } = require('../utils/db');
 const ParseService = require('../services/ParseService');
 const MediaDownloadService = require('../services/MediaDownloadService');
+const AiAnalysisService = require('../services/AiAnalysisService');
+const AiTagService = require('../services/AiTagService');
 const fs = require('fs-extra');
 const path = require('path');
 const CacheService = require('../services/CacheService');
@@ -1062,6 +1064,11 @@ class ContentController {
       // 清除内容列表缓存
       CacheService.flush();
 
+      // 触发AI分析（异步，不阻塞响应，但需要捕获异常防止未处理Promise拒绝）
+      this.triggerAiAnalysis(content, parsedData).catch(error => {
+        console.error('AI分析异步任务异常（不影响内容保存）:', error.message);
+      });
+
       // Prepare response message
       let message = '内容保存成功';
       if (downloadResult.success) {
@@ -1238,6 +1245,216 @@ class ContentController {
       if (!res.headersSent) {
         res.status(500).json({ message: '获取本地文件失败' });
       }
+    }
+  }
+
+  /**
+   * 触发AI分析（异步方法）
+   * @param {object} content - 保存的内容记录
+   * @param {object} parsedData - 解析的数据
+   */
+  static async triggerAiAnalysis(content, parsedData) {
+    try {
+      // 获取活跃的AI配置
+      const aiConfig = await AiAnalysisService.getActiveConfig();
+
+      if (!aiConfig) {
+        console.log('AI分析跳过：未配置AI服务');
+        return;
+      }
+
+      console.log(`触发AI分析 (内容: ${content.id}, 标题: ${content.title})`);
+
+      // 异步执行AI分析，返回Promise以便外部可以捕获异常
+      return AiAnalysisService.analyzeWithRetry(parsedData, content.id, 3)
+        .then(async (result) => {
+          if (result.success && result.tags.length > 0) {
+            // 自动添加高置信度标签
+            const tagResult = await AiTagService.autoAddTags(content.id, result.tags);
+            console.log(`AI标签添加结果: 成功${tagResult.added?.length || 0}个`);
+          } else if (!result.success) {
+            console.log(`AI分析失败: ${result.message}`);
+          }
+        })
+        .catch(error => {
+          console.error(`AI分析异常 (内容: ${content.id}):`, error.message);
+          // 重新抛出异常，让外部捕获
+          throw error;
+        });
+    } catch (error) {
+      console.error('触发AI分析失败:', error);
+      // 抛出异常，让外部捕获
+      throw error;
+    }
+  }
+
+  /**
+   * 分析单个内容的AI标签
+   * POST /api/v1/content/:id/ai-analyze
+   */
+  static async analyzeContentAi(req, res) {
+    try {
+      const { id } = req.params;
+      const contentRepository = AppDataSource.getRepository('Content');
+
+      // 获取内容
+      const content = await contentRepository.findOne({ where: { id } });
+
+      if (!content) {
+        return res.status(404).json({
+          success: false,
+          message: '内容不存在',
+        });
+      }
+
+      // 构建解析数据
+      const parsedData = {
+        title: content.title,
+        description: content.description,
+        platform: content.platform,
+        author: content.author,
+        original_tags: content.tags ? JSON.parse(content.tags) : [],
+      };
+
+      // 执行AI分析
+      const result = await AiAnalysisService.analyzeWithRetry(parsedData, id, 3);
+
+      if (result.success) {
+        // 自动添加高置信度标签
+        await AiTagService.autoAddTags(id, result.tags);
+
+        res.status(200).json({
+          success: true,
+          message: 'AI分析成功',
+          data: {
+            tags: result.tags,
+            confidence_scores: result.confidence_scores,
+            execution_time: result.execution_time,
+          },
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: result.message,
+        });
+      }
+    } catch (error) {
+      console.error('AI分析失败:', error);
+      res.status(500).json({
+        success: false,
+        message: `AI分析失败: ${error.message}`,
+      });
+    }
+  }
+
+  /**
+   * 获取内容的AI分析状态
+   * GET /api/v1/content/:id/ai-status
+   */
+  static async getContentAiStatus(req, res) {
+    try {
+      const { id } = req.params;
+
+      const result = await AiTagService.getContentAiStatus(id);
+
+      res.status(200).json({
+        success: true,
+        data: result.data,
+      });
+    } catch (error) {
+      console.error('获取AI状态失败:', error);
+      res.status(500).json({
+        success: false,
+        message: `获取AI状态失败: ${error.message}`,
+      });
+    }
+  }
+
+  /**
+   * 确认或拒绝AI生成的标签
+   * POST /api/v1/content/:id/ai-tags/confirm
+   */
+  static async confirmAiTags(req, res) {
+    try {
+      const { id } = req.params;
+      const { confirmed, rejected } = req.body;
+
+      if (!Array.isArray(confirmed) && !Array.isArray(rejected)) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供确认或拒绝的标签列表',
+        });
+      }
+
+      const result = await AiTagService.confirmTags(
+        id,
+        confirmed || [],
+        rejected || []
+      );
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: {
+          confirmed: result.confirmed,
+          rejected: result.rejected,
+        },
+      });
+    } catch (error) {
+      console.error('确认AI标签失败:', error);
+      res.status(500).json({
+        success: false,
+        message: `确认标签失败: ${error.message}`,
+      });
+    }
+  }
+
+  /**
+   * 获取待确认的AI标签
+   * GET /api/v1/content/:id/ai-tags/pending
+   */
+  static async getPendingAiTags(req, res) {
+    try {
+      const { id } = req.params;
+
+      const result = await AiTagService.getPendingTags(id);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          pending: result.pending,
+          analysis_id: result.analysis_id,
+          status: result.status,
+          created_at: result.created_at,
+        },
+      });
+    } catch (error) {
+      console.error('获取待确认标签失败:', error);
+      res.status(500).json({
+        success: false,
+        message: `获取待确认标签失败: ${error.message}`,
+      });
+    }
+  }
+
+  /**
+   * 获取AI标签统计信息
+   * GET /api/v1/content/ai-tags/stats
+   */
+  static async getAiTagStats(req, res) {
+    try {
+      const result = await AiTagService.getAiTagStats();
+
+      res.status(200).json({
+        success: true,
+        data: result.data,
+      });
+    } catch (error) {
+      console.error('获取AI标签统计失败:', error);
+      res.status(500).json({
+        success: false,
+        message: `获取统计信息失败: ${error.message}`,
+      });
     }
   }
 }

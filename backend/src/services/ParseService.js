@@ -204,10 +204,18 @@ class ParseService {
     let mediaUrl = '';
     let allImages = [];
     let allVideos = [];
+    let allLivePhotos = []; // 实况图片数组
 
     if (actualResult.download_urls) {
       // 提取所有视频URL
       allVideos = actualResult.download_urls.video || [];
+
+      // 特殊处理：实况图片的 videos 应该映射为 live_photos
+      if (mediaType === 'live_photo' && allVideos.length > 0) {
+        // 当媒体类型是实况图片时，videos 实际上是实况图片的视频
+        allLivePhotos = allVideos;
+        allVideos = []; // 清空普通视频数组
+      }
 
       // 视频URL优先作为主媒体URL
       if (allVideos.length > 0) {
@@ -244,6 +252,7 @@ class ParseService {
       media_url: mediaUrl, // 主要媒体URL
       all_images: allImages, // 所有图片URL
       all_videos: allVideos, // 所有视频URL - 新增字段
+      all_live_photos: allLivePhotos, // 实况图片URL - 新增字段
       file_path: filePath, // 生成的文件路径
       source_url: originalLink,
       source_type: 1, // 1-单链接解析
@@ -255,7 +264,7 @@ class ParseService {
       comment_count: actualResult.comment_count,
       share_count: actualResult.share_count,
       view_count: actualResult.view_count,
-      has_live_photo: actualResult.has_live_photo || false,
+      has_live_photo: actualResult.has_live_photo || allLivePhotos.length > 0, // 如果有实况图片URL，也标记为有实况
       publish_time: actualResult.publish_time ? new Date(actualResult.publish_time) : null,
       // 哔哩哔哩特有字段
       danmaku_count: actualResult.danmaku_count,

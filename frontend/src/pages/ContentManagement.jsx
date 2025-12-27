@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined } from '@ant-design/icons';
+import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin } from 'antd';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
 import BatchTagModal from '../components/BatchTagModal';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const ContentManagement = () => {
@@ -33,6 +33,10 @@ const ContentManagement = () => {
   const [refreshingStats, setRefreshingStats] = useState(false);
   // Batch tag modal state
   const [batchTagModalVisible, setBatchTagModalVisible] = useState(false);
+  // AI analysis state
+  const [aiAnalysisStatus, setAiAnalysisStatus] = useState(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiLoading, setAiLoading] = useState({});
 
   // Columns definition
   const columns = [
@@ -69,7 +73,7 @@ const ContentManagement = () => {
       ellipsis: true,
       width: 250,
       render: (title, record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <span>{title}</span>
           {record.is_missing && <Tag color="error">已消失</Tag>}
           {/* 显示标签 */}
@@ -137,6 +141,37 @@ const ContentManagement = () => {
           minute: '2-digit',
           second: '2-digit'
         });
+      }
+    },
+    {
+      title: 'AI分析',
+      key: 'ai_status',
+      width: 100,
+      fixed: 'right',
+      render: (_, record) => {
+        // 检查是否有AI生成的标签
+        const hasAiTags = record.tags?.some(t => t.is_ai_generated);
+        const isAnalyzing = aiLoading[record.id];
+
+        return (
+          <Space orientation="vertical" size={0}>
+            {hasAiTags ? (
+              <Badge status="success" text="已分析" />
+            ) : (
+              <Badge status="default" text="未分析" />
+            )}
+            <Button
+              type="link"
+              size="small"
+              icon={<RobotOutlined />}
+              loading={isAnalyzing}
+              onClick={() => handleAiAnalyze(record.id)}
+              style={{ padding: 0 }}
+            >
+              {hasAiTags ? '重新分析' : 'AI分析'}
+            </Button>
+          </Space>
+        );
       }
     },
     {
@@ -364,8 +399,22 @@ const ContentManagement = () => {
     console.log('all_videos 值:', record.all_videos);
     console.log('all_videos 长度:', record.all_videos?.length);
 
-    setPreviewContent(record);
+    // 解析 all_videos 和 all_images（它们可能是JSON字符串）
+    const processedRecord = {
+      ...record,
+      all_videos: typeof record.all_videos === 'string'
+        ? JSON.parse(record.all_videos || '[]')
+        : (record.all_videos || []),
+      all_images: typeof record.all_images === 'string'
+        ? JSON.parse(record.all_images || '[]')
+        : (record.all_images || []),
+    };
+
+    setPreviewContent(processedRecord);
     setPreviewVisible(true);
+
+    // 获取AI分析状态
+    fetchAiStatus(record.id);
   };
 
   // Handle refresh statistics
@@ -515,6 +564,52 @@ const ContentManagement = () => {
     } catch (error) {
       console.error('Batch tag operation error:', error);
       message.error(error.message || '批量标签操作失败');
+    }
+  };
+
+  // Handle AI analysis for a single content
+  const handleAiAnalyze = async (contentId) => {
+    try {
+      setAiLoading(prev => ({ ...prev, [contentId]: true }));
+      message.loading('AI分析中...', 0);
+
+      const response = await apiService.aiAnalysis.analyzeContent(contentId);
+
+      message.destroy();
+
+      if (response.success) {
+        message.success(`AI分析成功，生成${response.data?.tags?.length || 0}个标签`);
+        // Refresh content list to show new AI tags
+        getContentList();
+
+        // If this is the preview content, update it
+        if (previewContent?.id === contentId) {
+          setPreviewContent(prev => ({
+            ...prev,
+            tags: [...(prev.tags || []), ...(response.data?.tags || [])]
+          }));
+        }
+      } else {
+        message.warning(response.message || 'AI分析失败');
+      }
+    } catch (error) {
+      message.destroy();
+      console.error('AI analysis error:', error);
+      message.error(error.message || 'AI分析失败，请检查AI配置');
+    } finally {
+      setAiLoading(prev => ({ ...prev, [contentId]: false }));
+    }
+  };
+
+  // Fetch AI analysis status when opening preview
+  const fetchAiStatus = async (contentId) => {
+    try {
+      const response = await apiService.aiAnalysis.getContentStatus(contentId);
+      if (response.success) {
+        setAiAnalysisStatus(response.data);
+      }
+    } catch (error) {
+      console.error('获取AI状态失败:', error);
     }
   };
 
@@ -904,6 +999,66 @@ const ContentManagement = () => {
                 </Space>
               </div>
             )}
+
+            {/* AI分析状态 */}
+            <div style={{ padding: '12px', backgroundColor: `${token?.colorPrimary}10`, border: `1px solid ${token?.colorPrimary}`, borderRadius: '8px' }}>
+              <h4 style={{ marginTop: 0, marginBottom: '8px', color: token?.colorPrimary }}>
+                🤖 AI分析
+              </h4>
+              {aiAnalysisStatus ? (
+                <Space orientation="vertical" size="small" style={{ width: '100%' }}>>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Space>
+                      <Badge status={aiAnalysisStatus.has_analysis ? 'success' : 'default'} text={aiAnalysisStatus.has_analysis ? '已分析' : '未分析'} />
+                      {aiAnalysisStatus.execution_time && (
+                        <span style={{ color: token?.colorTextTertiary, fontSize: 12 }}>
+                          (耗时: {aiAnalysisStatus.execution_time}ms)
+                        </span>
+                      )}
+                    </Space>
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<RobotOutlined />}
+                      loading={aiLoading[previewContent?.id]}
+                      onClick={() => handleAiAnalyze(previewContent?.id)}
+                    >
+                      AI分析
+                    </Button>
+                  </div>
+
+                  {/* AI生成的标签 */}
+                  {aiAnalysisStatus.ai_tags && aiAnalysisStatus.ai_tags.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <span style={{ color: token?.colorTextTertiary }}>AI标签：</span>
+                      {aiAnalysisStatus.ai_tags.map((tag, index) => (
+                        <Tag
+                          key={index}
+                          color={tag.color || 'blue'}
+                          style={{ marginBottom: 2 }}
+                        >
+                          {tag.name}
+                        </Tag>
+                      ))}
+                    </div>
+                  )}
+                </Space>
+              ) : (
+                <Space orientation="vertical" size="small">
+                  <Text type="secondary">该内容尚未进行AI分析</Text>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<RobotOutlined />}
+                    loading={aiLoading[previewContent?.id]}
+                    onClick={() => handleAiAnalyze(previewContent?.id)}
+                  >
+                    立即AI分析
+                  </Button>
+                </Space>
+              )}
+            </div>
+
             {previewContent.source_url && (
               <div>
                 <h4>原始链接</h4>

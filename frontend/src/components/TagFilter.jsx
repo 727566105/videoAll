@@ -72,7 +72,6 @@ const TagFilter = ({ value, onChange }) => {
         value={value}
         onChange={onChange}
         allowClear
-        showArrow
         filterOption={(input, option) => {
           const tag = tags.find(t => t.id === option.value);
           return tag && tag.name.toLowerCase().includes(input.toLowerCase());

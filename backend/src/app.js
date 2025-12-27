@@ -83,6 +83,7 @@ app.use(`${apiPrefix}/config`, require('./routes/config'));
 app.use(`${apiPrefix}/tags`, require('./routes/tags'));
 app.use(`${apiPrefix}/dashboard`, require('./routes/dashboard'));
 app.use(`${apiPrefix}/backup`, require('./routes/backup'));
+app.use(`${apiPrefix}/ai-config`, require('./routes/aiConfig'));
 
 // Health check route
 app.get('/health', (req, res) => {

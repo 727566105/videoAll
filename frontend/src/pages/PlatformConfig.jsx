@@ -13,7 +13,7 @@ const PlatformConfig = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [currentPlatform, setCurrentPlatform] = useState(null);
-  const [modalTitle, setModalTitle] = useState('添加平台账户');
+  const [modalTitle, setModalTitle] = useState('添加平台 Cookie');
   const [autoFetching, setAutoFetching] = useState(false);
   const [autoFetchMessage, setAutoFetchMessage] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('');
@@ -91,7 +91,7 @@ const PlatformConfig = () => {
             测试
           </Button>
           <Popconfirm
-            title="确定要删除这个平台配置吗？"
+            title="确定要删除该 Cookie 配置吗？"
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
@@ -126,7 +126,7 @@ const PlatformConfig = () => {
   // 添加平台配置
   const handleAdd = () => {
     setCurrentPlatform(null);
-    setModalTitle('添加平台账户');
+    setModalTitle('添加平台 Cookie');
     form.resetFields();
     setSelectedPlatform('');
     setAutoFetchMessage('');
@@ -141,7 +141,7 @@ const PlatformConfig = () => {
   // 编辑平台配置
   const handleEdit = (platform) => {
     setCurrentPlatform(platform);
-    setModalTitle('编辑平台账户');
+    setModalTitle('编辑平台 Cookie');
     form.setFieldsValue({
       platform: platform.platform,
       account_alias: platform.account_alias,
@@ -263,20 +263,30 @@ const PlatformConfig = () => {
           <div>
             <Title level={4} style={{ margin: 0 }}>
               <KeyOutlined style={{ marginRight: '8px' }} />
-              平台账户配置
+              平台 Cookie 配置
             </Title>
             <Text type="secondary" style={{ marginTop: '8px', display: 'block' }}>
-              配置各平台的Cookie信息，用于解析需要登录的内容和去除水印
+              配置各平台的登录 Cookie，用于内容解析和账户监控
             </Text>
           </div>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
             onClick={handleAdd}
           >
-            添加平台账户
+            添加 Cookie
           </Button>
         </div>
+
+        {/* Cookie 配置说明 */}
+        <Alert
+          message="Cookie 配置说明"
+          description="在此配置各平台的登录 Cookie 后，可以提高内容解析成功率并启用账户监控功能。Cookie 采用加密存储，请放心使用。"
+          type="info"
+          showIcon
+          closable
+          style={{ marginBottom: '16px' }}
+        />
 
         <Table
           columns={columns}

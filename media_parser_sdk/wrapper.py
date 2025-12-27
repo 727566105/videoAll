@@ -19,8 +19,13 @@ from media_parser_sdk.platforms.bilibili_enhanced import BilibiliEnhancedParser
 
 # 便捷函数包装
 def extract_xiaohongshu_note_sync_wrapper(url, cookie=None):
-    """提取小红书笔记信息 - 包装函数"""
-    return extract_xiaohongshu_note_sync(url)
+    """提取小红书笔记信息 - 包装函数
+
+    Args:
+        url: 小红书笔记URL
+        cookie: 小红书Cookie (可选,有助于提高解析成功率)
+    """
+    return extract_xiaohongshu_note_sync(url, cookie=cookie)
 
 def extract_xiaohongshu_author_sync_wrapper(url, cookie=None):
     """提取小红书博主资料 - 包装函数"""

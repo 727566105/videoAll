@@ -78,11 +78,7 @@ class XiaohongshuEnhancedParser(BaseParser):
         # 导入单个笔记解析器，用于获取笔记详情
         try:
             from .xiaohongshu import XiaohongshuParser
-            self.note_parser = XiaohongshuParser(logger=logger)
-            if cookie:
-                # 如果提供了 Cookie，也设置到 note_parser 中
-                self.note_parser.headers = self.note_parser.headers.copy()
-                self.note_parser.headers["Cookie"] = cookie
+            self.note_parser = XiaohongshuParser(logger=logger, cookie=cookie)
         except ImportError:
             self.note_parser = None
             self.log_warning("无法导入XiaohongshuParser，笔记详情功能可能不可用")
@@ -561,11 +557,16 @@ class XiaohongshuEnhancedParser(BaseParser):
 
 
 # 便捷函数
-def extract_xiaohongshu_note_sync(url: str) -> XiaohongshuExtractResult:
-    """同步版本：提取小红书笔记信息"""
-    parser = XiaohongshuEnhancedParser()
+def extract_xiaohongshu_note_sync(url: str, cookie: str = None) -> XiaohongshuExtractResult:
+    """同步版本：提取小红书笔记信息
 
-    # 使用单个笔记解析器
+    Args:
+        url: 小红书笔记URL
+        cookie: 小红书Cookie (可选，有助于提高解析成功率，尤其是实况图片)
+    """
+    parser = XiaohongshuEnhancedParser(cookie=cookie)
+
+    # 使用单个笔记解析器（如果提供了cookie，也设置到note_parser中）
     if parser.note_parser:
         try:
             media_info = parser.note_parser.parse(url)

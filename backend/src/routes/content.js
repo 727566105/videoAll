@@ -45,4 +45,20 @@ router.post('/download', ContentController.downloadContent);
 // Save content to both database and project root directory
 router.post('/save', ContentController.saveContent);
 
+// AI分析相关路由
+// 分析单个内容的AI标签
+router.post('/:id/ai-analyze', ContentController.analyzeContentAi);
+
+// 获取内容的AI分析状态
+router.get('/:id/ai-status', ContentController.getContentAiStatus);
+
+// 确认或拒绝AI生成的标签
+router.post('/:id/ai-tags/confirm', ContentController.confirmAiTags);
+
+// 获取待确认的AI标签
+router.get('/:id/ai-tags/pending', ContentController.getPendingAiTags);
+
+// 获取AI标签统计信息
+router.get('/ai-tags/stats', ContentController.getAiTagStats);
+
 module.exports = router;
