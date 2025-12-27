@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
+import TagFilter from '../components/TagFilter';
+import BatchTagModal from '../components/BatchTagModal';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -18,7 +20,8 @@ const ContentManagement = () => {
     platform: '',
     media_type: '',
     source_type: '',
-    date_range: null
+    date_range: null,
+    tags: []
   });
   const [pagination, setPagination] = useState({
     current: 1,
@@ -28,6 +31,8 @@ const ContentManagement = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewContent, setPreviewContent] = useState(null);
   const [refreshingStats, setRefreshingStats] = useState(false);
+  // Batch tag modal state
+  const [batchTagModalVisible, setBatchTagModalVisible] = useState(false);
 
   // Columns definition
   const columns = [
@@ -67,6 +72,16 @@ const ContentManagement = () => {
         <Space direction="vertical" size={0}>
           <span>{title}</span>
           {record.is_missing && <Tag color="error">已消失</Tag>}
+          {/* 显示标签 */}
+          {record.tags && record.tags.length > 0 && (
+            <div style={{ marginTop: 4 }}>
+              {record.tags.map(tag => (
+                <Tag key={tag.id} color={tag.color} style={{ marginBottom: 2 }}>
+                  {tag.name}
+                </Tag>
+              ))}
+            </div>
+          )}
           {/* 描述预览 - 显示前50个字符 */}
           {record.description && (
             <span style={{ fontSize: 12, color: token?.colorTextQuaternary }}>
@@ -182,6 +197,11 @@ const ContentManagement = () => {
         params.end_date = filters.date_range[1].format('YYYY-MM-DD');
       }
 
+      // Add tags filter if selected
+      if (filters.tags && filters.tags.length > 0) {
+        params.tags = filters.tags.join(',');
+      }
+
       // Call backend API
       const result = await apiService.content.getList(params);
 
@@ -286,7 +306,8 @@ const ContentManagement = () => {
       platform: '',
       media_type: '',
       source_type: '',
-      date_range: null
+      date_range: null,
+      tags: []
     });
     setPagination({
       current: 1,
@@ -305,7 +326,8 @@ const ContentManagement = () => {
       filters.platform ||
       filters.media_type ||
       filters.source_type ||
-      filters.date_range
+      filters.date_range ||
+      (filters.tags && filters.tags.length > 0)
     );
   };
 
@@ -314,14 +336,15 @@ const ContentManagement = () => {
     if (!hasActiveFilters()) {
       return '显示所有内容';
     }
-    
+
     const activeFilters = [];
     if (filters.keyword && filters.keyword.trim()) activeFilters.push('关键词');
     if (filters.platform) activeFilters.push('平台');
     if (filters.media_type) activeFilters.push('类型');
     if (filters.source_type) activeFilters.push('来源');
     if (filters.date_range) activeFilters.push('日期范围');
-    
+    if (filters.tags && filters.tags.length > 0) activeFilters.push(`标签(${filters.tags.length}个)`);
+
     return `已应用筛选条件: ${activeFilters.join(', ')}`;
   };
 
@@ -476,6 +499,25 @@ const ContentManagement = () => {
     }
   };
 
+  // Handle batch tag operation
+  const handleBatchTagOperation = async ({ operation, tag_ids }) => {
+    try {
+      await apiService.tags.batchUpdateTags({
+        content_ids: selectedRowKeys,
+        tag_ids,
+        operation
+      });
+      message.success('批量标签操作成功');
+      // Refresh content list and clear selection
+      getContentList();
+      setSelectedRowKeys([]);
+      setBatchTagModalVisible(false);
+    } catch (error) {
+      console.error('Batch tag operation error:', error);
+      message.error(error.message || '批量标签操作失败');
+    }
+  };
+
   // Load content list on component mount and when pagination changes
   useEffect(() => {
     getContentList();
@@ -532,7 +574,7 @@ const ContentManagement = () => {
             <Select.Option value="1">单链接解析</Select.Option>
             <Select.Option value="2">监控任务</Select.Option>
           </Select>
-          <RangePicker 
+          <RangePicker
             placeholder={['开始日期', '结束日期']}
             style={{ width: 300 }}
             value={filters.date_range}
@@ -541,6 +583,15 @@ const ContentManagement = () => {
           <Button type="primary" onClick={handleSearch}>筛选</Button>
           <Button onClick={handleReset}>重置</Button>
         </Space>
+
+        {/* Tag Filter - 独立一行 */}
+        <div style={{ marginTop: '16px' }}>
+          <TagFilter
+            value={filters.tags}
+            onChange={(value) => handleFilterChange('tags', value)}
+          />
+        </div>
+
         
         {/* Filter status indicator */}
         <div style={{ 
@@ -573,6 +624,13 @@ const ContentManagement = () => {
               disabled={selectedRowKeys.length === 0}
             >
               批量删除 ({selectedRowKeys.length})
+            </Button>
+            <Button
+              icon={<TagOutlined />}
+              onClick={() => setBatchTagModalVisible(true)}
+              disabled={selectedRowKeys.length === 0}
+            >
+              批量打标签 ({selectedRowKeys.length})
             </Button>
             <Button
               type="primary"
@@ -857,6 +915,14 @@ const ContentManagement = () => {
           </Space>
         )}
       </Modal>
+
+      {/* Batch Tag Modal */}
+      <BatchTagModal
+        visible={batchTagModalVisible}
+        onCancel={() => setBatchTagModalVisible(false)}
+        onConfirm={handleBatchTagOperation}
+        selectedCount={selectedRowKeys.length}
+      />
     </Space>
   );
 };

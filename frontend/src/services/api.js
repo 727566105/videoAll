@@ -189,14 +189,14 @@ const apiService = {
     updateUserPassword: (id, data) => api.patch(`/config/users/${id}/password`, data),
     deleteUser: (id) => api.delete(`/config/users/${id}`),
     toggleUserStatus: (id, data) => api.patch(`/config/users/${id}/status`, data),
-    
+
     // Cookie management
     getCookies: () => api.get('/config/cookies'),
     createCookie: (data) => api.post('/config/cookies', data),
     updateCookie: (id, data) => api.put(`/config/cookies/${id}`, data),
     deleteCookie: (id) => api.delete(`/config/cookies/${id}`),
     testCookie: (id) => api.post(`/config/cookies/${id}/test`),
-    
+
     // Platform Cookie management
     getPlatformCookies: () => api.get('/config/platform-cookies'),
     createPlatformCookie: (data) => api.post('/config/platform-cookies', data),
@@ -208,6 +208,18 @@ const apiService = {
     // System settings
     getSystemSettings: () => api.get('/config/system'),
     updateSystemSettings: (data) => api.put('/config/system', data)
+  },
+
+  // Tag management
+  tags: {
+    getAll: () => api.get('/tags'),
+    create: (data) => api.post('/tags', data),
+    update: (id, data) => api.put(`/tags/${id}`, data),
+    delete: (id) => api.delete(`/tags/${id}`),
+    getContentTags: (id) => api.get(`/tags/content/${id}/tags`),
+    addTagsToContent: (data) => api.post('/tags/content/tags/add', data),
+    removeTagsFromContent: (data) => api.post('/tags/content/tags/remove', data),
+    batchUpdateTags: (data) => api.post('/tags/content/tags/batch', data)
   }
 };
 

@@ -80,6 +80,7 @@ app.use(`${apiPrefix}/content`, require('./routes/content'));
 app.use(`${apiPrefix}/tasks`, require('./routes/tasks'));
 app.use(`${apiPrefix}/hotsearch`, require('./routes/hotsearch'));
 app.use(`${apiPrefix}/config`, require('./routes/config'));
+app.use(`${apiPrefix}/tags`, require('./routes/tags'));
 app.use(`${apiPrefix}/dashboard`, require('./routes/dashboard'));
 app.use(`${apiPrefix}/backup`, require('./routes/backup'));
 

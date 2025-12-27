@@ -88,24 +88,69 @@ class ContentController {
         source_type,
         keyword,
         start_date,
-        end_date
+        end_date,
+        tags
       } = req.query;
-      
+
       // Create cache key based on query parameters
       const cacheKey = CacheService.getContentListCacheKey(req.query);
-      
+
       // Check cache first
       const cachedData = CacheService.get(cacheKey);
       if (cachedData) {
         return res.status(200).json(cachedData);
       }
-      
+
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
-      
+      const contentTagRepository = AppDataSource.getRepository('ContentTag');
+
       // Build query with TypeORM QueryBuilder
       const queryBuilder = contentRepository.createQueryBuilder('content');
-      
+
+      // 标签筛选 - 使用 OR 逻辑（包含任意一个标签即可）
+      let filteredContentIds = null;
+      if (tags) {
+        // 确保标签ID是数组
+        let tagIds;
+        if (Array.isArray(tags)) {
+          tagIds = tags;
+        } else if (typeof tags === 'string') {
+          // 处理逗号分隔的字符串
+          tagIds = tags.split(',').map(t => t.trim()).filter(t => t);
+        } else {
+          tagIds = [tags];
+        }
+
+        if (tagIds.length > 0) {
+          // 查询包含这些标签的内容ID（使用 OR 逻辑）
+          // 转义每个 UUID 并构建 IN 子句
+          const escapedTagIds = tagIds.map(id => `'${id}'`).join(',');
+          const query = `
+            SELECT DISTINCT ct.content_id
+            FROM content_tags ct
+            WHERE ct.tag_id IN (${escapedTagIds})
+          `;
+
+          const contentTags = await contentTagRepository.query(query);
+
+          filteredContentIds = contentTags.map(ct => ct.content_id);
+
+          // 如果没有找到任何内容，返回空结果
+          if (filteredContentIds.length === 0) {
+            return res.status(200).json({
+              message: '获取成功',
+              data: {
+                list: [],
+                total: 0,
+                page: parseInt(page),
+                page_size: parseInt(page_size)
+              }
+            });
+          }
+        }
+      }
+
       // Apply filters
       if (platform) {
         queryBuilder.andWhere('content.platform = :platform', { platform });
@@ -130,24 +175,61 @@ class ContentController {
           queryBuilder.andWhere('content.created_at <= :end_date', { end_date: new Date(end_date) });
         }
       }
-      
+
+      // 应用标签筛选
+      if (filteredContentIds) {
+        queryBuilder.andWhere('content.id IN (:...contentIds)', { contentIds: filteredContentIds });
+      }
+
       // Get total count
       const total = await queryBuilder.getCount();
-      
+
       // Get paginated data
       const contents = await queryBuilder
         .orderBy('content.created_at', 'DESC')
         .skip((parseInt(page) - 1) * parseInt(page_size))
         .take(parseInt(page_size))
         .getMany();
-      
+
+      // 批量获取内容的标签
+      const contentIds = contents.map(c => c.id);
+      const contentTags = contentIds.length > 0
+        ? await contentTagRepository
+            .createQueryBuilder('ct')
+            .where('ct.content_id IN (:...contentIds)', { contentIds })
+            .getMany()
+        : [];
+
+      // 构建 contentId -> tags 的映射
+      const contentTagsMap = {};
+      for (const ct of contentTags) {
+        if (!contentTagsMap[ct.content_id]) {
+          contentTagsMap[ct.content_id] = [];
+        }
+        contentTagsMap[ct.content_id].push(ct.tag_id);
+      }
+
       // Process all_images and all_videos fields - parse JSON strings to arrays
-      const processedContents = contents.map(content => ({
-        ...content,
-        all_images: content.all_images ? JSON.parse(content.all_images) : [],
-        all_videos: content.all_videos ? JSON.parse(content.all_videos) : []
+      const processedContents = await Promise.all(contents.map(async (content) => {
+        // 获取标签详细信息
+        let tags = [];
+        if (contentTagsMap[content.id] && contentTagsMap[content.id].length > 0) {
+          const tagRepository = AppDataSource.getRepository('Tag');
+          // 使用 QueryBuilder 避免数组参数问题
+          tags = await tagRepository
+            .createQueryBuilder('tag')
+            .where('tag.id IN (:...tagIds)', { tagIds: contentTagsMap[content.id] })
+            .getMany();
+        }
+
+        return {
+          ...content,
+          all_images: content.all_images ? JSON.parse(content.all_images) : [],
+          all_videos: content.all_videos ? JSON.parse(content.all_videos) : [],
+          tags: tags // 添加标签数组
+        };
       }));
-      
+
       // Prepare response data
       const responseData = {
         message: '获取成功',
@@ -158,14 +240,17 @@ class ContentController {
           page_size: parseInt(page_size)
         }
       };
-      
+
       // Cache the response for 1 minute (60 seconds)
       CacheService.set(cacheKey, responseData, 60);
-      
+
       res.status(200).json(responseData);
     } catch (error) {
       console.error('Get content list error:', error);
-      res.status(500).json({ message: '获取内容列表失败' });
+      console.error('Error stack:', error.stack);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      res.status(500).json({ message: `获取内容列表失败: ${error.message}` });
     }
   }
 
@@ -173,18 +258,34 @@ class ContentController {
   static async getContentById(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
       const content = await contentRepository.findOne({ where: { id } });
-      
+
       if (!content) {
         return res.status(404).json({ message: '内容不存在' });
       }
-      
+
+      // 查询内容关联的标签
+      const contentTagRepository = AppDataSource.getRepository('ContentTag');
+      const tagRepository = AppDataSource.getRepository('Tag');
+
+      const contentTags = await contentTagRepository.find({
+        where: { content_id: id }
+      });
+
+      const tagIds = contentTags.map(ct => ct.tag_id);
+      const tags = tagIds.length > 0
+        ? await tagRepository.findBy({ id: tagIds })
+        : [];
+
       res.status(200).json({
         message: '获取成功',
-        data: content
+        data: {
+          ...content,
+          tags: tags
+        }
       });
     } catch (error) {
       console.error('Get content by id error:', error);
@@ -323,9 +424,9 @@ class ContentController {
       
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
-      
+
       // Get contents to delete
-      const contents = await contentRepository.findByIds(ids);
+      const contents = await contentRepository.findBy({ id: ids });
       
       // Delete from database
       await contentRepository.delete(ids);
@@ -362,9 +463,9 @@ class ContentController {
       
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
-      
+
       // Get contents to export
-      const contents = await contentRepository.findByIds(ids);
+      const contents = await contentRepository.findBy({ id: ids });
       
       // Convert content data to Excel format
       const exportData = contents.map(content => ({
