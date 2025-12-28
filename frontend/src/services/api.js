@@ -164,7 +164,15 @@ const apiService = {
     getTrends: (platform, params) => api.get(`/hotsearch/${platform}/trends`, { params }),
     getPlatforms: () => api.get('/hotsearch/platforms'),
     parseContent: (data) => api.post('/hotsearch/parse', data),
-    getRelatedContent: (params) => api.get('/hotsearch/related', { params })
+    getRelatedContent: (params) => api.get('/hotsearch/related', { params }),
+    // Phase 2 新增API
+    getAllPlatforms: () => api.get('/hotsearch/all'),
+    getHistory: (params) => api.get('/hotsearch/history', { params }),
+    compare: (params) => api.get('/hotsearch/compare', { params }),
+    getAnalysis: (params) => api.get('/hotsearch/analysis', { params }),
+    getKeywordTrends: (keyword, params) => api.get(`/hotsearch/keywords/${keyword}`, { params }),
+    refresh: () => api.post('/hotsearch/refresh'),
+    getStats: () => api.get('/hotsearch/stats')
   },
   
   // Dashboard data

@@ -1,10 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const HotsearchController = require('../controllers/HotsearchController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, adminOnly } = require('../middleware/auth');
 
 // All routes are protected by authentication
 router.use(authenticate);
+
+// ========== Phase 2: New Routes ==========
+
+// Get all platforms hotsearch (merge endpoint)
+router.get('/all', HotsearchController.getAllPlatformsHotsearch);
+
+// Get hotsearch history with advanced filtering
+router.get('/history', HotsearchController.getHotsearchHistory);
+
+// Compare hotsearch across platforms
+router.get('/compare', HotsearchController.compareHotsearchAcrossPlatforms);
+
+// Get hotsearch analysis
+router.get('/analysis', HotsearchController.getHotsearchAnalysis);
+
+// Get keyword trends
+router.get('/keywords/:keyword', HotsearchController.getKeywordTrends);
+
+// Refresh all hotsearch (admin only)
+router.post('/refresh', adminOnly, HotsearchController.refreshAllHotsearch);
+
+// Get crawl statistics (admin only)
+router.get('/stats', adminOnly, HotsearchController.getCrawlStats);
+
+// ========== Existing Routes ==========
 
 // Get hotsearch platforms - specific route first
 router.get('/platforms', HotsearchController.getHotsearchPlatforms);

@@ -266,7 +266,7 @@ const UserManagement = () => {
         }
       >
         <Alert
-          message="用户管理说明"
+          title="用户管理说明"
           description="管理员可以创建、编辑和删除用户。注意：不能删除最后一个管理员账户和最后一个用户账户，也不能删除自己的账户。"
           type="info"
           showIcon

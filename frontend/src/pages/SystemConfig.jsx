@@ -5,7 +5,6 @@ import apiService from '../services/api';
 import PlatformConfig from './PlatformConfig';
 
 const { Title } = Typography;
-const { TabPane } = Tabs;
 
 const SystemConfig = () => {
   const { token } = App.useApp();
@@ -198,95 +197,105 @@ const SystemConfig = () => {
 
   return (
     <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-      <Tabs defaultActiveKey="cookies">
-        {/* Platform Account Configuration Tab */}
-        <TabPane tab={<span><KeyOutlined />平台账户配置</span>} key="cookies">
-          <PlatformConfig />
-        </TabPane>
+      <Tabs
+        defaultActiveKey="cookies"
+        items={[
+          {
+            key: 'cookies',
+            label: <span><KeyOutlined />平台账户配置</span>,
+            children: <PlatformConfig />
+          },
+          {
+            key: 'settings',
+            label: <span><SettingOutlined />系统设置</span>,
+            children: (
+              <Card title="系统基础配置">
+                <Form
+                  form={settingsForm}
+                  layout="vertical"
+                  onFinish={handleSaveSettings}
+                  initialValues={systemSettings}
+                >
+                  <Form.Item
+                    name="storage_path"
+                    label="存储路径"
+                    rules={[{ required: true, message: '请输入存储路径!' }]}
+                  >
+                    <Input placeholder="请输入媒体文件存储路径" />
+                  </Form.Item>
 
-        {/* System Settings Tab */}
-        <TabPane tab={<span><SettingOutlined />系统设置</span>} key="settings">
-          <Card title="系统基础配置">
-            <Form
-              form={settingsForm}
-              layout="vertical"
-              onFinish={handleSaveSettings}
-              initialValues={systemSettings}
-            >
-              <Form.Item
-                name="storage_path"
-                label="存储路径"
-                rules={[{ required: true, message: '请输入存储路径!' }]}
-              >
-                <Input placeholder="请输入媒体文件存储路径" />
-              </Form.Item>
+                  <Form.Item
+                    name="task_schedule_interval"
+                    label="任务调度间隔（秒）"
+                    rules={[{ required: true, message: '请输入任务调度间隔!' }, { type: 'number', min: 60, message: '任务调度间隔不能少于60秒!' }]}
+                  >
+                    <Input type="number" placeholder="请输入任务调度间隔（秒）" />
+                  </Form.Item>
 
-              <Form.Item
-                name="task_schedule_interval"
-                label="任务调度间隔（秒）"
-                rules={[{ required: true, message: '请输入任务调度间隔!' }, { type: 'number', min: 60, message: '任务调度间隔不能少于60秒!' }]}
-              >
-                <Input type="number" placeholder="请输入任务调度间隔（秒）" />
-              </Form.Item>
+                  <Form.Item
+                    name="hotsearch_fetch_interval"
+                    label="热搜抓取间隔（秒）"
+                    rules={[{ required: true, message: '请输入热搜抓取间隔!' }, { type: 'number', min: 300, message: '热搜抓取间隔不能少于300秒!' }]}
+                  >
+                    <Input type="number" placeholder="请输入热搜抓取间隔（秒）" />
+                  </Form.Item>
 
-              <Form.Item
-                name="hotsearch_fetch_interval"
-                label="热搜抓取间隔（秒）"
-                rules={[{ required: true, message: '请输入热搜抓取间隔!' }, { type: 'number', min: 300, message: '热搜抓取间隔不能少于300秒!' }]}
-              >
-                <Input type="number" placeholder="请输入热搜抓取间隔（秒）" />
-              </Form.Item>
+                  <Form.Item style={{ textAlign: 'right' }}>
+                    <Button type="primary" htmlType="submit" loading={settingsLoading}>保存设置</Button>
+                  </Form.Item>
+                </Form>
+              </Card>
+            )
+          },
+          {
+            key: 'compliance',
+            label: <span><SettingOutlined />合规性声明</span>,
+            children: (
+              <>
+                <Card title="使用条款">
+                  <div style={{ padding: '16px' }}>
+                    <h4>1. 系统用途</h4>
+                    <p>本系统仅供内部使用，用于内容的合法采集、管理和分析。</p>
+                    <h4>2. 数据合规</h4>
+                    <p>使用本系统采集的数据必须遵守各内容平台的Robots协议及服务条款，不得用于非法用途。</p>
+                    <h4>3. 责任限制</h4>
+                    <p>系统提供的数据仅供参考，用户需自行判断数据的准确性和合法性。</p>
+                    <h4>4. 更新与修改</h4>
+                    <p>系统使用条款可能会随时更新，用户需定期查看并遵守最新条款。</p>
+                  </div>
+                </Card>
 
-              <Form.Item style={{ textAlign: 'right' }}>
-                <Button type="primary" htmlType="submit" loading={settingsLoading}>保存设置</Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </TabPane>
+                <Card title="隐私政策" style={{ marginTop: '16px' }}>
+                  <div style={{ padding: '16px' }}>
+                    <h4>1. 数据收集</h4>
+                    <p>系统仅收集必要的用户数据用于身份验证和权限管理。</p>
+                    <h4>2. 数据存储</h4>
+                    <p>用户数据和系统配置信息将安全存储，严格限制访问权限。</p>
+                    <h4>3. 数据使用</h4>
+                    <p>收集的数据仅用于系统功能的正常运行，不会用于其他用途。</p>
+                    <h4>4. 数据保护</h4>
+                    <p>系统采取必要的技术和管理措施，保护数据的安全和完整性。</p>
+                  </div>
+                </Card>
 
-        {/* Compliance Tab */}
-        <TabPane tab={<span><SettingOutlined />合规性声明</span>} key="compliance">
-          <Card title="使用条款">
-            <div style={{ padding: '16px' }}>
-              <h4>1. 系统用途</h4>
-              <p>本系统仅供内部使用，用于内容的合法采集、管理和分析。</p>
-              <h4>2. 数据合规</h4>
-              <p>使用本系统采集的数据必须遵守各内容平台的Robots协议及服务条款，不得用于非法用途。</p>
-              <h4>3. 责任限制</h4>
-              <p>系统提供的数据仅供参考，用户需自行判断数据的准确性和合法性。</p>
-              <h4>4. 更新与修改</h4>
-              <p>系统使用条款可能会随时更新，用户需定期查看并遵守最新条款。</p>
-            </div>
-          </Card>
-
-          <Card title="隐私政策" style={{ marginTop: '16px' }}>
-            <div style={{ padding: '16px' }}>
-              <h4>1. 数据收集</h4>
-              <p>系统仅收集必要的用户数据用于身份验证和权限管理。</p>
-              <h4>2. 数据存储</h4>
-              <p>用户数据和系统配置信息将安全存储，严格限制访问权限。</p>
-              <h4>3. 数据使用</h4>
-              <p>收集的数据仅用于系统功能的正常运行，不会用于其他用途。</p>
-              <h4>4. 数据保护</h4>
-              <p>系统采取必要的技术和管理措施，保护数据的安全和完整性。</p>
-            </div>
-          </Card>
-
-          <Card title="合规提示" style={{ marginTop: '16px' }}>
-            <div style={{ padding: '16px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '4px' }}>
-              <p style={{ margin: 0 }}>
-                <strong>重要提示：</strong> 使用本系统时，请确保遵守以下规定：
-              </p>
-              <ul style={{ marginTop: '8px' }}>
-                <li>不得使用系统进行大规模数据采集，避免对目标平台造成服务器负担</li>
-                <li>采集的内容不得用于商业用途或非法用途</li>
-                <li>定期更新平台Cookie信息，确保采集服务的稳定性</li>
-                <li>尊重内容创作者的知识产权，合理使用采集的内容</li>
-              </ul>
-            </div>
-          </Card>
-        </TabPane>
-      </Tabs>
+                <Card title="合规提示" style={{ marginTop: '16px' }}>
+                  <div style={{ padding: '16px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '4px' }}>
+                    <p style={{ margin: 0 }}>
+                      <strong>重要提示：</strong> 使用本系统时，请确保遵守以下规定：
+                    </p>
+                    <ul style={{ marginTop: '8px' }}>
+                      <li>不得使用系统进行大规模数据采集，避免对目标平台造成服务器负担</li>
+                      <li>采集的内容不得用于商业用途或非法用途</li>
+                      <li>定期更新平台Cookie信息，确保采集服务的稳定性</li>
+                      <li>尊重内容创作者的知识产权，合理使用采集的内容</li>
+                    </ul>
+                  </div>
+                </Card>
+              </>
+            )
+          }
+        ]}
+      />
     </Space>
   );
 };

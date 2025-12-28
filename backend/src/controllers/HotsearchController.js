@@ -1,17 +1,12 @@
 const HotsearchService = require('../services/HotsearchService');
 const ParseService = require('../services/ParseService');
 const CacheService = require('../services/CacheService');
+const { AppDataSource } = require('../utils/db');
 
 class HotsearchController {
   // Fetch hotsearch for a specific platform
   static async fetchHotsearch(req, res) {
     try {
-      // Temporarily disable hotsearch functionality to avoid MongoDB timeout
-      return res.status(503).json({ 
-        message: '热搜功能暂时不可用，正在进行系统维护',
-        code: 'HOTSEARCH_MAINTENANCE'
-      });
-      
       const { platform } = req.params;
       if (!platform) {
         return res.status(400).json({ message: '请提供平台名称' });
@@ -31,12 +26,6 @@ class HotsearchController {
   // Fetch hotsearch for all platforms
   static async fetchAllHotsearch(req, res) {
     try {
-      // Temporarily disable hotsearch functionality to avoid MongoDB timeout
-      return res.status(503).json({ 
-        message: '热搜功能暂时不可用，正在进行系统维护',
-        code: 'HOTSEARCH_MAINTENANCE'
-      });
-      
       const results = await HotsearchService.fetchAllHotsearch();
       res.status(200).json({
         message: '所有平台热搜抓取完成',
@@ -51,22 +40,16 @@ class HotsearchController {
   // Get hotsearch by date and platform
   static async getHotsearchByDate(req, res) {
     try {
-      // Temporarily disable hotsearch functionality to avoid MongoDB timeout
-      return res.status(503).json({ 
-        message: '热搜功能暂时不可用，正在进行系统维护',
-        code: 'HOTSEARCH_MAINTENANCE'
-      });
-      
       const { platform } = req.params;
       const { date } = req.query;
-      
+
       if (!platform) {
         return res.status(400).json({ message: '请提供平台名称' });
       }
 
       // Generate cache key
       const cacheKey = CacheService.getHotsearchCacheKey(platform, date);
-      
+
       // Check cache first
       const cachedData = CacheService.get(cacheKey);
       if (cachedData) {
@@ -74,16 +57,16 @@ class HotsearchController {
       }
 
       const data = await HotsearchService.getHotsearchByDate(platform, date);
-      
+
       // Prepare response data
       const responseData = {
         message: '获取热搜成功',
         data
       };
-      
+
       // Cache the response for 30 minutes (1800 seconds)
       CacheService.set(cacheKey, responseData, 1800);
-      
+
       res.status(200).json(responseData);
     } catch (error) {
       console.error('Get hotsearch by date error:', error);
@@ -94,22 +77,16 @@ class HotsearchController {
   // Get hotsearch trends
   static async getHotsearchTrends(req, res) {
     try {
-      // Temporarily disable hotsearch functionality to avoid MongoDB timeout
-      return res.status(503).json({ 
-        message: '热搜功能暂时不可用，正在进行系统维护',
-        code: 'HOTSEARCH_MAINTENANCE'
-      });
-      
       const { platform } = req.params;
       const { days = 7 } = req.query;
-      
+
       if (!platform) {
         return res.status(400).json({ message: '请提供平台名称' });
       }
 
       // Generate cache key with days parameter
       const cacheKey = `hotsearch:trends:${platform}:${days}`;
-      
+
       // Check cache first
       const cachedData = CacheService.get(cacheKey);
       if (cachedData) {
@@ -117,16 +94,16 @@ class HotsearchController {
       }
 
       const data = await HotsearchService.getHotsearchTrends(platform, parseInt(days));
-      
+
       // Prepare response data
       const responseData = {
         message: '获取热搜趋势成功',
         data
       };
-      
+
       // Cache the response for 1 hour (3600 seconds)
       CacheService.set(cacheKey, responseData, 3600);
-      
+
       res.status(200).json(responseData);
     } catch (error) {
       console.error('Get hotsearch trends error:', error);
@@ -137,10 +114,16 @@ class HotsearchController {
   // Get hotsearch platforms
   static async getHotsearchPlatforms(req, res) {
     try {
-      // Return empty platforms list during maintenance
-      const platforms = [];
+      // 返回固定四个平台
+      const platforms = [
+        { key: 'douyin', name: '抖音' },
+        { key: 'xiaohongshu', name: '小红书' },
+        { key: 'weibo', name: '微博' },
+        { key: 'bilibili', name: 'B站' }
+      ];
+
       res.status(200).json({
-        message: '热搜功能暂时不可用，正在进行系统维护',
+        message: '获取平台列表成功',
         data: platforms
       });
     } catch (error) {
@@ -152,18 +135,12 @@ class HotsearchController {
   // Parse content from hotsearch keyword
   static async parseHotsearchContent(req, res) {
     try {
-      // Temporarily disable hotsearch functionality to avoid MongoDB timeout
-      return res.status(503).json({ 
-        message: '热搜功能暂时不可用，正在进行系统维护',
-        code: 'HOTSEARCH_MAINTENANCE'
-      });
-      
       const { platform, keyword } = req.body;
-      
+
       if (!platform || !keyword) {
         return res.status(400).json({ message: '请提供平台和关键词' });
       }
-      
+
       // Build search link based on platform
       let searchLink;
       switch (platform) {
@@ -176,19 +153,16 @@ class HotsearchController {
         case 'weibo':
           searchLink = `https://s.weibo.com/weibo?q=${encodeURIComponent(keyword)}`;
           break;
-        case 'kuaishou':
-          searchLink = `https://www.kuaishou.com/search/video?keyword=${encodeURIComponent(keyword)}`;
-          break;
         case 'bilibili':
           searchLink = `https://search.bilibili.com/all?keyword=${encodeURIComponent(keyword)}`;
           break;
         default:
           return res.status(400).json({ message: `暂不支持${platform}平台的一键解析` });
       }
-      
+
       // Parse content using ParseService
       const content = await ParseService.parseLink(searchLink);
-      
+
       res.status(200).json({
         message: '一键解析成功',
         data: content
@@ -202,22 +176,16 @@ class HotsearchController {
   // Get related content for a hotsearch keyword
   static async getHotsearchRelatedContent(req, res) {
     try {
-      // Temporarily disable hotsearch functionality to avoid MongoDB timeout
-      return res.status(503).json({ 
-        message: '热搜功能暂时不可用，正在进行系统维护',
-        code: 'HOTSEARCH_MAINTENANCE'
-      });
-      
       const { keyword, platform } = req.query;
       const { limit = 5 } = req.body;
-      
+
       if (!keyword || !platform) {
         return res.status(400).json({ message: '请提供关键词和平台' });
       }
-      
+
       // Get related content
       const relatedContent = await HotsearchService.getRelatedContent(keyword, platform, parseInt(limit));
-      
+
       res.status(200).json({
         message: '获取热搜关联内容成功',
         data: relatedContent
@@ -225,6 +193,133 @@ class HotsearchController {
     } catch (error) {
       console.error('Get hotsearch related content error:', error);
       res.status(500).json({ message: error.message || '获取热搜关联内容失败' });
+    }
+  }
+
+  // ========== Phase 2: New Controller Methods ==========
+
+  // Get all platforms hotsearch (merge endpoint)
+  static async getAllPlatformsHotsearch(req, res) {
+    try {
+      const data = await HotsearchService.getAllPlatformsHotsearch();
+      res.status(200).json(data);
+    } catch (error) {
+      console.error('Get all platforms hotsearch error:', error);
+      res.status(500).json({ message: error.message || '获取所有平台热搜失败' });
+    }
+  }
+
+  // Get hotsearch history with advanced filtering
+  static async getHotsearchHistory(req, res) {
+    try {
+      const result = await HotsearchService.getHotsearchHistory(req.query);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Get hotsearch history error:', error);
+      res.status(500).json({ message: error.message || '获取历史热搜失败' });
+    }
+  }
+
+  // Compare hotsearch across platforms
+  static async compareHotsearchAcrossPlatforms(req, res) {
+    try {
+      const { date } = req.query;
+      const result = await HotsearchService.compareHotsearchAcrossPlatforms(date);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Compare hotsearch across platforms error:', error);
+      res.status(500).json({ message: error.message || '跨平台对比失败' });
+    }
+  }
+
+  // Get hotsearch analysis
+  static async getHotsearchAnalysis(req, res) {
+    try {
+      const result = await HotsearchService.getHotsearchAnalysis(req.query);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Get hotsearch analysis error:', error);
+      res.status(500).json({ message: error.message || '获取数据分析失败' });
+    }
+  }
+
+  // Get keyword trends
+  static async getKeywordTrends(req, res) {
+    try {
+      const { keyword } = req.params;
+      const { startDate, endDate } = req.query;
+
+      if (!keyword) {
+        return res.status(400).json({ message: '请提供关键词' });
+      }
+
+      const result = await HotsearchService.getKeywordTrends(keyword, startDate, endDate);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error('Get keyword trends error:', error);
+      res.status(500).json({ message: error.message || '获取关键词趋势失败' });
+    }
+  }
+
+  // Refresh all hotsearch (admin only)
+  static async refreshAllHotsearch(req, res) {
+    try {
+      const results = await HotsearchService.fetchAllHotsearch();
+
+      // Invalidate caches
+      await HotsearchService.invalidateCaches(['douyin', 'xiaohongshu', 'weibo', 'bilibili']);
+
+      res.status(200).json({
+        message: '刷新所有热搜成功',
+        data: results
+      });
+    } catch (error) {
+      console.error('Refresh all hotsearch error:', error);
+      res.status(500).json({ message: error.message || '刷新所有热搜失败' });
+    }
+  }
+
+  // Get crawl statistics (admin only)
+  static async getCrawlStats(req, res) {
+    try {
+      const hotsearchRepository = AppDataSource.getRepository('HotsearchSnapshot');
+
+      // Get stats for the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const snapshots = await hotsearchRepository
+        .createQueryBuilder('snapshot')
+        .where('snapshot.capture_date >= :date', { date: sevenDaysAgo })
+        .select('snapshot.platform', 'platform')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('snapshot.platform')
+        .getRawMany();
+
+      const platformStats = {};
+      const platforms = ['douyin', 'xiaohongshu', 'weibo', 'bilibili'];
+
+      platforms.forEach(platform => {
+        const found = snapshots.find(s => s.platform === platform);
+        platformStats[platform] = {
+          successCount: found ? parseInt(found.count) : 0,
+          expectedCount: 28, // 7 days × 4 times per day
+          successRate: found ? (parseInt(found.count) / 28 * 100).toFixed(2) + '%' : '0%'
+        };
+      });
+
+      res.status(200).json({
+        message: '获取采集统计成功',
+        data: {
+          period: '最近7天',
+          platformStats,
+          healthStatus: Object.values(platformStats).every(s => parseFloat(s.successRate) >= 80)
+            ? 'healthy' : 'warning'
+        }
+      });
+    } catch (error) {
+      console.error('Get crawl stats error:', error);
+      res.status(500).json({ message: error.message || '获取采集统计失败' });
     }
   }
 }

@@ -280,7 +280,7 @@ const PlatformConfig = () => {
 
         {/* Cookie 配置说明 */}
         <Alert
-          message="Cookie 配置说明"
+          title="Cookie 配置说明"
           description="在此配置各平台的登录 Cookie 后，可以提高内容解析成功率并启用账户监控功能。Cookie 采用加密存储，请放心使用。"
           type="info"
           showIcon
