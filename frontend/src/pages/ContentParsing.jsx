@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import JSZip from 'jszip';
 import { Form, Input, Button, Card, Typography, Space, message, Progress, Modal, Image, App } from 'antd';
 import { FileSearchOutlined, DownloadOutlined, FileTextOutlined, EyeOutlined } from '@ant-design/icons';
@@ -8,6 +9,7 @@ import { getPlatformColor } from '../utils/themeColors';
 const { Title } = Typography;
 
 const ContentParsing = () => {
+  const location = useLocation();
   const { token } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,14 @@ const ContentParsing = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [previewTitle, setPreviewTitle] = useState('');
+
+  // 处理从热搜页面传递过来的URL
+  useEffect(() => {
+    if (location.state && location.state.url) {
+      form.setFieldsValue({ link: location.state.url });
+      message.info('已从热搜页面填入链接，请点击"解析"按钮开始解析');
+    }
+  }, [location.state, form]);
 
   // Handle image preview
   const handlePreview = (imageUrl, index) => {

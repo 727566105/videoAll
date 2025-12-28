@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Card, Tabs, Button, message, Space, Row, Col, Spin } from 'antd';
 import { SyncOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import PlatformHotSearchCard from '../components/hotsearch/PlatformHotSearchCard';
 import HotSearchTrendChart from '../components/hotsearch/HotSearchTrendChart';
 import HotSearchComparePanel from '../components/hotsearch/HotSearchComparePanel';
+import RelatedContentModal from '../components/hotsearch/RelatedContentModal';
 
 const HotSearch = () => {
+  const navigate = useNavigate();
+
   // 平台配置
   const [platforms, setPlatforms] = useState([]);
   const [platformConfig, setPlatformConfig] = useState({});
+
+  // 关联内容Modal状态
+  const [relatedModal, setRelatedModal] = useState({
+    visible: false,
+    keyword: null,
+    platform: null
+  });
 
   // 数据状态
   const [allHotsearchData, setAllHotsearchData] = useState({});
@@ -101,23 +112,28 @@ const HotSearch = () => {
     }
   };
 
-  // 处理关键词点击 - 解析
-  const handleKeywordClick = (keyword, platform) => {
-    message.info(`开始解析关键词: ${keyword}`);
-    // 可以跳转到解析页面
-    console.log('Parse keyword:', keyword, 'from platform:', platform);
+  // 处理关键词点击 - 解析（跳转到内容解析页面）
+  const handleKeywordClick = (keyword, url) => {
+    // 跳转到内容解析页面，并预填URL
+    navigate('/content-parsing', { state: { url } });
   };
 
-  // 处理关联内容查询
+  // 处理关联内容查询（打开Modal）
   const handleGetRelatedContent = async (keyword, platform) => {
-    try {
-      message.info(`查询 ${keyword} 的关联内容`);
-      // TODO: 后续可以添加 Modal 或跳转到内容管理页面
-      console.log('Get related content for:', keyword, 'from platform:', platform);
-    } catch (error) {
-      console.error('获取关联内容失败:', error);
-      message.error(error.message || '获取关联内容失败');
-    }
+    setRelatedModal({
+      visible: true,
+      keyword,
+      platform
+    });
+  };
+
+  // 关闭Modal
+  const handleCloseRelatedModal = () => {
+    setRelatedModal({
+      visible: false,
+      keyword: null,
+      platform: null
+    });
   };
 
   // 初始化加载
@@ -207,9 +223,14 @@ const HotSearch = () => {
           />
         </Card>
 
-        {/* 关联内容 Modal - 保留原有功能 */}
-        {/* 这里可以添加关联内容展示的 Modal */}
-        {/* 由于 Modal 组件在原代码中，可以保留或单独抽离成组件 */}
+        {/* 关联内容 Modal */}
+        <RelatedContentModal
+          visible={relatedModal.visible}
+          onClose={handleCloseRelatedModal}
+          keyword={relatedModal.keyword}
+          platform={relatedModal.platform}
+          platformConfig={platformConfig}
+        />
       </Space>
     </Spin>
   );

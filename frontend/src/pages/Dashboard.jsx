@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, Typography, Space, Statistic, Spin, Button, message, Row, Col, App } from 'antd';
+import { Card, Typography, Space, Statistic, Spin, Button, Row, Col, App } from 'antd';
 import { VideoCameraOutlined, PictureOutlined, PlusOutlined, ClockCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Pie, Column, Line } from '@ant-design/charts';
 import apiService from '../services/api';
@@ -26,18 +26,23 @@ const Dashboard = () => {
       setLoading(true);
       // Fetch all dashboard data in one API call for better performance
       const result = await apiService.dashboard.getAllData();
-      
+
       // Update state with real data
-      setStats(result.data?.stats || result.stats || {
+      const statsData = result.data?.stats || result.stats || {
         total: 0,
         videoCount: 0,
         imageCount: 0,
         todayAdded: 0,
         activeTasks: 0
-      });
-      setPlatformDistribution(result.data?.platformDistribution || result.platformDistribution || []);
-      setContentTypeComparison(result.data?.contentTypeComparison || result.contentTypeComparison || []);
-      setRecentTrend(result.data?.recentTrend || result.recentTrend || []);
+      };
+      const platformData = result.data?.platformDistribution || result.platformDistribution || [];
+      const contentTypeData = result.data?.contentTypeComparison || result.contentTypeComparison || [];
+      const trendData = result.data?.recentTrend || result.recentTrend || [];
+
+      setStats(statsData);
+      setPlatformDistribution(platformData);
+      setContentTypeComparison(contentTypeData);
+      setRecentTrend(trendData);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       // Use mock data as fallback without showing error message to user
@@ -80,30 +85,32 @@ const Dashboard = () => {
   }, []);
 
   // Chart configurations - 使用 useMemo 优化性能并处理 token 可能为 undefined 的情况
-  const pieConfig = useMemo(() => ({
-    data: platformDistribution,
-    angleField: 'value',
-    colorField: 'type',
-    radius: 0.8,
-    label: {
-      content: ({ percent }) => `${(percent * 100).toFixed(0)}%`,
-      style: {
-        fill: token?.colorBgElevated || '#fff',
-        fontSize: 14,
-        textAlign: 'center'
+  const pieConfig = useMemo(() => {
+    return {
+      data: platformDistribution,
+      angleField: 'value',
+      colorField: 'type',
+      // 环形图配置
+      radius: 0.8,
+      innerRadius: 0.5,
+      // 添加内边距确保tooltip不被裁剪
+      appendPadding: [10, 10, 10, 10],
+      // 自定义颜色 - 使用各平台的品牌色
+      color: ['#000000', '#ff2442', '#e6162d', '#00a1d6', '#ff6600'],
+      // 图例配置
+      legend: {
+        position: 'bottom',
+        layout: 'horizontal'
+      },
+      // Tooltip配置 - 显示中文标签
+      tooltip: {
+        title: 'type',
+        formatter: (datum) => {
+          return { name: datum.type, value: datum.value };
+        }
       }
-    },
-    tooltip: {
-      fields: ['type', 'value'],
-      formatter: (datum) => {
-        return { name: datum.type, value: datum.value };
-      }
-    },
-    interactions: [
-      { type: 'element-active' },
-      { type: 'tooltip' }
-    ],
-  }), [platformDistribution, token]);
+    };
+  }, [platformDistribution]);
 
   const columnConfig = useMemo(() => ({
     data: contentTypeComparison,
@@ -191,9 +198,17 @@ const Dashboard = () => {
         </Space>
         
         <div>
-          <Card title="平台分布" style={{ width: '100%', minHeight: 300 }}>
+          <Card title="平台分布" style={{ width: '100%', minHeight: 380 }}>
             <Spin spinning={loading}>
-              <Pie {...pieConfig} height={250} />
+              {platformDistribution && platformDistribution.length > 0 ? (
+                <div style={{ height: 350, position: 'relative', overflow: 'visible' }}>
+                  <Pie {...pieConfig} height={320} style={{ overflow: 'visible' }} />
+                </div>
+              ) : (
+                <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                  暂无平台分布数据
+                </div>
+              )}
             </Spin>
           </Card>
         </div>
