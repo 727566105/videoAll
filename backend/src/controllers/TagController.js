@@ -1,5 +1,6 @@
 const { AppDataSource } = require('../utils/db');
 const CacheService = require('../services/CacheService');
+const AiTagService = require('../services/AiTagService');
 
 class TagController {
   // 预定义颜色数组
@@ -253,6 +254,9 @@ class TagController {
         }
       }
 
+      // 同步更新 Content.tags JSON 字段
+      await AiTagService.syncContentTags(content_id);
+
       // 清除缓存
       CacheService.del('tags:all');
 
@@ -426,6 +430,16 @@ class TagController {
         }
 
         resultMessage = `成功为 ${content_ids.length} 个内容替换了标签`;
+      }
+
+      // 同步更新所有内容的 Content.tags JSON 字段
+      for (const content_id of content_ids) {
+        try {
+          await AiTagService.syncContentTags(content_id);
+        } catch (syncError) {
+          console.error(`同步内容标签失败 (content_id: ${content_id}):`, syncError);
+          // 继续处理其他内容，不中断整个批量操作
+        }
       }
 
       // 清除缓存

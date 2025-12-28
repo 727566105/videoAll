@@ -615,30 +615,77 @@ B站标签特点：
     const content = aiResponse.content;
 
     if (!content) {
+      logger.warn('AI响应内容为空');
       return { tags: [], error: 'AI响应内容为空' };
     }
 
     try {
       // 尝试直接解析JSON
       const parsed = JSON.parse(content);
-      return parsed;
-    } catch {
-      // 如果不是JSON，尝试提取JSON
+
+      // ✅ 验证新格式（带类型的标签对象）
+      if (parsed.tags && Array.isArray(parsed.tags)) {
+        logger.info('AI响应解析成功 (标准格式 - 带类型标签)');
+        return {
+          tags: parsed.tags.map(t => ({
+            name: t.name,
+            type: t.type || '未知',
+            confidence: t.confidence || 0.8
+          })),
+          reasoning: parsed.reasoning
+        };
+      }
+
+      // 兼容纯数组格式
+      if (Array.isArray(parsed)) {
+        logger.info('AI响应解析成功 (纯数组格式)');
+        return {
+          tags: parsed.map(tagName => ({
+            name: tagName,
+            type: '未知',
+            confidence: 0.8
+          }))
+        };
+      }
+
+      throw new Error('无效的响应格式');
+    } catch (parseError) {
+      logger.warn('JSON解析失败，尝试文本提取:', parseError.message);
+
+      // 尝试提取JSON片段
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
-          return JSON.parse(jsonMatch[0]);
-        } catch {
-          // 继续尝试其他方法
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.tags && Array.isArray(parsed.tags)) {
+            logger.info('从文本中提取到标准格式标签');
+            return {
+              tags: parsed.tags.map(t => ({
+                name: t.name,
+                type: t.type || '未知',
+                confidence: t.confidence || 0.8
+              }))
+            };
+          }
+        } catch (e) {
+          logger.debug('JSON片段解析失败:', e.message);
         }
       }
 
-      // 如果还是无法解析，尝试从文本中提取标签
-      const tags = this.extractTagsFromText(content);
-      return {
-        tags,
-        reasoning: content.substring(0, 200),
-      };
+      // 最后尝试：文本提取作为后备方案
+      const tagMatches = content.match(/["'「『]([\\u4e00-\\u9fa5]{2,4})["'」』]/g);
+      if (tagMatches && tagMatches.length > 0) {
+        const tags = tagMatches.map(m => ({
+          name: m.replace(/["'「『」』]/g, ''),
+          type: '未知',
+          confidence: 0.7
+        }));
+        logger.info('文本提取成功，提取到标签:', tags.map(t => t.name));
+        return { tags };
+      }
+
+      logger.error('AI响应解析完全失败');
+      return { tags: [], error: '无法解析AI响应' };
     }
   }
 
@@ -941,7 +988,7 @@ B站标签特点：
 
     const systemPrompt = this.getSystemPrompt(content.platform);
 
-    let userPrompt = `你是一位专业的社交媒体内容标签生成专家。
+    let userPrompt = `你是一位专业的社交媒体内容分析专家。
 
 【内容信息】
 平台：${this.getPlatformName(content.platform)}
@@ -961,17 +1008,53 @@ B站标签特点：
     }
 
     userPrompt += `\n【任务要求】
-请分析上述内容，生成5-10个精准的标签（2-4个汉字）。
+请分析上述内容，生成3-5个精准的标签（严格控制在2-4个汉字，最多5个标签）。
+
+【标签分类体系】
+1. **主题标签**（必填1-2个）：内容的核心主题
+   - 示例：美食、旅游、美妆、科技、教育、健身、穿搭、宠物、家居
+
+2. **风格标签**（必填1-2个）：内容的表现风格
+   - 示例：教程、测评、干货、种草、vlog、搞笑、励志、剧情
+
+3. **细节标签**（选填0-1个）：具体元素或特征
+   - 示例：平价、高端、新手、进阶、限时、独家、原创
+
+4. **情感标签**（选填0-1个）：情感倾向
+   - 示例：治愈、励志、温馨、震惊、感动
+
+【质量控制规则】
+1. 严格字数限制：必须2-4个汉字，不允许1个字或超过4个字
+2. 避免泛化词：❌推荐、❌热门、❌必看、❌分享、❌精选、❌最新
+3. 优先提取关键词：从标题、描述中提取2-4字的词组
+4. 保证语义明确：
+   - ✅"夏日护肤"（主题+时间）
+   - ✅"新手教程"（对象+风格）
+   - ❌"关于护肤的内容"（句子而非标签）
+   - ❌"分享一个护肤技巧"（过于冗长）
+
+5. 平台特性适配：
+   - 小红书：偏重生活方式（种草、教程、测评、探店）
+   - 抖音：偏重娱乐性（搞笑、挑战、剧情、热点）
+   - B站：偏重专业深度（技术、科普、攻略、分析）
 
 【输出格式】
-请直接以JSON数组格式输出，例如：
-["标签1", "标签2", "标签3", "标签4", "标签5"]
+请直接以JSON格式输出：
+{
+  "tags": [
+    {"name": "美食", "type": "主题", "confidence": 0.95},
+    {"name": "教程", "type": "风格", "confidence": 0.90},
+    {"name": "新手", "type": "细节", "confidence": 0.85}
+  ],
+  "reasoning": "简要说明标签选择理由（50字以内）"
+}
 
-要求：
-1. 标签要精准反映内容主题
-2. 避免过于宽泛的词（如"推荐"、"热门"）
-3. 优先从内容中提取关键词
-4. 结合平台特性（小红书偏向生活方式、抖音偏向娱乐）`;
+字段说明：
+- name: 标签名称（2-4个汉字，必填）
+- type: 标签类型（主题/风格/细节/情感，必填）
+- confidence: 置信度（0.6-1.0之间，必填）
+- reasoning: 标签选择理由（选填）
+`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
