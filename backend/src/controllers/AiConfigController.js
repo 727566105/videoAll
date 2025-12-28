@@ -10,6 +10,8 @@ const logger = require('../utils/logger');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
+const AiConfigValidationService = require('../services/AiConfigValidationService');
+const KeyRotationService = require('../services/KeyRotationService');
 
 class AiConfigController {
   /**
@@ -131,6 +133,16 @@ class AiConfigController {
       const { provider, api_endpoint, api_key, model, timeout, is_enabled, preferences, status } = req.body;
       const aiConfigRepository = AppDataSource.getRepository('AiConfig');
 
+      // 验证配置数据
+      const validation = AiConfigValidationService.validateConfig(req.body);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: '配置验证失败',
+          errors: validation.errors
+        });
+      }
+
       // 验证必填字段
       if (!provider) {
         return res.status(400).json({
@@ -187,6 +199,25 @@ class AiConfigController {
       const { id } = req.params;
       const { provider, api_endpoint, api_key, model, timeout, is_enabled, preferences, status } = req.body;
       const aiConfigRepository = AppDataSource.getRepository('AiConfig');
+
+      // 验证配置数据（如果提供了更新字段）
+      if (provider || api_endpoint || api_key || model || timeout !== undefined || preferences) {
+        const validation = AiConfigValidationService.validateConfig({
+          provider: provider || req.body.provider,
+          api_endpoint: api_endpoint || req.body.api_endpoint,
+          api_key: api_key || req.body.api_key,
+          model: model || req.body.model,
+          timeout: timeout !== undefined ? timeout : req.body.timeout,
+          preferences: preferences || req.body.preferences
+        });
+        if (!validation.valid) {
+          return res.status(400).json({
+            success: false,
+            message: '配置验证失败',
+            errors: validation.errors
+          });
+        }
+      }
 
       const config = await aiConfigRepository.findOne({
         where: { id },
@@ -337,17 +368,27 @@ class AiConfigController {
   static async testAiConnection(provider, apiEndpoint, apiKey, model, timeout) {
     try {
       // 根据提供商类型选择测试方法
-      if (provider === 'ollama') {
-        return await this.testOllamaConnection(apiEndpoint, model, timeout);
-      } else if (provider === 'openai' || provider === 'custom') {
-        return await this.testOpenAiConnection(apiEndpoint, apiKey, model, timeout);
-      } else if (provider === 'anthropic') {
-        return await this.testAnthropicConnection(apiEndpoint, apiKey, model, timeout);
-      } else {
-        return {
-          success: false,
-          message: `不支持的提供商类型: ${provider}`,
-        };
+      switch (provider) {
+        case 'ollama':
+          return await this.testOllamaConnection(apiEndpoint, model, timeout);
+        case 'openai':
+        case 'custom':
+          return await this.testOpenAiConnection(apiEndpoint, apiKey, model, timeout);
+        case 'anthropic':
+          return await this.testAnthropicConnection(apiEndpoint, apiKey, model, timeout);
+        case 'qwen':
+          return await this.testQwenConnection(apiEndpoint, apiKey, model, timeout);
+        case 'wenxin':
+          return await this.testWenxinConnection(apiEndpoint, apiKey, model, timeout);
+        case 'zhipu':
+          return await this.testZhipuConnection(apiEndpoint, apiKey, model, timeout);
+        case 'deepseek':
+          return await this.testDeepSeekConnection(apiEndpoint, apiKey, model, timeout);
+        default:
+          return {
+            success: false,
+            message: `不支持的提供商类型: ${provider}`,
+          };
       }
     } catch (error) {
       return {
@@ -548,6 +589,233 @@ class AiConfigController {
   }
 
   /**
+   * 测试通义千问连接
+   */
+  static async testQwenConnection(apiEndpoint, apiKey, model, timeout) {
+    const defaultEndpoint = 'https://dashscope.aliyuncs.com/api/v1';
+    const endpoint = apiEndpoint || defaultEndpoint;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        message: 'API密钥不能为空',
+      };
+    }
+
+    try {
+      const response = await fetch(`${endpoint}/services/aigc/text-generation/generation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: model || 'qwen-turbo',
+          input: {
+            messages: [{ role: 'user', content: '你好' }]
+          },
+          parameters: {
+            max_tokens: 5,
+          }
+        }),
+        signal: AbortSignal.timeout(timeout || 30000),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: `API响应错误: ${response.status} ${errorData.message || errorData.code || ''}`,
+        };
+      }
+
+      const data = await response.json();
+
+      return {
+        success: true,
+        message: '通义千问API连接成功',
+        details: {
+          model: data.output?.model,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          message: '连接超时',
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 测试文心一言连接
+   */
+  static async testWenxinConnection(apiEndpoint, apiKey, model, timeout) {
+    // 文心一言的API Key格式为: {apikey}.{secret_key}
+    if (!apiKey || !apiKey.includes('.')) {
+      return {
+        success: false,
+        message: '文心一言API密钥格式不正确（应为apikey.secret_key）',
+      };
+    }
+
+    const [accessToken] = apiKey.split('.');
+
+    try {
+      const defaultEndpoint = 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop';
+      const endpoint = apiEndpoint || defaultEndpoint;
+
+      const response = await fetch(`${endpoint}/chat/eb-instant?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: '你好' }],
+        }),
+        signal: AbortSignal.timeout(timeout || 30000),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: `API响应错误: ${errorData.error_msg || response.status}`,
+        };
+      }
+
+      return {
+        success: true,
+        message: '文心一言API连接成功',
+      };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          message: '连接超时',
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 测试智谱AI连接
+   */
+  static async testZhipuConnection(apiEndpoint, apiKey, model, timeout) {
+    const defaultEndpoint = 'https://open.bigmodel.cn/api/paas/v4';
+    const endpoint = apiEndpoint || defaultEndpoint;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        message: 'API密钥不能为空',
+      };
+    }
+
+    try {
+      const response = await fetch(`${endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: model || 'glm-4',
+          messages: [{ role: 'user', content: '你好' }],
+          max_tokens: 5,
+        }),
+        signal: AbortSignal.timeout(timeout || 30000),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: `API响应错误: ${response.status} ${errorData.error?.message || ''}`,
+        };
+      }
+
+      const data = await response.json();
+
+      return {
+        success: true,
+        message: '智谱AI连接成功',
+        details: {
+          model: data.model,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          message: '连接超时',
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 测试DeepSeek连接
+   */
+  static async testDeepSeekConnection(apiEndpoint, apiKey, model, timeout) {
+    const defaultEndpoint = 'https://api.deepseek.com/v1';
+    const endpoint = apiEndpoint || defaultEndpoint;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        message: 'API密钥不能为空',
+      };
+    }
+
+    try {
+      const response = await fetch(`${endpoint}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: model || 'deepseek-chat',
+          messages: [{ role: 'user', content: 'Hello' }],
+          max_tokens: 5,
+        }),
+        signal: AbortSignal.timeout(timeout || 30000),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          message: `API响应错误: ${response.status} ${errorData.error?.message || ''}`,
+        };
+      }
+
+      const data = await response.json();
+
+      return {
+        success: true,
+        message: 'DeepSeek API连接成功',
+        details: {
+          model: data.model,
+        },
+      };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          message: '连接超时',
+        };
+      }
+      throw error;
+    }
+  }
+
+  /**
    * 获取支持的提供商列表
    * GET /api/v1/ai-config/providers
    */
@@ -605,6 +873,61 @@ class AiConfigController {
           requiresEndpoint: true,
           defaultEndpoint: '',
           recommendedModels: [],
+        },
+        {
+          id: 'qwen',
+          name: '通义千问（阿里云）',
+          description: '阿里云大语言模型服务，中文优化',
+          features: ['中文优化', 'API稳定', '性价比高'],
+          requiresApiKey: true,
+          requiresEndpoint: false,
+          defaultEndpoint: 'https://dashscope.aliyuncs.com/api/v1',
+          recommendedModels: [
+            { name: 'qwen-turbo', description: '高性能版本', cost: '低' },
+            { name: 'qwen-plus', description: '平衡版本', cost: '中' },
+            { name: 'qwen-max', description: '最强版本', cost: '高' },
+          ],
+        },
+        {
+          id: 'wenxin',
+          name: '文心一言（百度）',
+          description: '百度大语言模型，知识增强',
+          features: ['中文优化', '知识增强', '多场景'],
+          requiresApiKey: true,
+          requiresEndpoint: false,
+          defaultEndpoint: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop',
+          recommendedModels: [
+            { name: 'ernie-bot-4', description: '最新版本', cost: '高' },
+            { name: 'ernie-bot', description: '标准版本', cost: '中' },
+            { name: 'ernie-bot-turbo', description: '快速版本', cost: '低' },
+          ],
+        },
+        {
+          id: 'zhipu',
+          name: '智谱AI（清言）',
+          description: '智谱AI大语言模型，推理能力强',
+          features: ['推理能力强', '学术性能好', '长文本'],
+          requiresApiKey: true,
+          requiresEndpoint: false,
+          defaultEndpoint: 'https://open.bigmodel.cn/api/paas/v4',
+          recommendedModels: [
+            { name: 'glm-4', description: '最新版本', cost: '中' },
+            { name: 'glm-3-turbo', description: '快速版本', cost: '低' },
+            { name: 'glm-4v', description: '视觉模型', cost: '高' },
+          ],
+        },
+        {
+          id: 'deepseek',
+          name: 'DeepSeek（深度求索）',
+          description: '深度求索开源模型，代码能力强',
+          features: ['开源', '性价比高', '代码能力强'],
+          requiresApiKey: true,
+          requiresEndpoint: false,
+          defaultEndpoint: 'https://api.deepseek.com/v1',
+          recommendedModels: [
+            { name: 'deepseek-chat', description: '对话模型', cost: '低' },
+            { name: 'deepseek-coder', description: '代码模型', cost: '低' },
+          ],
         },
       ];
 
@@ -672,6 +995,46 @@ class AiConfigController {
             max_tokens: 1000,
           },
         },
+        qwen: {
+          provider: 'qwen',
+          api_endpoint: 'https://dashscope.aliyuncs.com/api/v1',
+          model: 'qwen-turbo',
+          timeout: 60000,
+          preferences: {
+            temperature: 0.7,
+            max_tokens: 1000,
+          },
+        },
+        wenxin: {
+          provider: 'wenxin',
+          api_endpoint: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop',
+          model: 'ernie-bot',
+          timeout: 60000,
+          preferences: {
+            temperature: 0.7,
+            max_tokens: 1000,
+          },
+        },
+        zhipu: {
+          provider: 'zhipu',
+          api_endpoint: 'https://open.bigmodel.cn/api/paas/v4',
+          model: 'glm-4',
+          timeout: 60000,
+          preferences: {
+            temperature: 0.7,
+            max_tokens: 1000,
+          },
+        },
+        deepseek: {
+          provider: 'deepseek',
+          api_endpoint: 'https://api.deepseek.com/v1',
+          model: 'deepseek-chat',
+          timeout: 60000,
+          preferences: {
+            temperature: 0.7,
+            max_tokens: 1000,
+          },
+        },
       };
 
       const template = templates[provider];
@@ -693,6 +1056,363 @@ class AiConfigController {
       res.status(500).json({
         success: false,
         message: '获取配置模板失败',
+      });
+    }
+  }
+
+  /**
+   * 获取加密密钥安全状态
+   * GET /api/v1/ai-config/security/key-status
+   */
+  static async getKeyStatus(req, res) {
+    try {
+      const isDefaultKey = KeyRotationService.isUsingDefaultKey();
+      const strengthReport = KeyRotationService.getKeyStrengthReport();
+
+      res.status(200).json({
+        success: true,
+        message: '获取密钥状态成功',
+        data: {
+          using_default_key: isDefaultKey,
+          ...strengthReport
+        }
+      });
+    } catch (error) {
+      logger.error('获取密钥状态失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取密钥状态失败'
+      });
+    }
+  }
+
+  /**
+   * 轮换加密密钥
+   * POST /api/v1/ai-config/security/rotate-key
+   */
+  static async rotateKey(req, res) {
+    try {
+      const { old_key, new_key } = req.body;
+
+      if (!old_key || !new_key) {
+        return res.status(400).json({
+          success: false,
+          message: '请提供旧密钥和新密钥'
+        });
+      }
+
+      // 验证新密钥格式
+      const keyValidation = KeyRotationService.validateKey(new_key);
+      if (!keyValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: '新密钥格式不正确',
+          errors: keyValidation.errors
+        });
+      }
+
+      const result = await KeyRotationService.rotateEncryptionKey(old_key, new_key);
+
+      res.status(200).json({
+        success: result.success,
+        message: result.message,
+        data: result.details
+      });
+    } catch (error) {
+      logger.error('密钥轮换失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '密钥轮换失败',
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * 导入配置
+   * POST /api/v1/ai-config/import
+   */
+  static async importConfig(req, res) {
+    try {
+      const configData = req.body;
+
+      // 验证配置
+      const validation = AiConfigValidationService.validateConfig(configData);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: '配置验证失败',
+          errors: validation.errors
+        });
+      }
+
+      const aiConfigRepository = AppDataSource.getRepository('AiConfig');
+
+      // 加密API密钥
+      let apiKeyEncrypted = null;
+      if (configData.api_key) {
+        apiKeyEncrypted = EncryptionService.encrypt(configData.api_key);
+      }
+
+      // 创建配置
+      const config = aiConfigRepository.create({
+        provider: configData.provider,
+        api_endpoint: configData.api_endpoint || null,
+        api_key_encrypted: apiKeyEncrypted,
+        model: configData.model || null,
+        timeout: configData.timeout || 60000,
+        is_enabled: configData.is_enabled !== undefined ? configData.is_enabled : false,
+        preferences: configData.preferences || null,
+        status: configData.status || 'active',
+        imported_at: new Date()
+      });
+
+      await aiConfigRepository.save(config);
+
+      logger.info(`AI配置导入成功: ${configData.provider}`);
+
+      res.status(201).json({
+        success: true,
+        message: '配置导入成功',
+        data: {
+          ...config,
+          api_key_encrypted: undefined
+        }
+      });
+    } catch (error) {
+      logger.error('导入配置失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '导入配置失败'
+      });
+    }
+  }
+
+  /**
+   * 导出配置
+   * POST /api/v1/ai-config/export/:id
+   */
+  static async exportConfig(req, res) {
+    try {
+      const { id } = req.params;
+      const aiConfigRepository = AppDataSource.getRepository('AiConfig');
+
+      const config = await aiConfigRepository.findOne({
+        where: { id }
+      });
+
+      if (!config) {
+        return res.status(404).json({
+          success: false,
+          message: '配置不存在'
+        });
+      }
+
+      // 准备导出数据（不包含加密的密钥）
+      const exportData = {
+        provider: config.provider,
+        api_endpoint: config.api_endpoint,
+        model: config.model,
+        timeout: config.timeout,
+        is_enabled: config.is_enabled,
+        priority: config.priority,
+        preferences: config.preferences,
+        status: config.status,
+        exported_at: new Date().toISOString()
+      };
+
+      // 更新导出时间
+      config.exported_at = new Date();
+      await aiConfigRepository.save(config);
+
+      res.status(200).json({
+        success: true,
+        message: '导出成功',
+        data: exportData
+      });
+    } catch (error) {
+      logger.error('导出配置失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '导出配置失败'
+      });
+    }
+  }
+
+  /**
+   * 批量更新配置
+   * PUT /api/v1/ai-config/batch
+   */
+  static async batchUpdate(req, res) {
+    try {
+      const { config_ids, is_enabled, status } = req.body;
+
+      if (!config_ids || !Array.isArray(config_ids) || config_ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: '请选择要操作的配置'
+        });
+      }
+
+      const aiConfigRepository = AppDataSource.getRepository('AiConfig');
+
+      // 构建更新数据
+      const updateData = {};
+      if (is_enabled !== undefined) updateData.is_enabled = is_enabled;
+      if (status !== undefined) updateData.status = status;
+
+      // 执行批量更新
+      const result = await aiConfigRepository
+        .createQueryBuilder()
+        .update('AiConfig')
+        .set(updateData)
+        .where('id IN (:...ids)', { ids: config_ids })
+        .execute();
+
+      logger.info(`批量更新${result.affected || 0}个AI配置成功`);
+
+      res.status(200).json({
+        success: true,
+        message: `成功更新${result.affected || 0}个配置`,
+        data: { affected: result.affected || 0 }
+      });
+    } catch (error) {
+      logger.error('批量更新失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '批量更新失败'
+      });
+    }
+  }
+
+  /**
+   * 批量删除配置
+   * DELETE /api/v1/ai-config/batch
+   */
+  static async batchDelete(req, res) {
+    try {
+      const { config_ids } = req.body;
+
+      if (!config_ids || !Array.isArray(config_ids) || config_ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: '请选择要删除的配置'
+        });
+      }
+
+      const aiConfigRepository = AppDataSource.getRepository('AiConfig');
+
+      const result = await aiConfigRepository
+        .createQueryBuilder()
+        .delete()
+        .from('AiConfig')
+        .where('id IN (:...ids)', { ids: config_ids })
+        .execute();
+
+      logger.info(`批量删除${result.affected || 0}个AI配置成功`);
+
+      res.status(200).json({
+        success: true,
+        message: `成功删除${result.affected || 0}个配置`,
+        data: { affected: result.affected || 0 }
+      });
+    } catch (error) {
+      logger.error('批量删除失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '批量删除失败'
+      });
+    }
+  }
+
+  /**
+   * 复制配置
+   * POST /api/v1/ai-config/:id/copy
+   */
+  static async copyConfig(req, res) {
+    try {
+      const { id } = req.params;
+      const aiConfigRepository = AppDataSource.getRepository('AiConfig');
+
+      const originalConfig = await aiConfigRepository.findOne({
+        where: { id }
+      });
+
+      if (!originalConfig) {
+        return res.status(404).json({
+          success: false,
+          message: '配置不存在'
+        });
+      }
+
+      // 获取下一个优先级
+      const configs = await aiConfigRepository.find({
+        order: { priority: 'DESC' },
+        take: 1
+      });
+      const nextPriority = configs.length > 0 ? configs[0].priority + 1 : 0;
+
+      // 创建副本（不包含API密钥）
+      const copyConfig = aiConfigRepository.create({
+        provider: originalConfig.provider,
+        api_endpoint: originalConfig.api_endpoint,
+        api_key_encrypted: null, // 不复制密钥
+        model: originalConfig.model,
+        timeout: originalConfig.timeout,
+        is_enabled: false, // 默认禁用
+        priority: nextPriority,
+        preferences: originalConfig.preferences,
+        status: 'inactive'
+      });
+
+      const saved = await aiConfigRepository.save(copyConfig);
+
+      logger.info(`AI配置复制成功: ${id} -> ${saved.id}`);
+
+      res.status(201).json({
+        success: true,
+        message: '配置复制成功',
+        data: {
+          ...saved,
+          api_key_encrypted: undefined
+        }
+      });
+    } catch (error) {
+      logger.error('复制配置失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '复制配置失败'
+      });
+    }
+  }
+
+  /**
+   * 获取测试历史
+   * GET /api/v1/ai-config/:id/test-history
+   */
+  static async getTestHistory(req, res) {
+    try {
+      const { id } = req.params;
+      const limit = parseInt(req.query.limit) || 20;
+
+      const testHistoryRepository = AppDataSource.getRepository('AiTestHistory');
+
+      const history = await testHistoryRepository.find({
+        where: { ai_config_id: id },
+        order: { created_at: 'DESC' },
+        take: limit
+      });
+
+      res.status(200).json({
+        success: true,
+        message: '获取测试历史成功',
+        data: history
+      });
+    } catch (error) {
+      logger.error('获取测试历史失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取测试历史失败'
       });
     }
   }

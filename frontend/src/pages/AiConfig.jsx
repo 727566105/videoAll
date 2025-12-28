@@ -12,6 +12,7 @@ import {
   Space,
   Form,
   Input,
+  AutoComplete,
   Button,
   Table,
   Modal,
@@ -28,7 +29,8 @@ import {
   Col,
   Collapse,
   Descriptions,
-  Badge
+  Badge,
+  Upload
 } from 'antd';
 import {
   RobotOutlined,
@@ -43,7 +45,11 @@ import {
   ThunderboltOutlined,
   CloudServerOutlined,
   DesktopOutlined,
-  KeyOutlined
+  KeyOutlined,
+  CopyOutlined,
+  HistoryOutlined,
+  DownloadOutlined,
+  UploadOutlined
 } from '@ant-design/icons';
 import apiService from '../services/api';
 
@@ -63,12 +69,16 @@ const AiConfig = () => {
   const [currentConfig, setCurrentConfig] = useState(null);
   const [modalTitle, setModalTitle] = useState('添加AI配置');
   const [ OllamaInstallVisible, setOllamaInstallVisible] = useState(false);
+  const [keySecurityStatus, setKeySecurityStatus] = useState(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [testHistoryVisible, setTestHistoryVisible] = useState(false);
+  const [testHistory, setTestHistory] = useState([]);
 
   // 获取AI配置列表
   const fetchConfigs = async () => {
     try {
       setLoading(true);
-      const response = await apiService.get('/ai-config');
+      const response = await apiService.aiConfig.getConfigs();
       if (response.success) {
         setConfigs(response.data || []);
       }
@@ -83,7 +93,7 @@ const AiConfig = () => {
   // 获取提供商列表
   const fetchProviders = async () => {
     try {
-      const response = await apiService.get('/ai-config/meta/providers');
+      const response = await apiService.aiConfig.getProviders();
       if (response.success) {
         setProviders(response.data || []);
       }
@@ -92,10 +102,24 @@ const AiConfig = () => {
     }
   };
 
+  // 检查密钥安全状态
+  const checkKeySecurity = async () => {
+    try {
+      const response = await apiService.aiConfig.getKeyStatus();
+      if (response.success) {
+        setKeySecurityStatus(response.data);
+      }
+    } catch (error) {
+      console.error('获取密钥安全状态失败:', error);
+      // 非管理员用户可能没有权限访问这个API
+    }
+  };
+
   // 初始化
   useEffect(() => {
     fetchConfigs();
     fetchProviders();
+    checkKeySecurity();
   }, []);
 
   // 获取提供商信息
@@ -199,7 +223,7 @@ const AiConfig = () => {
     {
       title: '操作',
       key: 'action',
-      width: 250,
+      width: 300,
       render: (_, record) => (
         <Space size="small" wrap>
           <Button
@@ -210,7 +234,9 @@ const AiConfig = () => {
             {record.is_enabled ? '禁用' : '启用'}
           </Button>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          <Button type="link" icon={<CopyOutlined />} onClick={() => handleCopyConfig(record)}>复制</Button>
           <Button type="link" icon={<ThunderboltOutlined />} onClick={() => handleTest(record)}>测试</Button>
+          <Button type="link" icon={<HistoryOutlined />} onClick={() => handleViewTestHistory(record.id)}>历史</Button>
           <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
         </Space>
       )
@@ -259,7 +285,7 @@ const AiConfig = () => {
         cancelText: '取消',
       });
 
-      const response = await apiService.delete(`/ai-config/${id}`);
+      const response = await apiService.aiConfig.deleteConfig(id);
       if (response.success) {
         message.success('删除成功');
         fetchConfigs();
@@ -277,7 +303,7 @@ const AiConfig = () => {
   // 切换启用状态
   const handleToggleEnable = async (config) => {
     try {
-      const response = await apiService.put(`/ai-config/${config.id}`, {
+      const response = await apiService.aiConfig.updateConfig(config.id, {
         is_enabled: !config.is_enabled
       });
 
@@ -299,7 +325,7 @@ const AiConfig = () => {
       setTestingConnection(true);
       message.loading('正在测试连接...', 0);
 
-      const response = await apiService.post(`/ai-config/${config.id}/test`);
+      const response = await apiService.aiConfig.testConnection(config.id);
 
       message.destroy();
 
@@ -331,23 +357,189 @@ const AiConfig = () => {
         preferences: values.preferences ? JSON.parse(values.preferences) : null
       };
 
+      console.log('准备保存配置:', data);
+
       let response;
       if (currentConfig) {
-        response = await apiService.put(`/ai-config/${currentConfig.id}`, data);
+        response = await apiService.aiConfig.updateConfig(currentConfig.id, data);
       } else {
-        response = await apiService.post('/ai-config', data);
+        response = await apiService.aiConfig.createConfig(data);
       }
+
+      console.log('后端响应:', response);
 
       if (response.success) {
         message.success(currentConfig ? '更新成功' : '添加成功');
         setModalVisible(false);
         fetchConfigs();
       } else {
-        message.error(response.message || '保存失败');
+        // 显示详细的错误信息
+        console.log('保存失败，错误信息:', response);
+        if (response.errors && Array.isArray(response.errors)) {
+          Modal.error({
+            title: '配置验证失败',
+            content: (
+              <div>
+                <p>请检查以下错误：</p>
+                <ul>
+                  {response.errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            ),
+          });
+        } else {
+          message.error(response.message || '保存失败');
+        }
       }
     } catch (error) {
       console.error('保存配置失败:', error);
       message.error(error.message || '保存失败');
+    }
+  };
+
+  // 导出配置
+  const handleExportConfig = async (config) => {
+    try {
+      const response = await apiService.aiConfig.exportConfig(config.id);
+
+      if (response.success) {
+        const exportData = response.data;
+
+        // 创建并下载文件
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+          type: 'application/json'
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ai-config-${config.provider}-${config.id}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        message.success('配置导出成功');
+      } else {
+        message.error(response.message || '导出失败');
+      }
+    } catch (error) {
+      console.error('导出配置失败:', error);
+      message.error(error.message || '导出失败');
+    }
+  };
+
+  // 导入配置
+  const handleImportConfig = async (file) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const config = JSON.parse(e.target.result);
+
+          // 发送到后端验证并导入
+          const response = await apiService.aiConfig.importConfig(config);
+
+          if (response.success) {
+            message.success('配置导入成功');
+            fetchConfigs();
+          } else {
+            message.error(response.message || '配置导入失败');
+          }
+        } catch (parseError) {
+          message.error('配置文件格式不正确');
+        }
+      };
+      reader.readAsText(file);
+    } catch (error) {
+      console.error('导入配置失败:', error);
+      message.error('导入失败');
+    }
+
+    return false; // 阻止自动上传
+  };
+
+  // 批量启用/禁用
+  const handleBatchToggleEnable = async (isEnabled) => {
+    try {
+      const response = await apiService.aiConfig.batchUpdate({
+        config_ids: selectedRowKeys,
+        is_enabled: isEnabled
+      });
+
+      if (response.success) {
+        message.success(`批量${isEnabled ? '启用' : '禁用'}成功`);
+        setSelectedRowKeys([]);
+        fetchConfigs();
+      } else {
+        message.error(response.message || '批量操作失败');
+      }
+    } catch (error) {
+      console.error('批量操作失败:', error);
+      message.error(error.message || '批量操作失败');
+    }
+  };
+
+  // 批量删除
+  const handleBatchDelete = async () => {
+    try {
+      await Modal.confirm({
+        title: '确认批量删除',
+        content: `确定要删除选中的${selectedRowKeys.length}个配置吗？此操作不可恢复。`,
+        okText: '确认删除',
+        okType: 'danger',
+        cancelText: '取消',
+      });
+
+      const response = await apiService.aiConfig.batchDelete({
+        data: { config_ids: selectedRowKeys }
+      });
+
+      if (response.success) {
+        message.success('批量删除成功');
+        setSelectedRowKeys([]);
+        fetchConfigs();
+      } else {
+        message.error(response.message || '批量删除失败');
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        console.error('批量删除失败:', error);
+        message.error(error.message || '批量删除失败');
+      }
+    }
+  };
+
+  // 复制配置
+  const handleCopyConfig = async (config) => {
+    try {
+      const response = await apiService.aiConfig.copyConfig(config.id);
+
+      if (response.success) {
+        message.success('配置复制成功，请重新设置API密钥');
+        fetchConfigs();
+      } else {
+        message.error(response.message || '配置复制失败');
+      }
+    } catch (error) {
+      console.error('配置复制失败:', error);
+      message.error(error.message || '配置复制失败');
+    }
+  };
+
+  // 查看测试历史
+  const handleViewTestHistory = async (configId) => {
+    try {
+      const response = await apiService.aiConfig.getTestHistory(configId);
+
+      if (response.success) {
+        setTestHistory(response.data || []);
+        setTestHistoryVisible(true);
+      } else {
+        message.error(response.message || '获取测试历史失败');
+      }
+    } catch (error) {
+      console.error('获取测试历史失败:', error);
+      message.error(error.message || '获取测试历史失败');
     }
   };
 
@@ -381,6 +573,30 @@ const AiConfig = () => {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      {/* 密钥安全警告 */}
+      {keySecurityStatus?.using_default_key && (
+        <Alert
+          type="error"
+          showIcon
+          banner
+          closable
+          message="安全警告"
+          description={
+            <Space direction="vertical" size={0}>
+              <Text>检测到系统正在使用默认加密密钥，这可能导致API密钥泄露风险。</Text>
+              <Text strong>请立即采取以下措施：</Text>
+              <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
+                <li>在后端 .env 文件中设置 ENCRYPTION_KEY 环境变量</li>
+                <li>使用强密钥（建议32字符以上，包含大小写字母、数字和特殊字符）</li>
+                <li>重启后端服务使配置生效</li>
+              </ul>
+              <Text type="secondary">生成密钥命令: openssl rand -hex 32</Text>
+            </Space>
+          }
+          style={{ marginBottom: 0 }}
+        />
+      )}
+
       {/* 当前配置状态 */}
       <Card title={<Space><RobotOutlined /> AI配置状态</Space>}>
         {enabledConfig ? (
@@ -423,9 +639,42 @@ const AiConfig = () => {
       <Card
         title={<Space><SettingOutlined /> AI配置列表</Space>}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            添加配置
-          </Button>
+          <Space>
+            {selectedRowKeys.length > 0 && (
+              <>
+                <Button
+                  icon={<CheckOutlined />}
+                  onClick={() => handleBatchToggleEnable(true)}
+                >
+                  批量启用
+                </Button>
+                <Button
+                  icon={<CloseOutlined />}
+                  onClick={() => handleBatchToggleEnable(false)}
+                >
+                  批量禁用
+                </Button>
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleBatchDelete}
+                >
+                  批量删除
+                </Button>
+                <Divider type="vertical" />
+              </>
+            )}
+            <Upload
+              accept=".json"
+              showUploadList={false}
+              beforeUpload={handleImportConfig}
+            >
+              <Button icon={<UploadOutlined />}>导入配置</Button>
+            </Upload>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              添加配置
+            </Button>
+          </Space>
         }
       >
         <Table
@@ -433,6 +682,10 @@ const AiConfig = () => {
           columns={columns}
           rowKey="id"
           loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (selectedKeys) => setSelectedRowKeys(selectedKeys),
+          }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -556,12 +809,11 @@ const AiConfig = () => {
               <Form.Item
                 name="model"
                 label="模型名称"
-                tooltip="选择推荐模型或手动输入"
+                tooltip="可以从推荐列表选择，或直接手动输入模型名称"
               >
-                <Select
-                  placeholder="选择模型"
+                <AutoComplete
+                  placeholder="选择或输入模型名称"
                   allowClear
-                  showSearch
                   options={getModelOptions()}
                   filterOption={(input, option) =>
                     (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
@@ -734,6 +986,58 @@ curl http://localhost:11434/api/generate -d '{
               )
             }
           ]}
+        />
+      </Modal>
+
+      {/* 测试历史Modal */}
+      <Modal
+        title="测试历史"
+        open={testHistoryVisible}
+        onCancel={() => setTestHistoryVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setTestHistoryVisible(false)}>
+            关闭
+          </Button>
+        ]}
+        width={800}
+      >
+        <Table
+          dataSource={testHistory}
+          columns={[
+            {
+              title: '测试时间',
+              dataIndex: 'created_at',
+              render: (t) => new Date(t).toLocaleString(),
+              width: 180
+            },
+            {
+              title: '结果',
+              dataIndex: 'test_result',
+              render: (r) => (
+                <Tag color={r ? 'success' : 'error'}>
+                  {r ? '成功' : '失败'}
+                </Tag>
+              ),
+              width: 80
+            },
+            {
+              title: '响应时间',
+              dataIndex: 'response_time',
+              render: (t) => t ? `${t}ms` : '-',
+              width: 100
+            },
+            {
+              title: '错误信息',
+              dataIndex: 'error_message',
+              ellipsis: true
+            }
+          ]}
+          rowKey="id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true
+          }}
+          size="small"
         />
       </Modal>
     </Space>

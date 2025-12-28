@@ -91,6 +91,24 @@ module.exports = new EntitySchema({
       nullable: true,
       comment: '最后测试连接时间'
     },
+    // 配置导入时间
+    imported_at: {
+      type: 'timestamp',
+      nullable: true,
+      comment: '配置导入时间'
+    },
+    // 配置最后导出时间
+    exported_at: {
+      type: 'timestamp',
+      nullable: true,
+      comment: '配置最后导出时间'
+    },
+    // API密钥最后轮换时间
+    last_rotation_at: {
+      type: 'timestamp',
+      nullable: true,
+      comment: 'API密钥最后轮换时间'
+    },
   },
   indices: [
     {

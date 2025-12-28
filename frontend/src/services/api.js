@@ -232,13 +232,28 @@ const apiService = {
     deleteConfig: (id) => api.delete(`/ai-config/${id}`),
     testConnection: (id) => api.post(`/ai-config/${id}/test`),
     getProviders: () => api.get('/ai-config/meta/providers'),
-    getConfigTemplate: (provider) => api.get(`/ai-config/meta/templates/${provider}`)
+    getConfigTemplate: (provider) => api.get(`/ai-config/meta/templates/${provider}`),
+    getKeyStatus: () => api.get('/ai-config/security/key-status'),
+    rotateKey: () => api.post('/ai-config/security/rotate-key'),
+    copyConfig: (id) => api.post(`/ai-config/${id}/copy`),
+    getTestHistory: (id) => api.get(`/ai-config/${id}/test-history`),
+    importConfig: (data) => api.post('/ai-config/import', data),
+    exportConfig: (id) => api.post(`/ai-config/export/${id}`),
+    batchUpdate: (data) => api.put('/ai-config/batch', data),
+    batchDelete: (data) => api.delete('/ai-config/batch', { data })
   },
 
   // AI content analysis
   aiAnalysis: {
-    // 分析单个内容
-    analyzeContent: (id) => api.post(`/content/${id}/ai-analyze`),
+    // 分析内容（统一入口 - 包含标签和描述）
+    analyzeContent: (id, options = {}) => {
+      const { tags = true, description = true, ocr = true } = options;
+      return api.post(`/content/${id}/ai-analyze`, {
+        tags,
+        description,
+        ocr
+      });
+    },
     // 获取内容AI状态
     getContentStatus: (id) => api.get(`/content/${id}/ai-status`),
     // 确认AI标签

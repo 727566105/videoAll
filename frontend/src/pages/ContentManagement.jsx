@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
 import BatchTagModal from '../components/BatchTagModal';
+import DescriptionModal from '../components/DescriptionModal';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -37,6 +38,9 @@ const ContentManagement = () => {
   const [aiAnalysisStatus, setAiAnalysisStatus] = useState(null);
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiLoading, setAiLoading] = useState({});
+  // AI description modal state
+  const [descriptionModalVisible, setDescriptionModalVisible] = useState(false);
+  const [currentDescription, setCurrentDescription] = useState(null);
 
   // Columns definition
   const columns = [
@@ -88,11 +92,20 @@ const ContentManagement = () => {
           )}
           {/* 描述预览 - 显示前50个字符 */}
           {record.description && (
-            <span style={{ fontSize: 12, color: token?.colorTextQuaternary }}>
-              {record.description.length > 50
-                ? record.description.substring(0, 50) + '...'
-                : record.description}
-            </span>
+            <Tooltip title={record.description}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: token?.colorTextQuaternary,
+                  cursor: 'pointer'
+                }}
+                onClick={() => showDescriptionModal(record)}
+              >
+                {record.description.length > 50
+                  ? record.description.substring(0, 50) + '...'
+                  : record.description}
+              </span>
+            </Tooltip>
           )}
         </Space>
       )
@@ -146,20 +159,22 @@ const ContentManagement = () => {
     {
       title: 'AI分析',
       key: 'ai_status',
-      width: 100,
+      width: 120,
       fixed: 'right',
       render: (_, record) => {
         // 检查是否有AI生成的标签
         const hasAiTags = record.tags?.some(t => t.is_ai_generated);
+        // 检查是否有描述（描述长度>100视为有效描述）
+        const hasDescription = record.description && record.description.length > 100;
         const isAnalyzing = aiLoading[record.id];
 
         return (
           <Space orientation="vertical" size={0}>
-            {hasAiTags ? (
-              <Badge status="success" text="已分析" />
-            ) : (
-              <Badge status="default" text="未分析" />
-            )}
+            <div>
+              {hasAiTags && <Badge status="success" text="标签" />}
+              {hasDescription && <Badge status="processing" text="描述" />}
+              {!hasAiTags && !hasDescription && <Badge status="default" text="未分析" />}
+            </div>
             <Button
               type="link"
               size="small"
@@ -168,7 +183,7 @@ const ContentManagement = () => {
               onClick={() => handleAiAnalyze(record.id)}
               style={{ padding: 0 }}
             >
-              {hasAiTags ? '重新分析' : 'AI分析'}
+              {hasAiTags || hasDescription ? '重新分析' : 'AI分析'}
             </Button>
           </Space>
         );
@@ -567,35 +582,46 @@ const ContentManagement = () => {
     }
   };
 
-  // Handle AI analysis for a single content
+  // Handle AI analysis for a single content (unified - tags + description)
   const handleAiAnalyze = async (contentId) => {
     try {
       setAiLoading(prev => ({ ...prev, [contentId]: true }));
-      message.loading('AI分析中...', 0);
+      message.loading({ content: 'AI分析中（OCR→标签→描述）...', key: 'aiAnalyze', duration: 0 });
 
-      const response = await apiService.aiAnalysis.analyzeContent(contentId);
+      const result = await apiService.aiAnalysis.analyzeContent(contentId, {
+        tags: true,
+        description: true,
+        ocr: true
+      });
 
       message.destroy();
 
-      if (response.success) {
-        message.success(`AI分析成功，生成${response.data?.tags?.length || 0}个标签`);
-        // Refresh content list to show new AI tags
-        getContentList();
+      // 显示详细的阶段性结果
+      const { stages, tags, description } = result.data;
+      const successCount = Object.values(stages).filter(s => s.success).length;
+      const totalCount = Object.keys(stages).length;
 
-        // If this is the preview content, update it
-        if (previewContent?.id === contentId) {
-          setPreviewContent(prev => ({
-            ...prev,
-            tags: [...(prev.tags || []), ...(response.data?.tags || [])]
-          }));
-        }
+      if (successCount === totalCount) {
+        message.success(`AI分析完成：标签${tags?.length || 0}个，描述已生成`);
       } else {
-        message.warning(response.message || 'AI分析失败');
+        message.warning(`AI分析部分完成（${successCount}/${totalCount}成功）`);
+      }
+
+      // 刷新列表
+      getContentList();
+
+      // 如果有描述，显示预览
+      if (description) {
+        showDescriptionModal({
+          description,
+          ocr_results: result.data.ocr_results || [],
+          stages
+        });
       }
     } catch (error) {
       message.destroy();
-      console.error('AI analysis error:', error);
-      message.error(error.message || 'AI分析失败，请检查AI配置');
+      console.error('AI分析失败:', error);
+      message.error(error.message || 'AI分析失败');
     } finally {
       setAiLoading(prev => ({ ...prev, [contentId]: false }));
     }
@@ -611,6 +637,19 @@ const ContentManagement = () => {
     } catch (error) {
       console.error('获取AI状态失败:', error);
     }
+  };
+
+  // Show description modal with analysis result
+  const showDescriptionModal = (data) => {
+    setCurrentDescription({
+      description: data.description || '暂无描述',
+      ocr_results: data.ocr_results || [],
+      execution_time: data.stages ? Object.values(data.stages).reduce((sum, s) => sum + s.duration, 0) : 0,
+      ai_model: '未知',
+      image_count: data.ocr_results?.length || 0,
+      stages: data.stages
+    });
+    setDescriptionModalVisible(true);
   };
 
   // Load content list on component mount and when pagination changes
@@ -1077,6 +1116,13 @@ const ContentManagement = () => {
         onCancel={() => setBatchTagModalVisible(false)}
         onConfirm={handleBatchTagOperation}
         selectedCount={selectedRowKeys.length}
+      />
+
+      {/* AI Description Modal */}
+      <DescriptionModal
+        visible={descriptionModalVisible}
+        data={currentDescription}
+        onClose={() => setDescriptionModalVisible(false)}
       />
     </Space>
   );

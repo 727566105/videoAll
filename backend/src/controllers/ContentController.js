@@ -3,6 +3,7 @@ const ParseService = require('../services/ParseService');
 const MediaDownloadService = require('../services/MediaDownloadService');
 const AiAnalysisService = require('../services/AiAnalysisService');
 const AiTagService = require('../services/AiTagService');
+const OcrService = require('../services/OcrService');
 const fs = require('fs-extra');
 const path = require('path');
 const CacheService = require('../services/CacheService');
@@ -1289,60 +1290,51 @@ class ContentController {
   }
 
   /**
-   * 分析单个内容的AI标签
+   * AI分析内容（统一入口 - 包含OCR、标签和描述）
    * POST /api/v1/content/:id/ai-analyze
    */
   static async analyzeContentAi(req, res) {
     try {
       const { id } = req.params;
-      const contentRepository = AppDataSource.getRepository('Content');
+      const { tags = true, description = true, ocr = true } = req.body;
 
-      // 获取内容
-      const content = await contentRepository.findOne({ where: { id } });
-
-      if (!content) {
-        return res.status(404).json({
+      // 参数验证
+      if (!id) {
+        return res.status(400).json({
           success: false,
-          message: '内容不存在',
+          message: '内容ID不能为空'
         });
       }
 
-      // 构建解析数据
-      const parsedData = {
-        title: content.title,
-        description: content.description,
-        platform: content.platform,
-        author: content.author,
-        original_tags: content.tags ? JSON.parse(content.tags) : [],
-      };
+      // 调用统一分析方法
+      const result = await AiAnalysisService.analyzeUnified(id, {
+        generateTags: tags,
+        generateDescription: description,
+        enableOcr: ocr
+      });
 
-      // 执行AI分析
-      const result = await AiAnalysisService.analyzeWithRetry(parsedData, id, 3);
+      // 计算总耗时
+      const totalDuration = Object.values(result.stages).reduce((sum, s) => sum + s.duration, 0);
 
-      if (result.success) {
-        // 自动添加高置信度标签
-        await AiTagService.autoAddTags(id, result.tags);
-
-        res.status(200).json({
-          success: true,
-          message: 'AI分析成功',
-          data: {
-            tags: result.tags,
-            confidence_scores: result.confidence_scores,
-            execution_time: result.execution_time,
-          },
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: result.message,
-        });
-      }
+      res.status(200).json({
+        success: true,
+        message: 'AI分析完成',
+        data: {
+          tags: result.tags,
+          description: result.description,
+          ocr_results: result.ocrResults,
+          stages: result.stages,
+          total_duration: totalDuration
+        }
+      });
     } catch (error) {
-      console.error('AI分析失败:', error);
+      logger.error('AI分析失败:', error);
       res.status(500).json({
         success: false,
-        message: `AI分析失败: ${error.message}`,
+        message: 'AI分析失败',
+        error: {
+          details: error.message
+        }
       });
     }
   }

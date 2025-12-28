@@ -8,6 +8,8 @@
 const { AppDataSource } = require('../utils/db');
 const EncryptionService = require('../utils/encryption');
 const logger = require('../utils/logger');
+const OcrService = require('./OcrService');
+const AiTagService = require('./AiTagService');
 
 class AiAnalysisService {
   // 缓存配置，避免频繁查询数据库
@@ -300,6 +302,8 @@ B站标签特点：
         return this.callOpenAiApi(prompt, api_endpoint, api_key, model, timeout, preferences);
       case 'anthropic':
         return this.callAnthropicApi(prompt, api_endpoint, api_key, model, timeout, preferences);
+      case 'deepseek':
+        return this.callDeepSeekApi(prompt, api_endpoint, api_key, model, timeout, preferences);
       case 'custom':
         return this.callCustomApi(prompt, api_endpoint, api_key, model, timeout, preferences);
       default:
@@ -541,6 +545,68 @@ B站标签特点：
   }
 
   /**
+   * 调用DeepSeek API生成标签
+   * @param {string} prompt - 提示词
+   * @param {string} endpoint - API端点
+   * @param {string} apiKey - API密钥
+   * @param {string} model - 模型名称
+   * @param {number} timeout - 超时时间
+   * @param {object} preferences - 偏好设置
+   * @returns {Promise<object>}
+   */
+  static async callDeepSeekApi(prompt, endpoint, apiKey, model, timeout, preferences) {
+    const defaultEndpoint = 'https://api.deepseek.com/v1';
+    const endpointUrl = endpoint || defaultEndpoint;
+    const modelName = model || 'deepseek-chat';
+
+    let messages;
+    try {
+      messages = JSON.parse(prompt);
+    } catch {
+      messages = [{ role: 'user', content: prompt }];
+    }
+
+    const temperature = preferences?.temperature ?? 0.7;
+    const maxTokens = preferences?.max_tokens ?? 1000;
+
+    try {
+      const response = await fetch(`${endpointUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages,
+          temperature,
+          max_tokens: maxTokens,
+        }),
+        signal: AbortSignal.timeout(timeout || 60000),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error?.message || `DeepSeek API错误: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      return {
+        provider: 'deepseek',
+        model: data.model,
+        content: data.choices?.[0]?.message?.content || '',
+        usage: data.usage,
+      };
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('DeepSeek API调用超时');
+      }
+      throw error;
+    }
+  }
+
+  /**
    * 解析AI响应
    * @param {object} aiResponse - AI API响应
    * @returns {object}
@@ -715,6 +781,469 @@ B站标签特点：
    */
   static sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // ==================== 统一分析方法（OCR + 标签 + 描述）====================
+
+  /**
+   * 统一AI分析 - 一次性完成OCR提取、标签生成和描述生成
+   * @param {string} contentId - 内容ID
+   * @param {object} options - 选项
+   * @returns {Promise<object>} 分析结果
+   */
+  static async analyzeUnified(contentId, options = {}) {
+    const {
+      generateTags = true,
+      generateDescription = true,
+      enableOcr = true
+    } = options;
+
+    const result = {
+      tags: null,
+      description: null,
+      ocrResults: [],
+      stages: {
+        ocr: { success: false, duration: 0 },
+        tags: { success: false, duration: 0 },
+        description: { success: false, duration: 0 }
+      }
+    };
+
+    try {
+      // 1. 获取内容
+      const content = await this.getContentById(contentId);
+      if (!content) {
+        throw new Error('内容不存在');
+      }
+
+      // 2. OCR提取（如果启用且有图片）
+      if (enableOcr && generateDescription) {
+        const ocrStart = Date.now();
+        try {
+          result.ocrResults = await OcrService.extractFromContent(content);
+          result.stages.ocr = {
+            success: true,
+            duration: Date.now() - ocrStart
+          };
+          logger.info(`OCR提取完成: ${result.ocrResults.length}张图片`);
+        } catch (error) {
+          logger.warn('OCR提取失败:', error);
+          result.stages.ocr = {
+            success: false,
+            duration: Date.now() - ocrStart,
+            error: error.message
+          };
+        }
+      }
+
+      // 3. 生成标签
+      if (generateTags) {
+        const tagsStart = Date.now();
+        try {
+          // 构建包含OCR文字的Prompt
+          const prompt = this.buildTagPrompt(content, result.ocrResults);
+          const aiConfig = await this.getActiveConfig();
+
+          if (!aiConfig) {
+            throw new Error('未找到启用的AI配置');
+          }
+
+          const aiResponse = await this.callAiApi(prompt, aiConfig);
+          result.tags = this.parseAiResponse(aiResponse).tags || [];
+
+          // 保存标签到数据库
+          if (result.tags.length > 0) {
+            await this.saveTags(contentId, result.tags);
+          }
+
+          result.stages.tags = {
+            success: true,
+            duration: Date.now() - tagsStart
+          };
+          logger.info(`标签生成完成: ${result.tags.length}个标签`);
+        } catch (error) {
+          logger.error('标签生成失败:', error);
+          result.stages.tags = {
+            success: false,
+            duration: Date.now() - tagsStart,
+            error: error.message
+          };
+        }
+      }
+
+      // 4. 生成描述
+      if (generateDescription) {
+        const descStart = Date.now();
+        try {
+          const prompt = this.buildDescriptionPrompt(content, result.ocrResults);
+          const aiConfig = await this.getActiveConfig();
+
+          if (!aiConfig) {
+            throw new Error('未找到启用的AI配置');
+          }
+
+          const description = await this.callAiForDescription(prompt, aiConfig);
+
+          // 保存描述到Content表
+          await this.updateContentDescription(contentId, description);
+          result.description = description;
+
+          result.stages.description = {
+            success: true,
+            duration: Date.now() - descStart
+          };
+          logger.info(`描述生成完成: ${description.length}字符`);
+        } catch (error) {
+          logger.error('描述生成失败:', error);
+          result.stages.description = {
+            success: false,
+            duration: Date.now() - descStart,
+            error: error.message
+          };
+        }
+      }
+
+      // 5. 保存统一分析历史
+      await this.saveUnifiedAnalysisHistory(contentId, result);
+
+      return result;
+    } catch (error) {
+      logger.error('统一分析失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 构建包含OCR文字的标签生成Prompt
+   * @param {object} content - 内容对象
+   * @param {array} ocrResults - OCR结果数组
+   * @returns {string} Prompt
+   */
+  static buildTagPrompt(content, ocrResults = []) {
+    const ocrTexts = ocrResults
+      .filter(r => r.text && r.text.length > 0)
+      .map(r => r.text)
+      .join('\n');
+
+    const systemPrompt = this.getSystemPrompt(content.platform);
+
+    let userPrompt = `你是一位专业的社交媒体内容标签生成专家。
+
+【内容信息】
+平台：${this.getPlatformName(content.platform)}
+标题：${content.title || '无标题'}
+作者：${content.author || '未知'}
+`;
+
+    if (content.description) {
+      const truncatedDesc = content.description.length > 500
+        ? content.description.substring(0, 500) + '...'
+        : content.description;
+      userPrompt += `描述：${truncatedDesc}\n`;
+    }
+
+    if (ocrTexts) {
+      userPrompt += `\n【图片中提取的文字】\n${ocrTexts}\n`;
+    }
+
+    userPrompt += `\n【任务要求】
+请分析上述内容，生成5-10个精准的标签（2-4个汉字）。
+
+【输出格式】
+请直接以JSON数组格式输出，例如：
+["标签1", "标签2", "标签3", "标签4", "标签5"]
+
+要求：
+1. 标签要精准反映内容主题
+2. 避免过于宽泛的词（如"推荐"、"热门"）
+3. 优先从内容中提取关键词
+4. 结合平台特性（小红书偏向生活方式、抖音偏向娱乐）`;
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ];
+
+    return JSON.stringify(messages);
+  }
+
+  /**
+   * 构建描述生成Prompt（包含OCR文字）
+   * @param {object} content - 内容对象
+   * @param {array} ocrResults - OCR结果数组
+   * @returns {string} Prompt
+   */
+  static buildDescriptionPrompt(content, ocrResults = []) {
+    const ocrTexts = ocrResults
+      .filter(r => r.text && r.text.length > 0)
+      .map(r => r.text)
+      .join('\n\n');
+
+    return `你是一位专业的社交媒体内容分析专家。
+
+【内容信息】
+平台：${this.getPlatformName(content.platform)}
+媒体类型：${content.media_type === 'video' ? '视频' : '图片'}
+作者：${content.author || '未知'}
+
+【标题】
+${content.title || '无标题'}
+
+【原始描述】
+${content.description || '（无原始描述）'}
+
+${ocrTexts ? `【图片中提取的文字】\n${ocrTexts}` : ''}
+
+【任务要求】
+1. 综合分析标题、描述和图片文字
+2. 提取内容的主题和核心信息点
+3. 识别内容中的视觉元素和关键文字
+4. 分析内容传达的情感、氛围和价值
+5. 生成200-500字的全面描述
+
+【输出要求】
+- 使用简洁流畅的中文段落
+- 直接输出描述文本，无需JSON格式或其他标记
+- 描述应包含：内容主题、视觉元素、关键文字、情感氛围
+- 基于实际信息分析，避免编造内容
+- 如果信息不足，就如实描述已知部分
+
+请生成内容描述：`;
+  }
+
+  /**
+   * 调用AI生成描述（返回纯文本，非JSON）
+   * @param {string} prompt - Prompt
+   * @param {object} aiConfig - AI配置
+   * @returns {Promise<string>} 生成的描述
+   */
+  static async callAiForDescription(prompt, aiConfig) {
+    const { provider, api_endpoint, api_key, model, timeout, preferences } = aiConfig;
+
+    switch (provider) {
+      case 'ollama':
+        return await this.callOllamaForDescription(prompt, api_endpoint, model, timeout, preferences);
+      case 'openai':
+      case 'custom':
+        return await this.callOpenAIForDescription(prompt, api_endpoint, api_key, model, timeout, preferences, provider);
+      case 'anthropic':
+        return await this.callAnthropicForDescription(prompt, api_endpoint, api_key, model, timeout, preferences);
+      case 'deepseek':
+        return await this.callDeepSeekForDescription(prompt, api_endpoint, api_key, model, timeout, preferences);
+      default:
+        throw new Error(`不支持的提供商: ${provider}`);
+    }
+  }
+
+  /**
+   * 调用Ollama生成描述
+   */
+  static async callOllamaForDescription(prompt, endpoint, model, timeout, preferences) {
+    const endpointUrl = endpoint || 'http://localhost:11434';
+    const modelName = model || 'qwen2.5:7b';
+
+    const response = await fetch(`${endpointUrl}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: modelName,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: preferences?.temperature ?? 0.7,
+          top_p: preferences?.top_p ?? 0.9,
+          num_predict: preferences?.max_tokens ?? 2000
+        }
+      }),
+      signal: AbortSignal.timeout(timeout || 90000)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama API错误: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.response.trim();
+  }
+
+  /**
+   * 调用OpenAI兼容API生成描述
+   */
+  static async callOpenAIForDescription(prompt, endpoint, apiKey, model, timeout, preferences, providerName) {
+    const defaultEndpoint = providerName === 'openai'
+      ? 'https://api.openai.com/v1'
+      : endpoint;
+
+    const endpointUrl = endpoint || defaultEndpoint;
+    const modelName = model || 'gpt-3.5-turbo';
+
+    const response = await fetch(`${endpointUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: preferences?.temperature ?? 0.7,
+        max_tokens: preferences?.max_tokens ?? 2000
+      }),
+      signal: AbortSignal.timeout(timeout || 90000)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`OpenAI API错误: ${errorData.error?.message || response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  }
+
+  /**
+   * 调用Anthropic API生成描述
+   */
+  static async callAnthropicForDescription(prompt, endpoint, apiKey, model, timeout, preferences) {
+    const endpointUrl = endpoint || 'https://api.anthropic.com';
+    const modelName = model || 'claude-3-haiku-20250307';
+
+    const response = await fetch(`${endpointUrl}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: modelName,
+        max_tokens: preferences?.max_tokens ?? 2000,
+        messages: [{ role: 'user', content: prompt }]
+      }),
+      signal: AbortSignal.timeout(timeout || 90000)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Anthropic API错误: ${errorData.error?.message || response.status}`);
+    }
+
+    const data = await response.json();
+    return data.content[0].text.trim();
+  }
+
+  /**
+   * 调用DeepSeek API生成描述
+   * @param {string} prompt - 提示词
+   * @param {string} endpoint - API端点
+   * @param {string} apiKey - API密钥
+   * @param {string} model - 模型名称
+   * @param {number} timeout - 超时时间
+   * @param {object} preferences - 偏好设置
+   * @returns {Promise<string>} 生成的描述
+   */
+  static async callDeepSeekForDescription(prompt, endpoint, apiKey, model, timeout, preferences) {
+    const endpointUrl = endpoint || 'https://api.deepseek.com/v1';
+    const modelName = model || 'deepseek-chat';
+
+    const response = await fetch(`${endpointUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: preferences?.temperature ?? 0.7,
+        max_tokens: preferences?.max_tokens ?? 2000
+      }),
+      signal: AbortSignal.timeout(timeout || 90000)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`DeepSeek API错误: ${errorData.error?.message || response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  }
+
+  /**
+   * 更新Content的description字段
+   * @param {string} contentId - 内容ID
+   * @param {string} description - 描述文本
+   */
+  static async updateContentDescription(contentId, description) {
+    const contentRepository = AppDataSource.getRepository('Content');
+    await contentRepository.update(contentId, { description });
+    logger.info('描述已更新到数据库', { contentId, length: description.length });
+  }
+
+  /**
+   * 保存标签到数据库
+   * @param {string} contentId - 内容ID
+   * @param {array} tags - 标签数组
+   */
+  static async saveTags(contentId, tags) {
+    try {
+      // 使用AiTagService自动添加标签
+      await AiTagService.autoAddTags(contentId, tags);
+      logger.info('标签已保存', { contentId, count: tags.length });
+    } catch (error) {
+      logger.error('保存标签失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取内容对象
+   * @param {string} contentId - 内容ID
+   * @returns {Promise<object|null>} Content对象
+   */
+  static async getContentById(contentId) {
+    try {
+      const contentRepository = AppDataSource.getRepository('Content');
+      const content = await contentRepository.findOne({ where: { id: contentId } });
+      return content;
+    } catch (error) {
+      logger.error('获取内容失败:', { contentId, error: error.message });
+      return null;
+    }
+  }
+
+  /**
+   * 保存统一分析历史
+   * @param {string} contentId - 内容ID
+   * @param {object} result - 分析结果
+   */
+  static async saveUnifiedAnalysisHistory(contentId, result) {
+    try {
+      const resultRepository = AppDataSource.getRepository('AiAnalysisResult');
+      const aiConfig = await this.getActiveConfig();
+
+      await resultRepository.save({
+        content_id: contentId,
+        ai_config_id: aiConfig?.id,
+        analysis_type: 'unified_analysis',
+        analysis_result: {
+          tags: result.tags,
+          description: result.description,
+          ocr_results: result.ocrResults,
+          stages: result.stages
+        },
+        generated_tags: result.tags || [],
+        status: 'completed',
+        execution_time: Object.values(result.stages).reduce((sum, s) => sum + s.duration, 0),
+        completed_at: new Date()
+      });
+
+      logger.debug('统一分析历史已保存', { contentId });
+    } catch (error) {
+      logger.warn('保存统一分析历史失败:', error);
+      // 不抛出错误，历史记录失败不影响主流程
+    }
   }
 }
 
