@@ -95,7 +95,8 @@ const DownloadSettings = () => {
   if (loading) {
     return (
       <div style={{ padding: '24px', textAlign: 'center' }}>
-        <Spin size="large" tip="加载中..." />
+        <Spin size="large" />
+        <div style={{ marginTop: '12px', fontSize: '14px', color: '#999' }}>加载中...</div>
       </div>
     );
   }
@@ -113,11 +114,11 @@ const DownloadSettings = () => {
           </Text>
         </div>
 
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           {/* 调试信息 */}
           {debugInfo && (
             <Alert
-              message="调试信息"
+              title="调试信息"
               description={debugInfo}
               type="warning"
               closable
@@ -146,7 +147,7 @@ const DownloadSettings = () => {
 
           {/* 提示信息 */}
           <Alert
-            message="提示"
+            title="提示"
             description={
               <ul style={{ margin: 0, paddingLeft: '20px' }}>
                 <li>画质设置仅对哔哩哔哩平台生效</li>

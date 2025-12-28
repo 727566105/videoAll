@@ -54,7 +54,8 @@ const TagFilter = ({ value, onChange }) => {
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '20px' }}>
-        <Spin size="small" tip="加载标签..." />
+        <Spin size="small" />
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>加载标签...</div>
       </div>
     );
   }

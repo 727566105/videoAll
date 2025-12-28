@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress, Dropdown, Checkbox } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined, SettingOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined, SettingOutlined, UserOutlined, GlobalOutlined, VideoCameraOutlined, ClockCircleOutlined, LinkOutlined, LikeOutlined, StarOutlined, MessageOutlined, ShareAltOutlined, EyeOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
 import BatchTagModal from '../components/BatchTagModal';
@@ -147,19 +147,22 @@ const ContentManagement = () => {
         dataIndex: 'title',
         key: 'title',
         ellipsis: true,
-        width: 250,
+        width: 280,
         render: (title, record) => (
           <Space orientation="vertical" size={0}>
             <span>{title}</span>
             {record.is_missing && <Tag color="error">已消失</Tag>}
             {/* 显示标签 */}
             {record.tags && record.tags.length > 0 && (
-              <div style={{ marginTop: 4 }}>
-                {record.tags.map(tag => (
-                  <Tag key={tag.id} color={tag.color} style={{ marginBottom: 2 }}>
+              <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {record.tags.slice(0, 5).map(tag => (
+                  <Tag key={tag.id} color={tag.color}>
                     {tag.name}
                   </Tag>
                 ))}
+                {record.tags.length > 5 && (
+                  <Tag>+{record.tags.length - 5}</Tag>
+                )}
               </div>
             )}
           </Space>
@@ -168,37 +171,36 @@ const ContentManagement = () => {
       {
         title: '作者',
         dataIndex: 'author',
-        key: 'author'
+        key: 'author',
+        width: 120
       },
       {
         title: '平台',
         dataIndex: 'platform',
-        key: 'platform'
+        key: 'platform',
+        width: 100
       },
       {
         title: '类型',
         dataIndex: 'media_type',
         key: 'media_type',
-        render: (type, record) => {
-          if (type === 'video') {
-            const videoCount = record.all_videos && record.all_videos.length > 0 ? record.all_videos.length : 1;
-            return `视频 (${videoCount}个)`;
-          } else {
-            const imageCount = record.all_images && record.all_images.length > 0 ? record.all_images.length : 1;
-            return type === 'image' && imageCount > 1 ? `图片 (${imageCount}张)` : '图片';
-          }
+        width: 120,
+        render: (type) => {
+          return type === 'video' ? '视频' : '图片';
         }
       },
       {
         title: '来源',
         dataIndex: 'source_type',
         key: 'source_type',
+        width: 120,
         render: (type) => type === 1 ? '单链接解析' : '监控任务'
       },
       {
         title: '采集时间',
         dataIndex: 'created_at',
         key: 'created_at',
+        width: 160,
         render: (time) => {
           const date = new Date(time);
           return date.toLocaleString('zh-CN', {
@@ -905,30 +907,114 @@ const ContentManagement = () => {
         )}
 
         {/* 基本信息 */}
-        <div style={{ padding: '12px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
-          <h4 style={{ marginTop: 0 }}>ℹ️ 基本信息</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 16px' }}>
-            <div><span style={{ color: token?.colorTextTertiary }}>作者:</span> {previewContent.author || '未知'}</div>
-            <div><span style={{ color: token?.colorTextTertiary }}>平台:</span> {previewContent.platform || '未知'}</div>
-            <div><span style={{ color: token?.colorTextTertiary }}>类型:</span> {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
-            <div><span style={{ color: token?.colorTextTertiary }}>来源:</span> {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
-            <div><span style={{ color: token?.colorTextTertiary }}>采集时间:</span> {new Date(previewContent.created_at).toLocaleString()}</div>
+        <div style={{
+          padding: '16px',
+          backgroundColor: token?.colorBgContainer,
+          border: `1px solid ${token?.colorBorderSecondary}`,
+          borderRadius: token?.borderRadiusLG || 8,
+          boxShadow: token?.boxShadow,
+          marginBottom: '16px'
+        }}>
+          <h4 style={{
+            marginTop: 0,
+            fontSize: '15px',
+            fontWeight: 600,
+            color: token?.colorText,
+            marginBottom: '12px',
+            paddingBottom: '8px',
+            borderBottom: `1px solid ${token?.colorBorderSecondary}`,
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            ℹ️ 核心信息
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px 24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '13px', color: token?.colorTextTertiary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <UserOutlined style={{ fontSize: '14px' }} />
+                <span>作者</span>
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: token?.colorText }}>
+                {previewContent.author || '未知'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '13px', color: token?.colorTextTertiary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <GlobalOutlined style={{ fontSize: '14px' }} />
+                <span>平台</span>
+              </div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: token?.colorText }}>
+                {previewContent.platform || '未知'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '13px', color: token?.colorTextTertiary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <VideoCameraOutlined style={{ fontSize: '14px' }} />
+                <span>类型</span>
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: token?.colorText }}>
+                {previewContent.media_type === 'video' ? '视频' : '图片'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '13px', color: token?.colorTextTertiary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <DownloadOutlined style={{ fontSize: '14px' }} />
+                <span>来源</span>
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: token?.colorText }}>
+                {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '13px', color: token?.colorTextTertiary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ClockCircleOutlined style={{ fontSize: '14px' }} />
+                <span>采集时间</span>
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: token?.colorText }}>
+                {new Date(previewContent.created_at).toLocaleString()}
+              </div>
+            </div>
             {previewContent.publish_time && (
-              <div><span style={{ color: token?.colorTextTertiary }}>发布时间:</span> {new Date(previewContent.publish_time).toLocaleString()}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '13px', color: token?.colorTextTertiary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ClockCircleOutlined style={{ fontSize: '14px' }} />
+                  <span>发布时间</span>
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: token?.colorText }}>
+                  {new Date(previewContent.publish_time).toLocaleString()}
+                </div>
+              </div>
             )}
           </div>
         </div>
 
         {/* 内容描述（AI生成的描述）*/}
         {previewContent.description && (
-          <div style={{ padding: '12px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '8px' }}>
-            <h4 style={{ marginTop: 0, marginBottom: '8px', color: token?.colorSuccess }}>📝 内容描述</h4>
+          <div style={{
+            padding: '16px',
+            backgroundColor: `${token?.colorSuccess}15`,
+            border: `1px solid ${token?.colorSuccess}40`,
+            borderRadius: token?.borderRadiusLG || 8,
+            marginBottom: '16px'
+          }}>
+            <h4 style={{
+              marginTop: 0,
+              marginBottom: '12px',
+              fontSize: '15px',
+              fontWeight: 600,
+              color: token?.colorSuccess,
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              📝 内容描述
+            </h4>
             <p style={{
               margin: 0,
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
-              lineHeight: '1.6',
-              color: '#262626'
+              lineHeight: '1.8',
+              color: token?.colorText,
+              fontSize: '14px'
             }}>
               {previewContent.description}
             </p>
@@ -939,40 +1025,174 @@ const ContentManagement = () => {
         {(previewContent.like_count || previewContent.collect_count ||
           previewContent.comment_count || previewContent.share_count ||
           previewContent.view_count) && (
-          <div style={{ padding: '12px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
-            <h4 style={{ marginTop: 0 }}>📊 互动数据</h4>
-            <Space size="large" wrap>
+          <div style={{
+            padding: '16px',
+            backgroundColor: token?.colorFillSecondary,
+            borderRadius: token?.borderRadiusLG || 8,
+            border: `1px solid ${token?.colorBorderSecondary}`,
+            marginBottom: '16px'
+          }}>
+            <h4 style={{
+              marginTop: 0,
+              fontSize: '15px',
+              fontWeight: 600,
+              color: token?.colorText,
+              marginBottom: '12px'
+            }}>
+              📊 互动数据
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '12px'
+            }}>
               {previewContent.like_count !== undefined && previewContent.like_count !== null && (
-                <Space>
-                  <span>👍 点赞:</span>
-                  <strong>{previewContent.like_count.toLocaleString()}</strong>
-                </Space>
+                <div
+                  style={{
+                    backgroundColor: token?.colorBgContainer,
+                    padding: '12px',
+                    borderRadius: token?.borderRadius || 6,
+                    border: `1px solid ${token?.colorBorder}`,
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'default'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = token?.colorPrimary;
+                    e.currentTarget.style.boxShadow = token?.boxShadow;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <LikeOutlined style={{ fontSize: '24px', marginBottom: '8px', display: 'block', color: token?.colorTextSecondary }} />
+                  <div style={{ fontSize: '13px', color: token?.colorTextSecondary, marginBottom: '6px' }}>点赞</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: token?.colorText, fontFamily: 'SF Mono, Monaco, Consolas, monospace' }}>
+                    {previewContent.like_count.toLocaleString()}
+                  </div>
+                </div>
               )}
               {previewContent.collect_count !== undefined && previewContent.collect_count !== null && (
-                <Space>
-                  <span>⭐ 收藏:</span>
-                  <strong>{previewContent.collect_count.toLocaleString()}</strong>
-                </Space>
+                <div
+                  style={{
+                    backgroundColor: token?.colorBgContainer,
+                    padding: '12px',
+                    borderRadius: token?.borderRadius || 6,
+                    border: `1px solid ${token?.colorBorder}`,
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'default'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = token?.colorPrimary;
+                    e.currentTarget.style.boxShadow = token?.boxShadow;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <StarOutlined style={{ fontSize: '24px', marginBottom: '8px', display: 'block', color: token?.colorTextSecondary }} />
+                  <div style={{ fontSize: '13px', color: token?.colorTextSecondary, marginBottom: '6px' }}>收藏</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: token?.colorText, fontFamily: 'SF Mono, Monaco, Consolas, monospace' }}>
+                    {previewContent.collect_count.toLocaleString()}
+                  </div>
+                </div>
               )}
               {previewContent.comment_count !== undefined && previewContent.comment_count !== null && (
-                <Space>
-                  <span>💬 评论:</span>
-                  <strong>{previewContent.comment_count.toLocaleString()}</strong>
-                </Space>
+                <div
+                  style={{
+                    backgroundColor: token?.colorBgContainer,
+                    padding: '12px',
+                    borderRadius: token?.borderRadius || 6,
+                    border: `1px solid ${token?.colorBorder}`,
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'default'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = token?.colorPrimary;
+                    e.currentTarget.style.boxShadow = token?.boxShadow;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <MessageOutlined style={{ fontSize: '24px', marginBottom: '8px', display: 'block', color: token?.colorTextSecondary }} />
+                  <div style={{ fontSize: '13px', color: token?.colorTextSecondary, marginBottom: '6px' }}>评论</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: token?.colorText, fontFamily: 'SF Mono, Monaco, Consolas, monospace' }}>
+                    {previewContent.comment_count.toLocaleString()}
+                  </div>
+                </div>
               )}
               {previewContent.share_count !== undefined && previewContent.share_count !== null && (
-                <Space>
-                  <span>🔄 分享:</span>
-                  <strong>{previewContent.share_count.toLocaleString()}</strong>
-                </Space>
+                <div
+                  style={{
+                    backgroundColor: token?.colorBgContainer,
+                    padding: '12px',
+                    borderRadius: token?.borderRadius || 6,
+                    border: `1px solid ${token?.colorBorder}`,
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'default'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = token?.colorPrimary;
+                    e.currentTarget.style.boxShadow = token?.boxShadow;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <ShareAltOutlined style={{ fontSize: '24px', marginBottom: '8px', display: 'block', color: token?.colorTextSecondary }} />
+                  <div style={{ fontSize: '13px', color: token?.colorTextSecondary, marginBottom: '6px' }}>分享</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: token?.colorText, fontFamily: 'SF Mono, Monaco, Consolas, monospace' }}>
+                    {previewContent.share_count.toLocaleString()}
+                  </div>
+                </div>
               )}
               {previewContent.view_count !== undefined && previewContent.view_count !== null && (
-                <Space>
-                  <span>👁️ 浏览:</span>
-                  <strong>{previewContent.view_count.toLocaleString()}</strong>
-                </Space>
+                <div
+                  style={{
+                    backgroundColor: token?.colorBgContainer,
+                    padding: '12px',
+                    borderRadius: token?.borderRadius || 6,
+                    border: `1px solid ${token?.colorBorder}`,
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'default',
+                    gridColumn: 'span 1'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = token?.colorPrimary;
+                    e.currentTarget.style.boxShadow = token?.boxShadow;
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <EyeOutlined style={{ fontSize: '24px', marginBottom: '8px', display: 'block', color: token?.colorTextSecondary }} />
+                  <div style={{ fontSize: '13px', color: token?.colorTextSecondary, marginBottom: '6px' }}>浏览</div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: token?.colorText, fontFamily: 'SF Mono, Monaco, Consolas, monospace' }}>
+                    {previewContent.view_count.toLocaleString()}
+                  </div>
+                </div>
               )}
-            </Space>
+            </div>
           </div>
         )}
 
@@ -980,36 +1200,70 @@ const ContentManagement = () => {
         {((previewContent.tags && previewContent.tags.length > 0) ||
           (aiAnalysisStatusMap[previewContent?.id]?.ai_tags &&
            aiAnalysisStatusMap[previewContent?.id]?.ai_tags.length > 0)) && (
-          <div style={{ padding: '12px', backgroundColor: `${token?.colorPrimary}10`, border: `1px solid ${token?.colorPrimary}`, borderRadius: '8px' }}>
-            <h4 style={{ marginTop: 0, color: token?.colorPrimary }}>🏷️ 标签</h4>
-            <Space size="small" wrap>
+          <div style={{
+            padding: '16px',
+            backgroundColor: `${token?.colorPrimary}10`,
+            border: `1px solid ${token?.colorPrimary}40`,
+            borderRadius: token?.borderRadiusLG || 8,
+            marginBottom: '16px'
+          }}>
+            <h4 style={{
+              marginTop: 0,
+              marginBottom: '12px',
+              fontSize: '15px',
+              fontWeight: 600,
+              color: token?.colorPrimary
+            }}>
+              🏷️ 标签管理
+            </h4>
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
               {/* 手动添加的标签 */}
               {previewContent.tags && previewContent.tags.length > 0 && (
-                <>
-                  {previewContent.tags.map((tag) => (
-                    <Tag
-                      key={tag.id}
-                      color={tag.color}
-                      style={{ marginBottom: 4 }}
-                    >
-                      {tag.name}
-                    </Tag>
-                  ))}
-                </>
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{
+                    fontSize: '13px',
+                    color: token?.colorTextSecondary,
+                    marginBottom: '8px',
+                    fontWeight: 500
+                  }}>
+                    手动标签
+                  </div>
+                  <Space size="small" wrap>
+                    {previewContent.tags.map((tag) => (
+                      <Tag key={tag.id} color={tag.color}>
+                        {tag.name}
+                      </Tag>
+                    ))}
+                  </Space>
+                </div>
               )}
               {/* AI生成的标签 */}
               {aiAnalysisStatusMap[previewContent?.id]?.ai_tags &&
                aiAnalysisStatusMap[previewContent?.id]?.ai_tags.length > 0 && (
                 <>
-                  {aiAnalysisStatusMap[previewContent?.id].ai_tags.map((tag) => (
-                    <Tag
-                      key={`ai-${tag}`}
-                      color="blue"
-                      style={{ marginBottom: 4 }}
-                    >
-                      🤖 {tag}
-                    </Tag>
-                  ))}
+                  {previewContent.tags && previewContent.tags.length > 0 && (
+                    <div style={{
+                      borderTop: `1px solid ${token?.colorBorderSecondary}`,
+                      margin: '8px 0'
+                    }} />
+                  )}
+                  <div>
+                    <div style={{
+                      fontSize: '13px',
+                      color: token?.colorTextSecondary,
+                      marginBottom: '8px',
+                      fontWeight: 500
+                    }}>
+                      🤖 AI标签
+                    </div>
+                    <Space size="small" wrap>
+                      {aiAnalysisStatusMap[previewContent?.id].ai_tags.map((tag) => (
+                        <Tag key={`ai-${tag}`} color="blue">
+                          {tag}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </div>
                 </>
               )}
             </Space>
@@ -1018,9 +1272,32 @@ const ContentManagement = () => {
 
         {/* 原始链接 */}
         {previewContent.source_url && (
-          <div>
-            <h4>🔗 原始链接</h4>
-            <a href={previewContent.source_url} target="_blank" rel="noopener noreferrer">
+          <div style={{
+            padding: '12px 0',
+            borderTop: `1px solid ${token?.colorBorderSecondary}`,
+            marginTop: '16px'
+          }}>
+            <a
+              href={previewContent.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: token?.colorLink,
+                textDecoration: 'none',
+                fontSize: '13px',
+                wordBreak: 'break-all',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.textDecoration = 'underline';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.textDecoration = 'none';
+              }}
+            >
+              <LinkOutlined />
               {previewContent.source_url}
             </a>
           </div>
@@ -1348,7 +1625,7 @@ const ContentManagement = () => {
             <Dropdown
               trigger={['click']}
               placement="bottomRight"
-              dropdownRender={() => columnSettingsMenu}
+              popupRender={() => columnSettingsMenu}
             >
               <Button icon={<SettingOutlined />}>
                 列设置

@@ -120,7 +120,7 @@ const BilibiliQualitySettings = ({ settings, onUpdate, loading = false }) => {
 
       {/* 自动降级开关 */}
       <Form.Item label="自动降级">
-        <Space direction="vertical" size="small">
+        <Space orientation="vertical" size="small">
           <Switch
             checked={autoFallback}
             onChange={setAutoFallback}

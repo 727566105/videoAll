@@ -539,8 +539,7 @@ const ContentParsing = () => {
       
       setProgress(100);
       setParsedResult(parsedData);
-      message.success('解析成功！');
-      
+
       // Automatically save to database and local file system after successful parsing
       try {
         console.log('开始自动保存到内容库...');
@@ -552,16 +551,19 @@ const ContentParsing = () => {
           task_id: null
         });
 
-        message.success('内容已自动保存到数据库和本地文件系统');
+        // 合并后的成功提醒
+        message.success('解析成功并已保存到内容管理');
         console.log('自动保存成功');
       } catch (saveError) {
         console.error('Auto save error:', saveError);
 
         // 区分409（内容已存在）和其他错误
         if (saveError.message && saveError.message.includes('内容已存在')) {
-          message.info(saveError.message);
+          // 合并后的内容已存在提醒
+          message.info('解析成功，内容已存在，无需重复保存');
         } else {
-          message.warning(`自动保存失败：${saveError.message}，但解析成功`);
+          // 合并后的保存失败提醒
+          message.warning(`解析成功，但保存失败：${saveError.message}`);
         }
       }
       
@@ -910,8 +912,8 @@ const ContentParsing = () => {
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>{previewTitle}</span>
-            <Button 
-              type="link" 
+            <Button
+              type="link"
               icon={<DownloadOutlined />}
               onClick={() => {
                 // Extract original URL from proxy URL
@@ -930,7 +932,7 @@ const ContentParsing = () => {
         onCancel={handlePreviewCancel}
         width="80%"
         style={{ top: 20 }}
-        bodyStyle={{ padding: 0, textAlign: 'center', backgroundColor: token?.colorFillTertiary }}
+        styles={{ body: { padding: 0, textAlign: 'center', backgroundColor: token?.colorFillTertiary } }}
       >
         <Image
           src={previewImage}

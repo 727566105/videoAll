@@ -3,6 +3,13 @@ import { Table, Button, Modal, Form, Input, Radio, Space, Tag, Popconfirm, messa
 import { TagsOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 
+// 预设颜色
+const PREDEFINED_COLORS = [
+  '#f50', '#faad14', '#52c41a', '#1890ff',
+  '#722ed1', '#eb2f96', '#fa8c16', '#a0d911',
+  '#13c2c2', '#2f54eb', '#f759ab', '#9254de'
+];
+
 const TagManagement = () => {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,18 +17,12 @@ const TagManagement = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [editingTag, setEditingTag] = useState(null);
   const [searchText, setSearchText] = useState('');
+  const [selectedColor, setSelectedColor] = useState(PREDEFINED_COLORS[0]);
   const [form] = Form.useForm();
 
   // 获取当前用户信息
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const isAdmin = currentUser?.role === 'admin';
-
-  // 预设颜色
-  const PREDEFINED_COLORS = [
-    '#f50', '#faad14', '#52c41a', '#1890ff',
-    '#722ed1', '#eb2f96', '#fa8c16', '#a0d911',
-    '#13c2c2', '#2f54eb', '#f759ab', '#9254de'
-  ];
 
   // 获取所有标签
   const fetchTags = async () => {
@@ -47,14 +48,16 @@ const TagManagement = () => {
   // 打开创建标签 Modal
   const handleCreate = () => {
     setEditingTag(null);
+    setSelectedColor(PREDEFINED_COLORS[0]);
     form.resetFields();
-    form.setFieldsValue({ color: PREDEFINED_COLORS[0] }); // 默认选择第一个颜色
+    form.setFieldsValue({ color: PREDEFINED_COLORS[0] });
     setModalVisible(true);
   };
 
   // 打开编辑标签 Modal
   const handleEdit = (tag) => {
     setEditingTag(tag);
+    setSelectedColor(tag.color);
     form.setFieldsValue({
       name: tag.name,
       color: tag.color,
@@ -203,7 +206,7 @@ const TagManagement = () => {
               title="标签总数"
               value={totalTags}
               suffix="个"
-              valueStyle={{ color: '#1890ff' }}
+              styles={{ content: { color: '#1890ff' } }}
             />
           </Card>
         </Col>
@@ -213,7 +216,7 @@ const TagManagement = () => {
               title="总使用次数"
               value={totalUsage}
               suffix="次"
-              valueStyle={{ color: '#52c41a' }}
+              styles={{ content: { color: '#52c41a' } }}
             />
           </Card>
         </Col>
@@ -223,7 +226,7 @@ const TagManagement = () => {
               title="平均使用率"
               value={avgUsage}
               suffix="次/标签"
-              valueStyle={{ color: '#faad14' }}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -282,15 +285,17 @@ const TagManagement = () => {
           </Space>
         }
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+        }}
         footer={null}
-        destroyOnClose
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          preserve={false}
+          initialValues={{ color: PREDEFINED_COLORS[0] }}
         >
           <Form.Item
             label="标签名称"
@@ -313,7 +318,10 @@ const TagManagement = () => {
             name="color"
             rules={[{ required: true, message: '请选择颜色' }]}
           >
-            <Radio.Group>
+            <Radio.Group
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value)}
+            >
               <Space wrap>
                 {PREDEFINED_COLORS.map(color => (
                   <Radio.Button
@@ -330,7 +338,7 @@ const TagManagement = () => {
                       minWidth: 'auto'
                     }}
                   >
-                    {form.getFieldValue('color') === color && '✓'}
+                    {selectedColor === color && '✓'}
                   </Radio.Button>
                 ))}
               </Space>
