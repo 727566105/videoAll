@@ -162,23 +162,6 @@ const ContentManagement = () => {
                 ))}
               </div>
             )}
-            {/* 描述预览 - 显示前50个字符 */}
-            {record.description && (
-              <Tooltip title={record.description}>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: token?.colorTextQuaternary,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => showDescriptionModal(record)}
-                >
-                  {record.description.length > 50
-                    ? record.description.substring(0, 50) + '...'
-                    : record.description}
-                </span>
-              </Tooltip>
-            )}
           </Space>
         )
       },
@@ -232,39 +215,6 @@ const ContentManagement = () => {
 
     // 固定列（始终显示）
     const fixedColumns = [
-      {
-        title: 'AI分析',
-        key: 'ai_status',
-        width: 120,
-        fixed: 'right',
-        render: (_, record) => {
-          // 检查是否有AI生成的标签
-          const hasAiTags = record.tags?.some(t => t.is_ai_generated);
-          // 检查是否有描述（描述长度>100视为有效描述）
-          const hasDescription = record.description && record.description.length > 100;
-          const isAnalyzing = aiLoading[record.id];
-
-          return (
-            <Space orientation="vertical" size={0}>
-              <div>
-                {hasAiTags && <Badge status="success" text="标签" />}
-                {hasDescription && <Badge status="processing" text="描述" />}
-                {!hasAiTags && !hasDescription && <Badge status="default" text="未分析" />}
-              </div>
-              <Button
-                type="link"
-                size="small"
-                icon={<RobotOutlined />}
-                loading={isAnalyzing}
-                onClick={() => handleAiAnalyze(record.id)}
-                style={{ padding: 0 }}
-              >
-                {hasAiTags || hasDescription ? '重新分析' : 'AI分析'}
-              </Button>
-            </Space>
-          );
-        }
-      },
       {
         title: '操作',
         key: 'action',

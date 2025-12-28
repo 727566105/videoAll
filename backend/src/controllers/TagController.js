@@ -259,10 +259,31 @@ class TagController {
 
       // 清除缓存
       CacheService.del('tags:all');
+      CacheService.flush(); // ✅ 清除所有缓存，确保内容列表立即更新
+
+      // ✅ 返回更新后的完整标签列表
+      const updatedContent = await contentRepository.findOne({
+        where: { id: content_id }
+      });
+
+      // 解析 tags JSON 字段
+      let updatedTags = [];
+      if (updatedContent && updatedContent.tags) {
+        try {
+          updatedTags = typeof updatedContent.tags === 'string'
+            ? JSON.parse(updatedContent.tags)
+            : updatedContent.tags;
+        } catch (e) {
+          console.error('解析标签失败:', e);
+        }
+      }
 
       res.status(200).json({
         message: `成功添加 ${addedCount} 个标签`,
-        data: { addedCount }
+        data: {
+          addedCount,
+          tags: updatedTags // ✅ 返回更新后的标签列表
+        }
       });
     } catch (error) {
       console.error('添加标签失败:', error);
@@ -309,12 +330,37 @@ class TagController {
         }
       }
 
+      // 同步更新 Content.tags JSON 字段
+      await AiTagService.syncContentTags(content_id);
+
       // 清除缓存
       CacheService.del('tags:all');
+      CacheService.flush(); // ✅ 清除所有缓存，确保内容列表立即更新
+
+      // ✅ 返回更新后的完整标签列表
+      const contentRepository = AppDataSource.getRepository('Content');
+      const updatedContent = await contentRepository.findOne({
+        where: { id: content_id }
+      });
+
+      // 解析 tags JSON 字段
+      let updatedTags = [];
+      if (updatedContent && updatedContent.tags) {
+        try {
+          updatedTags = typeof updatedContent.tags === 'string'
+            ? JSON.parse(updatedContent.tags)
+            : updatedContent.tags;
+        } catch (e) {
+          console.error('解析标签失败:', e);
+        }
+      }
 
       res.status(200).json({
         message: `成功移除 ${removedCount} 个标签`,
-        data: { removedCount }
+        data: {
+          removedCount,
+          tags: updatedTags // ✅ 返回更新后的标签列表
+        }
       });
     } catch (error) {
       console.error('移除标签失败:', error);
@@ -444,6 +490,7 @@ class TagController {
 
       // 清除缓存
       CacheService.del('tags:all');
+      CacheService.flush(); // ✅ 清除所有缓存，确保内容列表立即更新
 
       res.status(200).json({
         message: resultMessage,
