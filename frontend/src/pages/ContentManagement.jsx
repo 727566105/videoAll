@@ -45,8 +45,8 @@ const ContentManagement = () => {
   const [refreshingStats, setRefreshingStats] = useState(false);
   // Batch tag modal state
   const [batchTagModalVisible, setBatchTagModalVisible] = useState(false);
-  // AI analysis state
-  const [aiAnalysisStatus, setAiAnalysisStatus] = useState(null);
+  // AI analysis state - 按内容ID分别存储
+  const [aiAnalysisStatusMap, setAiAnalysisStatusMap] = useState({});
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiLoading, setAiLoading] = useState({});
   // AI description modal state
@@ -708,8 +708,11 @@ const ContentManagement = () => {
         if (response.success) {
           const { is_processing, current_stage } = response.data;
 
-          // 更新AI状态
-          setAiAnalysisStatus(response.data);
+          // 更新AI状态 - 按内容ID分别存储
+          setAiAnalysisStatusMap(prev => ({
+            ...prev,
+            [contentId]: response.data
+          }));
 
           // 如果不在处理中，停止轮询
           if (!is_processing) {
@@ -733,18 +736,24 @@ const ContentManagement = () => {
     try {
       const response = await apiService.aiAnalysis.getContentStatus(contentId);
       if (response.success) {
-        setAiAnalysisStatus(response.data);
+        setAiAnalysisStatusMap(prev => ({
+          ...prev,
+          [contentId]: response.data
+        }));
       }
     } catch (error) {
       console.error('获取AI状态失败:', error);
       // 设置空状态，避免渲染错误
-      setAiAnalysisStatus({
-        has_analysis: false,
-        ai_tags: [],
-        description: null,
-        ocr_results: [],
-        stages: null
-      });
+      setAiAnalysisStatusMap(prev => ({
+        ...prev,
+        [contentId]: {
+          has_analysis: false,
+          ai_tags: [],
+          description: null,
+          ocr_results: [],
+          stages: null
+        }
+      }));
     }
   };
 
@@ -1003,12 +1012,13 @@ const ContentManagement = () => {
   };
 
   const renderAiAnalysisTab = () => {
-    // 从 aiAnalysisStatus 获取分析结果
-    const hasAiAnalysis = aiAnalysisStatus?.has_analysis;
-    const aiTags = aiAnalysisStatus?.ai_tags || [];
-    const aiDescription = aiAnalysisStatus?.description || previewContent?.description || '';
-    const ocrResults = aiAnalysisStatus?.ocr_results || [];
-    const stages = aiAnalysisStatus?.stages || {};
+    // 从 aiAnalysisStatusMap 获取当前内容的分析结果
+    const currentAiStatus = aiAnalysisStatusMap[previewContent?.id] || {};
+    const hasAiAnalysis = currentAiStatus?.has_analysis;
+    const aiTags = currentAiStatus?.ai_tags || [];
+    const aiDescription = currentAiStatus?.description || previewContent?.description || '';
+    const ocrResults = currentAiStatus?.ocr_results || [];
+    const stages = currentAiStatus?.stages || {};
 
     return (
       <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
@@ -1020,30 +1030,30 @@ const ContentManagement = () => {
               <Space>
                 <Badge
                   status={
-                    aiAnalysisStatus?.is_processing ? 'processing' :
+                    currentAiStatus?.is_processing ? 'processing' :
                     hasAiAnalysis ? 'success' : 'default'
                   }
                   text={
-                    aiAnalysisStatus?.is_processing ? '分析中' :
+                    currentAiStatus?.is_processing ? '分析中' :
                     hasAiAnalysis ? '已分析' : '未分析'
                   }
                 />
-                {aiAnalysisStatus?.execution_time && (
+                {currentAiStatus?.execution_time && (
                   <span style={{ color: token?.colorTextTertiary, fontSize: 12 }}>
-                    (总耗时: {aiAnalysisStatus.execution_time}ms)
+                    (总耗时: {currentAiStatus.execution_time}ms)
                   </span>
                 )}
               </Space>
             </div>
 
             {/* 进度条 */}
-            {aiAnalysisStatus?.is_processing && (
+            {currentAiStatus?.is_processing && (
               <div style={{ marginTop: 8 }}>
                 <div style={{ marginBottom: 4, fontSize: 12, color: token?.colorTextTertiary }}>
-                  当前阶段: {getStageLabel(aiAnalysisStatus.current_stage)}
+                  当前阶段: {getStageLabel(currentAiStatus.current_stage)}
                 </div>
                 <Progress
-                  percent={getStageProgress(aiAnalysisStatus.current_stage)}
+                  percent={getStageProgress(currentAiStatus.current_stage)}
                   status="active"
                   strokeColor={{
                     '0%': token?.colorPrimary,
