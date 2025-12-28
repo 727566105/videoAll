@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin } from 'antd';
+import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress } from 'antd';
 import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
@@ -586,45 +586,78 @@ const ContentManagement = () => {
   const handleAiAnalyze = async (contentId) => {
     try {
       setAiLoading(prev => ({ ...prev, [contentId]: true }));
-      message.loading({ content: 'AI分析中（OCR→标签→描述）...', key: 'aiAnalyze', duration: 0 });
 
-      const result = await apiService.aiAnalysis.analyzeContent(contentId, {
+      // 启动分析（不等待完成）
+      apiService.aiAnalysis.analyzeContent(contentId, {
         tags: true,
         description: true,
         ocr: true
+      }).then(async (result) => {
+        message.destroy();
+
+        // 显示详细的阶段性结果
+        const { stages, tags, description } = result.data;
+        const successCount = Object.values(stages).filter(s => s.success).length;
+        const totalCount = Object.keys(stages).length;
+
+        if (successCount === totalCount) {
+          message.success(`AI分析完成：标签${tags?.length || 0}个，描述已生成`);
+
+          // 刷新内容列表
+          getContentList();
+
+          // 如果当前预览的就是这个内容，刷新AI状态
+          if (previewContent?.id === contentId) {
+            await fetchAiStatus(contentId);
+          }
+        } else {
+          message.warning(`AI分析部分完成（${successCount}/${totalCount}成功）`);
+        }
+
+        setAiLoading(prev => ({ ...prev, [contentId]: false }));
+      }).catch((error) => {
+        message.destroy();
+        console.error('AI分析失败:', error);
+        message.error(error.message || 'AI分析失败');
+        setAiLoading(prev => ({ ...prev, [contentId]: false }));
       });
 
-      message.destroy();
-
-      // 显示详细的阶段性结果
-      const { stages, tags, description } = result.data;
-      const successCount = Object.values(stages).filter(s => s.success).length;
-      const totalCount = Object.keys(stages).length;
-
-      if (successCount === totalCount) {
-        message.success(`AI分析完成：标签${tags?.length || 0}个，描述已生成`);
-      } else {
-        message.warning(`AI分析部分完成（${successCount}/${totalCount}成功）`);
-      }
-
-      // 刷新列表
-      getContentList();
-
-      // 如果有描述，显示预览
-      if (description) {
-        showDescriptionModal({
-          description,
-          ocr_results: result.data.ocr_results || [],
-          stages
-        });
-      }
+      // 开始轮询进度
+      startProgressPolling(contentId);
     } catch (error) {
       message.destroy();
-      console.error('AI分析失败:', error);
-      message.error(error.message || 'AI分析失败');
-    } finally {
+      console.error('启动AI分析失败:', error);
+      message.error(error.message || '启动AI分析失败');
       setAiLoading(prev => ({ ...prev, [contentId]: false }));
     }
+  };
+
+  // 轮询分析进度
+  const startProgressPolling = (contentId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await apiService.aiAnalysis.getContentStatus(contentId);
+        if (response.success) {
+          const { is_processing, current_stage } = response.data;
+
+          // 更新AI状态
+          setAiAnalysisStatus(response.data);
+
+          // 如果不在处理中，停止轮询
+          if (!is_processing) {
+            clearInterval(pollInterval);
+            setAiLoading(prev => ({ ...prev, [contentId]: false }));
+          }
+        }
+      } catch (error) {
+        console.error('轮询进度失败:', error);
+        clearInterval(pollInterval);
+        setAiLoading(prev => ({ ...prev, [contentId]: false }));
+      }
+    }, 1000); // 每秒轮询一次
+
+    // 清理定时器
+    return () => clearInterval(pollInterval);
   };
 
   // Fetch AI analysis status when opening preview
@@ -636,6 +669,14 @@ const ContentManagement = () => {
       }
     } catch (error) {
       console.error('获取AI状态失败:', error);
+      // 设置空状态，避免渲染错误
+      setAiAnalysisStatus({
+        has_analysis: false,
+        ai_tags: [],
+        description: null,
+        ocr_results: [],
+        stages: null
+      });
     }
   };
 
@@ -650,6 +691,415 @@ const ContentManagement = () => {
       stages: data.stages
     });
     setDescriptionModalVisible(true);
+  };
+
+  // Render Basic Info Tab
+  const renderBasicInfoTab = () => {
+    return (
+      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+        {/* 视频预览 */}
+        {previewContent.all_videos && previewContent.all_videos.length > 0 && (
+          <div>
+            <h4>
+              🎥 视频预览
+              <span style={{ color: token?.colorError, marginLeft: 8, fontSize: 14 }}>
+                共 {previewContent.all_videos.length} 个视频
+              </span>
+            </h4>
+            {/* 主视频预览 - 优先使用本地文件 */}
+            <video
+              key={`main-video-${previewContent.all_videos[0]}`}
+              src={`/api/v1/content/${previewContent.id}/local-media?type=video&index=1`}
+              controls
+              style={{ width: '100%', maxHeight: '400px', borderRadius: 8 }}
+              onError={(e) => {
+                console.log('本地视频加载失败，使用远程代理');
+                e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.all_videos[0])}`;
+              }}
+            />
+
+            {/* 多视频缩略图列表 */}
+            {previewContent.all_videos.length > 1 && (
+              <div style={{ marginTop: 15 }}>
+                <div style={{ fontSize: 13, color: token?.colorTextTertiary, marginBottom: 8 }}>更多视频：</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 10 }}>
+                  {previewContent.all_videos.slice(1).map((videoUrl, index) => (
+                    <div
+                      key={index + 1}
+                      style={{
+                        flex: '0 0 auto',
+                        cursor: 'pointer',
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        border: `2px solid ${token?.colorBorderSecondary}`,
+                        transition: 'all 0.3s'
+                      }}
+                      onClick={() => {
+                        const videoEl = document.querySelector('video');
+                        const localVideoUrl = `/api/v1/content/${previewContent.id}/local-media?type=video&index=${index + 2}`;
+                        if (videoEl) {
+                          videoEl.src = localVideoUrl;
+                          videoEl.style.display = 'block';
+                          videoEl.onerror = () => {
+                            console.log('本地视频加载失败，使用远程代理');
+                            videoEl.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
+                          };
+                        }
+                      }}
+                    >
+                      <video
+                        src={`/api/v1/content/${previewContent.id}/local-media?type=video&index=${index + 2}`}
+                        style={{ width: 120, height: 90, objectFit: 'cover', display: 'block' }}
+                        muted
+                        onError={(e) => {
+                          e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
+                        }}
+                      />
+                      <div style={{ padding: '4px 8px', backgroundColor: token?.colorBgContainer, fontSize: 11, color: token?.colorTextTertiary, textAlign: 'center' }}>
+                        视频 {index + 2}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 图片预览 */}
+        {previewContent.all_images && previewContent.all_images.length > 0 && (
+          <div style={{ marginTop: previewContent.all_videos && previewContent.all_videos.length > 0 ? 15 : 0 }}>
+            <h4>
+              📸 图片预览
+              <span style={{ color: token?.colorPrimary, marginLeft: 8, fontSize: 14 }}>
+                共 {previewContent.all_images.length} 张
+              </span>
+            </h4>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+              gap: 10,
+              maxHeight: '400px',
+              overflowY: 'auto',
+              padding: '10px',
+              backgroundColor: token?.colorFillSecondary,
+              borderRadius: '8px'
+            }}>
+              {previewContent.all_images.map((imgUrl, index) => (
+                <div key={index} style={{ textAlign: 'center' }}>
+                  <Image
+                    src={`/api/v1/content/${previewContent.id}/local-media?type=image&index=${index + 1}`}
+                    alt={`图片 ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '120px',
+                      objectFit: 'cover',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                    fallback="https://via.placeholder.com/120x120?text=加载失败"
+                    onError={(e) => {
+                      console.log('本地图片加载失败，使用远程代理');
+                      e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(imgUrl)}`;
+                    }}
+                  />
+                  <div style={{ fontSize: '11px', color: token?.colorTextTertiary, marginTop: '4px' }}>
+                    图片 {index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 如果没有视频也没有图片，显示封面 */}
+        {(!previewContent.all_videos || previewContent.all_videos.length === 0) &&
+         (!previewContent.all_images || previewContent.all_images.length === 0) && (
+          <Image
+            src={`/api/v1/content/${previewContent.id}/local-media?type=cover`}
+            alt={previewContent.title}
+            style={{ maxWidth: '100%', maxHeight: '400px' }}
+            fallback="https://via.placeholder.com/400x300?text=图片加载失败"
+            onError={(e) => {
+              console.log('本地封面加载失败，使用远程代理');
+              e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(previewContent.cover_url)}`;
+            }}
+          />
+        )}
+
+        {/* 基本信息 */}
+        <div style={{ padding: '12px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+          <h4 style={{ marginTop: 0 }}>ℹ️ 基本信息</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 16px' }}>
+            <div><span style={{ color: token?.colorTextTertiary }}>作者:</span> {previewContent.author || '未知'}</div>
+            <div><span style={{ color: token?.colorTextTertiary }}>平台:</span> {previewContent.platform || '未知'}</div>
+            <div><span style={{ color: token?.colorTextTertiary }}>类型:</span> {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
+            <div><span style={{ color: token?.colorTextTertiary }}>来源:</span> {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
+            <div><span style={{ color: token?.colorTextTertiary }}>采集时间:</span> {new Date(previewContent.created_at).toLocaleString()}</div>
+            {previewContent.publish_time && (
+              <div><span style={{ color: token?.colorTextTertiary }}>发布时间:</span> {new Date(previewContent.publish_time).toLocaleString()}</div>
+            )}
+          </div>
+        </div>
+
+        {/* 内容描述（AI生成的描述）*/}
+        {previewContent.description && (
+          <div style={{ padding: '12px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '8px' }}>
+            <h4 style={{ marginTop: 0, marginBottom: '8px', color: token?.colorSuccess }}>📝 内容描述</h4>
+            <p style={{
+              margin: 0,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: '1.6',
+              color: '#262626'
+            }}>
+              {previewContent.description}
+            </p>
+          </div>
+        )}
+
+        {/* 统计数据 */}
+        {(previewContent.like_count || previewContent.collect_count ||
+          previewContent.comment_count || previewContent.share_count ||
+          previewContent.view_count) && (
+          <div style={{ padding: '12px', backgroundColor: '#fafafa', borderRadius: '8px' }}>
+            <h4 style={{ marginTop: 0 }}>📊 互动数据</h4>
+            <Space size="large" wrap>
+              {previewContent.like_count !== undefined && previewContent.like_count !== null && (
+                <Space>
+                  <span>👍 点赞:</span>
+                  <strong>{previewContent.like_count.toLocaleString()}</strong>
+                </Space>
+              )}
+              {previewContent.collect_count !== undefined && previewContent.collect_count !== null && (
+                <Space>
+                  <span>⭐ 收藏:</span>
+                  <strong>{previewContent.collect_count.toLocaleString()}</strong>
+                </Space>
+              )}
+              {previewContent.comment_count !== undefined && previewContent.comment_count !== null && (
+                <Space>
+                  <span>💬 评论:</span>
+                  <strong>{previewContent.comment_count.toLocaleString()}</strong>
+                </Space>
+              )}
+              {previewContent.share_count !== undefined && previewContent.share_count !== null && (
+                <Space>
+                  <span>🔄 分享:</span>
+                  <strong>{previewContent.share_count.toLocaleString()}</strong>
+                </Space>
+              )}
+              {previewContent.view_count !== undefined && previewContent.view_count !== null && (
+                <Space>
+                  <span>👁️ 浏览:</span>
+                  <strong>{previewContent.view_count.toLocaleString()}</strong>
+                </Space>
+              )}
+            </Space>
+          </div>
+        )}
+
+        {/* 原始链接 */}
+        {previewContent.source_url && (
+          <div>
+            <h4>🔗 原始链接</h4>
+            <a href={previewContent.source_url} target="_blank" rel="noopener noreferrer">
+              {previewContent.source_url}
+            </a>
+          </div>
+        )}
+      </Space>
+    );
+  };
+
+  // 获取分析阶段标签
+  const getStageLabel = (stage) => {
+    const stageLabels = {
+      'initializing': '初始化中...',
+      'ocr': 'OCR提取文字中...',
+      'generating_tags': '生成标签中...',
+      'generating_description': '生成描述中...'
+    };
+    return stageLabels[stage] || stage;
+  };
+
+  // 获取分析阶段进度百分比
+  const getStageProgress = (stage) => {
+    const stageProgress = {
+      'initializing': 10,
+      'ocr': 35,
+      'generating_tags': 70,
+      'generating_description': 95
+    };
+    return stageProgress[stage] || 0;
+  };
+
+  const renderAiAnalysisTab = () => {
+    // 从 aiAnalysisStatus 获取分析结果
+    const hasAiAnalysis = aiAnalysisStatus?.has_analysis;
+    const aiTags = aiAnalysisStatus?.ai_tags || [];
+    const aiDescription = aiAnalysisStatus?.description || previewContent?.description || '';
+    const ocrResults = aiAnalysisStatus?.ocr_results || [];
+    const stages = aiAnalysisStatus?.stages || {};
+
+    return (
+      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+        {/* 分析状态总览 */}
+        <div style={{ padding: '12px', backgroundColor: `${token?.colorPrimary}10`, border: `1px solid ${token?.colorPrimary}`, borderRadius: '8px' }}>
+          <h4 style={{ marginTop: 0, color: token?.colorPrimary }}>⚙️ 分析状态</h4>
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space>
+                <Badge
+                  status={
+                    aiAnalysisStatus?.is_processing ? 'processing' :
+                    hasAiAnalysis ? 'success' : 'default'
+                  }
+                  text={
+                    aiAnalysisStatus?.is_processing ? '分析中' :
+                    hasAiAnalysis ? '已分析' : '未分析'
+                  }
+                />
+                {aiAnalysisStatus?.execution_time && (
+                  <span style={{ color: token?.colorTextTertiary, fontSize: 12 }}>
+                    (总耗时: {aiAnalysisStatus.execution_time}ms)
+                  </span>
+                )}
+              </Space>
+            </div>
+
+            {/* 进度条 */}
+            {aiAnalysisStatus?.is_processing && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ marginBottom: 4, fontSize: 12, color: token?.colorTextTertiary }}>
+                  当前阶段: {getStageLabel(aiAnalysisStatus.current_stage)}
+                </div>
+                <Progress
+                  percent={getStageProgress(aiAnalysisStatus.current_stage)}
+                  status="active"
+                  strokeColor={{
+                    '0%': token?.colorPrimary,
+                    '100%': token?.colorSuccess,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 各阶段状态 */}
+            {hasAiAnalysis && stages && (
+              <div style={{ marginTop: 8 }}>
+                <Space size="small" wrap>
+                  <Badge
+                    status={stages.ocr?.success ? 'success' : 'error'}
+                    text={`OCR提取${stages.ocr?.duration ? ` (${stages.ocr.duration}ms)` : ''}`}
+                  />
+                  <Badge
+                    status={stages.tags?.success ? 'success' : 'error'}
+                    text={`标签生成${stages.tags?.duration ? ` (${stages.tags.duration}ms)` : ''}`}
+                  />
+                  <Badge
+                    status={stages.description?.success ? 'success' : 'error'}
+                    text={`描述生成${stages.description?.duration ? ` (${stages.description.duration}ms)` : ''}`}
+                  />
+                </Space>
+              </div>
+            )}
+          </Space>
+        </div>
+
+        {/* AI生成的标签 */}
+        {aiTags.length > 0 && (
+          <div style={{ padding: '12px', backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '8px' }}>
+            <h4 style={{ marginTop: 0, color: '#2f54eb' }}>🏷️ AI生成的标签</h4>
+            <div style={{ marginTop: 8 }}>
+              <Space size="small" wrap>
+                {aiTags.map((tag, index) => (
+                  <Tag
+                    key={index}
+                    color={tag.color || 'blue'}
+                    style={{ marginBottom: 4, fontSize: 14 }}
+                  >
+                    {tag.name}
+                  </Tag>
+                ))}
+              </Space>
+            </div>
+          </div>
+        )}
+
+        {/* AI生成的描述 */}
+        {aiDescription && (
+          <div style={{ padding: '12px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '8px' }}>
+            <h4 style={{ marginTop: 0, color: token?.colorSuccess }}>📝 AI生成的描述</h4>
+            <p style={{
+              margin: 0,
+              marginTop: 8,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              lineHeight: '1.8',
+              color: '#262626',
+              fontSize: 14
+            }}>
+              {aiDescription}
+            </p>
+          </div>
+        )}
+
+        {/* OCR识别结果 */}
+        {ocrResults.length > 0 && (
+          <div style={{ padding: '12px', backgroundColor: '#fff7e6', border: '1px solid #ffd591', borderRadius: '8px' }}>
+            <h4 style={{ marginTop: 0, color: '#fa8c16' }}>
+              🔍 图片中提取的文字
+              <span style={{ fontSize: 12, color: token?.colorTextTertiary }}>
+                ({ocrResults.length}张图片)
+              </span>
+            </h4>
+            <List
+              size="small"
+              dataSource={ocrResults.filter(r => r.text && r.text.length > 0)}
+              renderItem={(item, index) => (
+                <List.Item key={index}>
+                  <Space direction="vertical" size={0} style={{ width: '100%' }}>
+                    <div style={{ fontSize: 12, color: token?.colorTextTertiary }}>
+                      图片 {index + 1}
+                    </div>
+                    <div style={{
+                      padding: '8px',
+                      backgroundColor: 'white',
+                      borderRadius: '4px',
+                      fontSize: 13,
+                      lineHeight: '1.6'
+                    }}>
+                      {item.text}
+                    </div>
+                    {item.confidence && (
+                      <div style={{ fontSize: 11, color: token?.colorTextTertiary }}>
+                        置信度: {Math.round(item.confidence * 100)}%
+                      </div>
+                    )}
+                  </Space>
+                </List.Item>
+              )}
+            />
+          </div>
+        )}
+
+        {/* 未分析状态提示 */}
+        {!hasAiAnalysis && (
+          <Empty
+            description={
+              <Space direction="vertical" size="small">
+                <Text type="secondary">该内容尚未进行AI分析</Text>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  点击上方"AI分析"按钮开始分析
+                </Text>
+              </Space>
+            }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        )}
+      </Space>
+    );
   };
 
   // Load content list on component mount and when pagination changes
@@ -818,294 +1268,48 @@ const ContentManagement = () => {
       >
         {previewContent && (
           <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-            {/* 操作栏 */}
+            {/* 顶部操作栏 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
               <Space>
-                {previewContent?.is_missing && (
-                  <Tag color="error" style={{ fontSize: 14 }}>
-                    ⚠️ 笔记已消失
-                  </Tag>
-                )}
+                {previewContent?.is_missing && <Tag color="error">⚠️ 笔记已消失</Tag>}
               </Space>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleRefreshStats}
-                loading={refreshingStats}
-                type="primary"
-                size="small"
-              >
-                刷新统计数据
-              </Button>
+              <Space>
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={handleRefreshStats}
+                  loading={refreshingStats}
+                  type="default"
+                  size="small"
+                >
+                  刷新统计数据
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<RobotOutlined />}
+                  loading={aiLoading[previewContent?.id]}
+                  onClick={() => handleAiAnalyze(previewContent?.id)}
+                >
+                  AI分析
+                </Button>
+              </Space>
             </div>
 
-            {/* 🎥 视频预览区域 */}
-            {previewContent.all_videos && previewContent.all_videos.length > 0 && (
-              <div>
-                <h4>
-                  🎥 视频预览
-                  <span style={{ color: token?.colorError, marginLeft: 8, fontSize: 14 }}>
-                    共 {previewContent.all_videos.length} 个视频
-                  </span>
-                </h4>
-                {/* 主视频预览 - 优先使用本地文件 */}
-                <video
-                  key={`main-video-${previewContent.all_videos[0]}`}
-                  src={`/api/v1/content/${previewContent.id}/local-media?type=video&index=1`}
-                  controls
-                  style={{ width: '100%', maxHeight: '400px', borderRadius: 8 }}
-                  onError={(e) => {
-                    console.log('本地视频加载失败，使用远程代理');
-                    e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(previewContent.all_videos[0])}`;
-                  }}
-                />
-
-                {/* 多视频缩略图列表 */}
-                {previewContent.all_videos.length > 1 && (
-                  <div style={{ marginTop: 15 }}>
-                    <div style={{ fontSize: 13, color: token?.colorTextTertiary, marginBottom: 8 }}>更多视频：</div>
-                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 10 }}>
-                      {previewContent.all_videos.slice(1).map((videoUrl, index) => (
-                        <div
-                          key={index + 1}
-                          style={{
-                            flex: '0 0 auto',
-                            cursor: 'pointer',
-                            borderRadius: 8,
-                            overflow: 'hidden',
-                            border: `2px solid ${token?.colorBorderSecondary}`,
-                            transition: 'all 0.3s'
-                          }}
-                          onClick={() => {
-                            const videoEl = document.querySelector('video');
-                            const localVideoUrl = `/api/v1/content/${previewContent.id}/local-media?type=video&index=${index + 2}`;
-                            if (videoEl) {
-                              videoEl.src = localVideoUrl;
-                              videoEl.style.display = 'block';
-                              videoEl.onerror = () => {
-                                console.log('本地视频加载失败，使用远程代理');
-                                videoEl.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
-                              };
-                            }
-                          }}
-                        >
-                          <video
-                            src={`/api/v1/content/${previewContent.id}/local-media?type=video&index=${index + 2}`}
-                            style={{ width: 120, height: 90, objectFit: 'cover', display: 'block' }}
-                            muted
-                            onError={(e) => {
-                              e.target.src = `/api/v1/content/proxy-download?url=${encodeURIComponent(videoUrl)}`;
-                            }}
-                          />
-                          <div style={{ padding: '4px 8px', backgroundColor: token?.colorBgContainer, fontSize: 11, color: token?.colorTextTertiary, textAlign: 'center' }}>
-                            视频 {index + 2}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 📸 图片预览区域 - 可与视频共存 */}
-            {previewContent.all_images && previewContent.all_images.length > 0 && (
-              <div style={{ marginTop: previewContent.all_videos && previewContent.all_videos.length > 0 ? 15 : 0 }}>
-                <h4>
-                  📸 图片预览
-                  <span style={{ color: token?.colorPrimary, marginLeft: 8, fontSize: 14 }}>
-                    共 {previewContent.all_images.length} 张
-                  </span>
-                </h4>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-                  gap: 10,
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  padding: '10px',
-                  backgroundColor: token?.colorFillSecondary,
-                  borderRadius: '8px'
-                }}>
-                  {previewContent.all_images.map((imgUrl, index) => (
-                    <div key={index} style={{ textAlign: 'center' }}>
-                      <Image
-                        src={`/api/v1/content/${previewContent.id}/local-media?type=image&index=${index + 1}`}
-                        alt={`图片 ${index + 1}`}
-                        style={{
-                          width: '100%',
-                          height: '120px',
-                          objectFit: 'cover',
-                          borderRadius: '6px',
-                          cursor: 'pointer'
-                        }}
-                        fallback="https://via.placeholder.com/120x120?text=加载失败"
-                        onError={(e) => {
-                          console.log('本地图片加载失败，使用远程代理');
-                          e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(imgUrl)}`;
-                        }}
-                      />
-                      <div style={{ fontSize: '11px', color: token?.colorTextTertiary, marginTop: '4px' }}>
-                        图片 {index + 1}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 如果没有视频也没有图片，显示封面 */}
-            {(!previewContent.all_videos || previewContent.all_videos.length === 0) &&
-             (!previewContent.all_images || previewContent.all_images.length === 0) && (
-              <Image
-                src={`/api/v1/content/${previewContent.id}/local-media?type=cover`}
-                alt={previewContent.title}
-                style={{ maxWidth: '100%', maxHeight: '400px' }}
-                fallback="https://via.placeholder.com/400x300?text=图片加载失败"
-                onError={(e) => {
-                  console.log('本地封面加载失败，使用远程代理');
-                  e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(previewContent.cover_url)}`;
-                }}
-              />
-            )}
-
-            <div style={{ marginBottom: '16px' }}>
-              <h4>基本信息</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px 16px' }}>
-                <div><span style={{ color: token?.colorTextTertiary }}>作者:</span> {previewContent.author || '未知'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>平台:</span> {previewContent.platform || '未知'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>类型:</span> {previewContent.media_type === 'video' ? '视频' : '图片'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>来源:</span> {previewContent.source_type === 1 ? '单链接解析' : '监控任务'}</div>
-                <div><span style={{ color: token?.colorTextTertiary }}>采集时间:</span> {new Date(previewContent.created_at).toLocaleString()}</div>
-                {previewContent.publish_time && (
-                  <div><span style={{ color: token?.colorTextTertiary }}>发布时间:</span> {new Date(previewContent.publish_time).toLocaleString()}</div>
-                )}
-              </div>
-            </div>
-
-            {/* 描述信息 - 放在基本信息之前，更突出 */}
-            {previewContent.description && (
-              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: `${token?.colorSuccess}10`, border: `1px solid ${token?.colorSuccess}`, borderRadius: '8px' }}>
-                <h4 style={{ marginTop: 0, marginBottom: '8px', color: token?.colorSuccess }}>📝 内容描述</h4>
-                <p style={{
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  lineHeight: '1.6',
-                  color: '#262626'
-                }}>
-                  {previewContent.description}
-                </p>
-              </div>
-            )}
-
-            {/* 统计数据 */}
-            {(previewContent.like_count || previewContent.collect_count ||
-              previewContent.comment_count || previewContent.share_count ||
-              previewContent.view_count) && (
-              <div style={{ marginBottom: '16px' }}>
-                <h4>互动数据</h4>
-                <Space size="large" wrap>
-                  {previewContent.like_count !== undefined && previewContent.like_count !== null && (
-                    <Space>
-                      <span>👍 点赞:</span>
-                      <strong>{previewContent.like_count.toLocaleString()}</strong>
-                    </Space>
-                  )}
-                  {previewContent.collect_count !== undefined && previewContent.collect_count !== null && (
-                    <Space>
-                      <span>⭐ 收藏:</span>
-                      <strong>{previewContent.collect_count.toLocaleString()}</strong>
-                    </Space>
-                  )}
-                  {previewContent.comment_count !== undefined && previewContent.comment_count !== null && (
-                    <Space>
-                      <span>💬 评论:</span>
-                      <strong>{previewContent.comment_count.toLocaleString()}</strong>
-                    </Space>
-                  )}
-                  {previewContent.share_count !== undefined && previewContent.share_count !== null && (
-                    <Space>
-                      <span>🔄 分享:</span>
-                      <strong>{previewContent.share_count.toLocaleString()}</strong>
-                    </Space>
-                  )}
-                  {previewContent.view_count !== undefined && previewContent.view_count !== null && (
-                    <Space>
-                      <span>👁️ 浏览:</span>
-                      <strong>{previewContent.view_count.toLocaleString()}</strong>
-                    </Space>
-                  )}
-                </Space>
-              </div>
-            )}
-
-            {/* AI分析状态 */}
-            <div style={{ padding: '12px', backgroundColor: `${token?.colorPrimary}10`, border: `1px solid ${token?.colorPrimary}`, borderRadius: '8px' }}>
-              <h4 style={{ marginTop: 0, marginBottom: '8px', color: token?.colorPrimary }}>
-                🤖 AI分析
-              </h4>
-              {aiAnalysisStatus ? (
-                <Space orientation="vertical" size="small" style={{ width: '100%' }}>>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Space>
-                      <Badge status={aiAnalysisStatus.has_analysis ? 'success' : 'default'} text={aiAnalysisStatus.has_analysis ? '已分析' : '未分析'} />
-                      {aiAnalysisStatus.execution_time && (
-                        <span style={{ color: token?.colorTextTertiary, fontSize: 12 }}>
-                          (耗时: {aiAnalysisStatus.execution_time}ms)
-                        </span>
-                      )}
-                    </Space>
-                    <Button
-                      type="primary"
-                      size="small"
-                      icon={<RobotOutlined />}
-                      loading={aiLoading[previewContent?.id]}
-                      onClick={() => handleAiAnalyze(previewContent?.id)}
-                    >
-                      AI分析
-                    </Button>
-                  </div>
-
-                  {/* AI生成的标签 */}
-                  {aiAnalysisStatus.ai_tags && aiAnalysisStatus.ai_tags.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <span style={{ color: token?.colorTextTertiary }}>AI标签：</span>
-                      {aiAnalysisStatus.ai_tags.map((tag, index) => (
-                        <Tag
-                          key={index}
-                          color={tag.color || 'blue'}
-                          style={{ marginBottom: 2 }}
-                        >
-                          {tag.name}
-                        </Tag>
-                      ))}
-                    </div>
-                  )}
-                </Space>
-              ) : (
-                <Space orientation="vertical" size="small">
-                  <Text type="secondary">该内容尚未进行AI分析</Text>
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<RobotOutlined />}
-                    loading={aiLoading[previewContent?.id]}
-                    onClick={() => handleAiAnalyze(previewContent?.id)}
-                  >
-                    立即AI分析
-                  </Button>
-                </Space>
-              )}
-            </div>
-
-            {previewContent.source_url && (
-              <div>
-                <h4>原始链接</h4>
-                <a href={previewContent.source_url} target="_blank" rel="noopener noreferrer">
-                  {previewContent.source_url}
-                </a>
-              </div>
-            )}
+            {/* Tabs内容 */}
+            <Tabs
+              defaultActiveKey="basic"
+              items={[
+                {
+                  key: 'basic',
+                  label: '基本信息',
+                  children: renderBasicInfoTab()
+                },
+                {
+                  key: 'ai-analysis',
+                  label: 'AI分析总结',
+                  children: renderAiAnalysisTab()
+                }
+              ]}
+            />
           </Space>
         )}
       </Modal>

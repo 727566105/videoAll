@@ -53,6 +53,13 @@ module.exports = new EntitySchema({
       default: 'pending',
       comment: '分析状态：pending-等待中、processing-处理中、completed-完成、failed-失败'
     },
+    // 当前分析阶段
+    current_stage: {
+      type: 'varchar',
+      length: 50,
+      nullable: true,
+      comment: '当前分析阶段：initializing-初始化、ocr-OCR提取、generating_tags-生成标签、generating_description-生成描述'
+    },
     // 重试次数
     retry_count: {
       type: 'int',

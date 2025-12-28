@@ -809,8 +809,26 @@ B站标签特点：
       }
     };
 
+    // 创建分析记录用于跟踪进度
+    const aiConfig = await this.getActiveConfig();
+    let analysisRecord = null;
+    try {
+      const resultRepository = AppDataSource.getRepository('AiAnalysisResult');
+      analysisRecord = resultRepository.create({
+        content_id: contentId,
+        ai_config_id: aiConfig?.id,
+        status: 'processing',
+        current_stage: 'initializing',
+        analysis_type: 'unified_analysis'
+      });
+      await resultRepository.save(analysisRecord);
+    } catch (error) {
+      logger.warn('创建分析记录失败:', error);
+    }
+
     try {
       // 1. 获取内容
+      await this.updateAnalysisProgress(contentId, 'initializing');
       const content = await this.getContentById(contentId);
       if (!content) {
         throw new Error('内容不存在');
@@ -818,6 +836,7 @@ B站标签特点：
 
       // 2. OCR提取（如果启用且有图片）
       if (enableOcr && generateDescription) {
+        await this.updateAnalysisProgress(contentId, 'ocr');
         const ocrStart = Date.now();
         try {
           result.ocrResults = await OcrService.extractFromContent(content);
@@ -838,15 +857,11 @@ B站标签特点：
 
       // 3. 生成标签
       if (generateTags) {
+        await this.updateAnalysisProgress(contentId, 'generating_tags');
         const tagsStart = Date.now();
         try {
           // 构建包含OCR文字的Prompt
           const prompt = this.buildTagPrompt(content, result.ocrResults);
-          const aiConfig = await this.getActiveConfig();
-
-          if (!aiConfig) {
-            throw new Error('未找到启用的AI配置');
-          }
 
           const aiResponse = await this.callAiApi(prompt, aiConfig);
           result.tags = this.parseAiResponse(aiResponse).tags || [];
@@ -871,21 +886,16 @@ B站标签特点：
         }
       }
 
-      // 4. 生成描述
+      // 4. 生成描述（不覆盖原始描述，只保存在分析结果中）
       if (generateDescription) {
+        await this.updateAnalysisProgress(contentId, 'generating_description');
         const descStart = Date.now();
         try {
           const prompt = this.buildDescriptionPrompt(content, result.ocrResults);
-          const aiConfig = await this.getActiveConfig();
-
-          if (!aiConfig) {
-            throw new Error('未找到启用的AI配置');
-          }
 
           const description = await this.callAiForDescription(prompt, aiConfig);
 
-          // 保存描述到Content表
-          await this.updateContentDescription(contentId, description);
+          // 不再保存到Content表，只保存在result中
           result.description = description;
 
           result.stages.description = {
@@ -906,9 +916,13 @@ B站标签特点：
       // 5. 保存统一分析历史
       await this.saveUnifiedAnalysisHistory(contentId, result);
 
+      // 更新为完成状态
+      await this.updateAnalysisProgress(contentId, 'completed');
+
       return result;
     } catch (error) {
       logger.error('统一分析失败:', error);
+      await this.updateAnalysisProgress(contentId, 'failed', error.message);
       throw error;
     }
   }
@@ -1210,6 +1224,48 @@ ${ocrTexts ? `【图片中提取的文字】\n${ocrTexts}` : ''}
     } catch (error) {
       logger.error('获取内容失败:', { contentId, error: error.message });
       return null;
+    }
+  }
+
+  /**
+   * 更新分析进度
+   * @param {string} contentId - 内容ID
+   * @param {string} stage - 当前阶段
+   * @param {string} errorMessage - 错误信息（可选）
+   */
+  static async updateAnalysisProgress(contentId, stage, errorMessage = null) {
+    try {
+      const resultRepository = AppDataSource.getRepository('AiAnalysisResult');
+
+      // 查找最新的处理中记录
+      const record = await resultRepository.findOne({
+        where: { content_id: contentId },
+        order: { created_at: 'DESC' }
+      });
+
+      if (!record) {
+        logger.debug('未找到分析记录，跳过进度更新');
+        return;
+      }
+
+      // 更新当前阶段
+      if (stage === 'completed') {
+        record.status = 'completed';
+        record.current_stage = null;
+        record.completed_at = new Date();
+      } else if (stage === 'failed') {
+        record.status = 'failed';
+        record.current_stage = null;
+        record.error_message = errorMessage;
+      } else {
+        record.current_stage = stage;
+      }
+
+      await resultRepository.save(record);
+      logger.debug(`分析进度已更新: ${contentId} -> ${stage}`);
+    } catch (error) {
+      logger.warn('更新分析进度失败:', error);
+      // 不抛出错误，进度更新失败不影响主流程
     }
   }
 

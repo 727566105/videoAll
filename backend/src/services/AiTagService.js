@@ -320,23 +320,40 @@ class AiTagService {
         order: { created_at: 'DESC' },
       });
 
-      // 获取内容标签
+      // 获取内容标签和描述
       const content = await contentRepository.findOne({
         where: { id: contentId },
       });
 
-      const aiGeneratedTags = (content?.tags || []).filter(t => t.is_ai_generated);
+      // 确保 tags 是数组
+      const contentTags = Array.isArray(content?.tags) ? content.tags : [];
+      const aiGeneratedTags = contentTags.filter(t => t.is_ai_generated);
+
+      // 从 analysis_result 中提取详细数据
+      const analysisResult = aiResult?.analysis_result || {};
+      const stages = analysisResult.stages || {};
+      const ocrResults = analysisResult.ocr_results || [];
+      const aiDescription = analysisResult.description || null; // AI生成的描述
+
+      // 判断是否正在分析中
+      const isProcessing = aiResult?.status === 'processing';
 
       return {
         success: true,
         data: {
-          has_analysis: !!aiResult,
+          has_analysis: !!aiResult && aiResult.status === 'completed',
           analysis_status: aiResult?.status || 'none',
+          is_processing: isProcessing,
+          current_stage: aiResult?.current_stage || null,
           analysis_time: aiResult?.created_at || null,
           execution_time: aiResult?.execution_time || null,
           ai_generated_count: aiGeneratedTags.length,
           ai_tags: aiGeneratedTags,
-          total_tags: content?.tags?.length || 0,
+          total_tags: contentTags.length,
+          // AI生成的描述（不是原始描述）
+          description: aiDescription,
+          ocr_results: ocrResults,
+          stages: stages,
         },
       };
     } catch (error) {
