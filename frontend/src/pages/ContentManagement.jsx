@@ -296,7 +296,14 @@ const ContentManagement = () => {
 
   // Column settings menu
   const columnSettingsMenu = (
-    <div style={{ padding: '8px', minWidth: '150px' }}>
+    <div style={{
+      padding: '8px',
+      minWidth: '150px',
+      backgroundColor: 'white',
+      borderRadius: '6px',
+      boxShadow: '0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08)',
+      border: '1px solid #f0f0f0'
+    }}>
       <Space direction="vertical" style={{ width: '100%' }}>
         {ALL_COLUMNS.map(column => (
           <Checkbox
@@ -1311,30 +1318,32 @@ const ContentManagement = () => {
       
       <Card>
         <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-          <Space wrap style={{ justifyContent: 'flex-end' }}>
-            <Button
-              type="primary"
-              danger
-              onClick={handleBatchDelete}
-              disabled={selectedRowKeys.length === 0}
-            >
-              批量删除 ({selectedRowKeys.length})
-            </Button>
-            <Button
-              icon={<TagOutlined />}
-              onClick={() => setBatchTagModalVisible(true)}
-              disabled={selectedRowKeys.length === 0}
-            >
-              批量打标签 ({selectedRowKeys.length})
-            </Button>
-            <Button
-              type="primary"
-              icon={<DownloadOutlined />}
-              onClick={handleBatchDownload}
-              disabled={selectedRowKeys.length === 0}
-            >
-              批量下载 ({selectedRowKeys.length})
-            </Button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <Space wrap>
+              <Button
+                type="primary"
+                danger
+                onClick={handleBatchDelete}
+                disabled={selectedRowKeys.length === 0}
+              >
+                批量删除 ({selectedRowKeys.length})
+              </Button>
+              <Button
+                icon={<TagOutlined />}
+                onClick={() => setBatchTagModalVisible(true)}
+                disabled={selectedRowKeys.length === 0}
+              >
+                批量打标签 ({selectedRowKeys.length})
+              </Button>
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleBatchDownload}
+                disabled={selectedRowKeys.length === 0}
+              >
+                批量下载 ({selectedRowKeys.length})
+              </Button>
+            </Space>
             <Dropdown
               trigger={['click']}
               placement="bottomRight"
@@ -1344,7 +1353,7 @@ const ContentManagement = () => {
                 列设置
               </Button>
             </Dropdown>
-          </Space>
+          </div>
           
           <Table
             dataSource={contentList}
