@@ -113,7 +113,7 @@ class AiTagService {
       await this.syncContentTags(contentId);
 
       // ✅ 清除缓存，确保前端立即看到更新
-      const CacheService = require('../utils/cache');
+      const CacheService = require('./CacheService');
       CacheService.flush();
 
       logger.info(`[AI标签][${traceId}] 处理完成 (添加数: ${addedTags.length})`);

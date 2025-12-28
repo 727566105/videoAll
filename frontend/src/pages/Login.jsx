@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Card, Typography, Space, Checkbox, Alert, Spin, Modal, message, App } from 'antd';
-import { LockOutlined, UserOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
+import { LockOutlined, UserOutlined, DeleteOutlined, SettingOutlined, VideoCameraOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 import {
@@ -13,7 +13,8 @@ import {
 const { Title, Text } = Typography;
 
 const Login = ({ onLogin }) => {
-  const { token } = App.useApp();
+  const appContext = App.useApp() || {};
+  const token = appContext.token || {};
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,12 @@ const Login = ({ onLogin }) => {
   // 使用 useRef 避免竞态条件
   const isInitializedRef = useRef(false);
   const previousRememberStateRef = useRef(null);
+
+  // 获取当前主题
+  const currentTheme = localStorage.getItem('appTheme') || 'light';
+
+  // 安全的 token 值获取
+  const getToken = (key, defaultValue) => token[key] || defaultValue;
 
   // Check system status on component mount
   useEffect(() => {
@@ -157,34 +164,213 @@ const Login = ({ onLogin }) => {
 
   if (checkingSystem) {
     return (
-      <Card style={{ width: 400, boxShadow: token.boxShadowSecondary }}>
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16, color: token.colorTextSecondary }}>
-            <Text>正在检查系统状态...</Text>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: currentTheme === 'dark'
+          ? 'linear-gradient(135deg, rgba(64, 169, 255, 0.08) 0%, rgba(115, 209, 61, 0.05) 50%, rgba(24, 144, 255, 0.12) 100%)'
+          : 'linear-gradient(135deg, rgba(22, 119, 255, 0.05) 0%, rgba(82, 196, 26, 0.03) 50%, rgba(24, 144, 255, 0.08) 100%)',
+        padding: '24px',
+        position: 'relative'
+      }}>
+        <Card style={{
+          width: '100%',
+          maxWidth: 480,
+          borderRadius: (token.borderRadiusLG || 8) * 2,
+          boxShadow: currentTheme === 'dark'
+            ? '0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3)'
+            : '0 20px 60px rgba(22, 119, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08)',
+          background: currentTheme === 'dark'
+            ? 'rgba(31, 31, 31, 0.95)'
+            : 'rgba(255, 255, 255, 0.98)',
+          border: currentTheme === 'dark'
+            ? '1px solid rgba(255, 255, 255, 0.1)'
+            : '1px solid rgba(22, 119, 255, 0.1)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ textAlign: 'center', padding: '60px 40px' }}>
+            <Spin
+              size="large"
+              indicator={<LoadingOutlined style={{ fontSize: 32, color: token.colorPrimary || '#1677ff' }} spin />}
+            />
+            <div style={{ marginTop: 24 }}>
+              <Title level={4} style={{ margin: 0, color: token.colorText || 'rgba(0, 0, 0, 0.88)' }}>
+                正在检查系统状态...
+              </Title>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                请稍候
+              </Text>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card
-      style={{ width: 400, boxShadow: token.boxShadowSecondary }}
-      title={
-        <Space orientation="vertical" align="center" size="small" style={{ width: '100%' }}>
-          <Title level={2} style={{ margin: 0, color: token.colorPrimary }}>
-            内容管理系统
-          </Title>
-          {isInitialSetup && (
-            <Space>
-              <SettingOutlined style={{ color: token.colorSuccess }} />
-              <Text type="success">系统初始化</Text>
-            </Space>
-          )}
-        </Space>
-      }
-    >
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: currentTheme === 'dark'
+        ? 'linear-gradient(135deg, rgba(64, 169, 255, 0.08) 0%, rgba(115, 209, 61, 0.05) 50%, rgba(24, 144, 255, 0.12) 100%)'
+        : 'linear-gradient(135deg, rgba(22, 119, 255, 0.05) 0%, rgba(82, 196, 26, 0.03) 50%, rgba(24, 144, 255, 0.08) 100%)',
+      position: 'relative',
+      overflow: 'hidden',
+      padding: '24px'
+    }}>
+      {/* 背景装饰元素 */}
+      <div style={{
+        position: 'absolute',
+        width: '300px',
+        height: '300px',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${token.colorPrimary || '#1677ff'}10 0%, transparent 70%)`,
+        top: '-100px',
+        right: '-100px',
+        animation: 'float 8s ease-in-out infinite',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '200px',
+        height: '200px',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${token.colorSuccess || '#52c41a'}08 0%, transparent 70%)`,
+        bottom: '-50px',
+        left: '-50px',
+        animation: 'float 6s ease-in-out infinite 1s',
+        pointerEvents: 'none'
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '150px',
+        height: '150px',
+        borderRadius: '50%',
+        background: `radial-gradient(circle, ${token.colorWarning || '#faad14'}08 0%, transparent 70%)`,
+        top: '50%',
+        left: '10%',
+        animation: 'float 7s ease-in-out infinite 2s',
+        pointerEvents: 'none'
+      }} />
+
+      <style>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(-20px) scale(1.05);
+          }
+        }
+        @keyframes slideUpFade {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .login-card-animation {
+          animation: slideUpFade 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
+
+      <Card
+        className="login-card-animation"
+        style={{
+          width: '100%',
+          maxWidth: 480,
+          borderRadius: (token.borderRadiusLG || 8) * 2,
+          boxShadow: currentTheme === 'dark'
+            ? '0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3)'
+            : '0 20px 60px rgba(22, 119, 255, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08)',
+          background: currentTheme === 'dark'
+            ? 'rgba(31, 31, 31, 0.95)'
+            : 'rgba(255, 255, 255, 0.98)',
+          border: currentTheme === 'dark'
+            ? '1px solid rgba(255, 255, 255, 0.1)'
+            : '1px solid rgba(22, 119, 255, 0.1)',
+          backdropFilter: 'blur(10px)',
+          position: 'relative',
+          zIndex: 1
+        }}
+        bordered={false}
+        title={
+          <div style={{ textAlign: 'center', paddingTop: '8px' }}>
+            {/* Logo 区域 */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '16px'
+            }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '20px',
+                background: `linear-gradient(135deg, ${token.colorPrimary || '#1677ff'}15, ${token.colorPrimary || '#1677ff'}08)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: `0 8px 24px ${currentTheme === 'dark' ? 'rgba(64, 169, 255, 0.3)' : 'rgba(22, 119, 255, 0.2)'}`,
+                position: 'relative'
+              }}>
+                <VideoCameraOutlined style={{ fontSize: '40px', color: token.colorPrimary || '#1677ff' }} />
+                <div style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  background: token.colorSuccess || '#52c41a',
+                  border: '3px solid',
+                  borderColor: currentTheme === 'dark' ? '#1f1f1f' : '#fff',
+                  animation: 'pulse 2s ease-in-out infinite'
+                }} />
+              </div>
+            </div>
+
+            {/* 标题 */}
+            <Title level={2} style={{
+              margin: 0,
+              color: token.colorPrimary || '#1677ff',
+              fontWeight: 600,
+              fontSize: '26px',
+              letterSpacing: '0.5px',
+              textAlign: 'center'
+            }}>
+              内容管理系统
+            </Title>
+
+            {/* 欢迎标语 */}
+            <Text style={{
+              fontSize: '14px',
+              color: token.colorTextSecondary || 'rgba(0, 0, 0, 0.65)',
+              marginTop: '8px',
+              display: 'block',
+              textAlign: 'center'
+            }}>
+              多平台内容聚合 · 智能解析 · 高效管理
+            </Text>
+
+            {/* 初始化状态指示 */}
+            {isInitialSetup && (
+              <Space style={{ marginTop: '12px', justifyContent: 'center' }}>
+                <SettingOutlined style={{ color: token.colorSuccess || '#52c41a', fontSize: '16px' }} />
+                <Text type="success" style={{ fontSize: '14px', fontWeight: 500 }}>
+                  系统初始化设置
+                </Text>
+              </Space>
+            )}
+          </div>
+        }
+      >
       {isInitialSetup && (
         <Alert
           message="欢迎使用内容管理系统"
@@ -270,6 +456,7 @@ const Login = ({ onLogin }) => {
         </div>
       )}
     </Card>
+    </div>
   );
 };
 

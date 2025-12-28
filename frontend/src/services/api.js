@@ -51,34 +51,37 @@ api.interceptors.response.use(
         const message = '认证令牌无效，请重新登录';
         return Promise.reject(new Error(message));
       }
-      
+
       // For real token errors, clear authentication info and redirect to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('savedCredentials');
       window.location.href = '/login';
     }
-    
+
     // Handle network errors specially
     if (!error.response) {
       const message = '网络连接失败，请检查后端服务是否正常运行';
       return Promise.reject(new Error(message));
     }
-    
+
     // Handle other errors
     let message = error.response?.data?.message || error.message || '请求失败';
-    
+
     // Provide more specific error messages for common status codes
     if (error.response.status === 403) {
       message = '您没有权限执行此操作';
     } else if (error.response.status === 404) {
       message = '请求的资源不存在';
+    } else if (error.response.status === 409) {
+      // 409 Conflict - 内容已存在
+      message = error.response.data?.message || '内容已存在';
     } else if (error.response.status === 503) {
       message = error.response.data?.message || '数据库连接不可用，请稍后重试';
     } else if (error.response.status >= 500) {
       message = '服务器内部错误，请稍后重试';
     }
-    
+
     return Promise.reject(new Error(message));
   }
 );

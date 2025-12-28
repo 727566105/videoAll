@@ -544,19 +544,25 @@ const ContentParsing = () => {
       // Automatically save to database and local file system after successful parsing
       try {
         console.log('开始自动保存到内容库...');
-        
+
         // Call backend API to save content (this will save to both database and local files)
         await apiService.content.save({
           link: link, // Original link for parsing and downloading
           source_type: 1, // 1-单链接解析
           task_id: null
         });
-        
+
         message.success('内容已自动保存到数据库和本地文件系统');
         console.log('自动保存成功');
       } catch (saveError) {
         console.error('Auto save error:', saveError);
-        message.warning(`自动保存失败：${saveError.message}，但解析成功`);
+
+        // 区分409（内容已存在）和其他错误
+        if (saveError.message && saveError.message.includes('内容已存在')) {
+          message.info(saveError.message);
+        } else {
+          message.warning(`自动保存失败：${saveError.message}，但解析成功`);
+        }
       }
       
       setProcessingStatus('completed');

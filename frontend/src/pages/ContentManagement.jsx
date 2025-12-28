@@ -976,6 +976,46 @@ const ContentManagement = () => {
           </div>
         )}
 
+        {/* 标签 */}
+        {((previewContent.tags && previewContent.tags.length > 0) ||
+          (aiAnalysisStatusMap[previewContent?.id]?.ai_tags &&
+           aiAnalysisStatusMap[previewContent?.id]?.ai_tags.length > 0)) && (
+          <div style={{ padding: '12px', backgroundColor: `${token?.colorPrimary}10`, border: `1px solid ${token?.colorPrimary}`, borderRadius: '8px' }}>
+            <h4 style={{ marginTop: 0, color: token?.colorPrimary }}>🏷️ 标签</h4>
+            <Space size="small" wrap>
+              {/* 手动添加的标签 */}
+              {previewContent.tags && previewContent.tags.length > 0 && (
+                <>
+                  {previewContent.tags.map((tag) => (
+                    <Tag
+                      key={tag.id}
+                      color={tag.color}
+                      style={{ marginBottom: 4 }}
+                    >
+                      {tag.name}
+                    </Tag>
+                  ))}
+                </>
+              )}
+              {/* AI生成的标签 */}
+              {aiAnalysisStatusMap[previewContent?.id]?.ai_tags &&
+               aiAnalysisStatusMap[previewContent?.id]?.ai_tags.length > 0 && (
+                <>
+                  {aiAnalysisStatusMap[previewContent?.id].ai_tags.map((tag) => (
+                    <Tag
+                      key={`ai-${tag}`}
+                      color="blue"
+                      style={{ marginBottom: 4 }}
+                    >
+                      🤖 {tag}
+                    </Tag>
+                  ))}
+                </>
+              )}
+            </Space>
+          </div>
+        )}
+
         {/* 原始链接 */}
         {previewContent.source_url && (
           <div>
@@ -1191,7 +1231,8 @@ const ContentManagement = () => {
   }, []); // Empty dependency array ensures this runs only once on mount
 
   return (
-    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+    <div style={{ width: '100%', maxWidth: 'none' }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
       <Card title="筛选条件">
         <Space wrap>
           <Input 
@@ -1418,6 +1459,7 @@ const ContentManagement = () => {
         onClose={() => setDescriptionModalVisible(false)}
       />
     </Space>
+    </div>
   );
 };
 
