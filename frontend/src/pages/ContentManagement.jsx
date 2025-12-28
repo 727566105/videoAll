@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined } from '@ant-design/icons';
+import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress, Dropdown, Checkbox } from 'antd';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined, SettingOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
 import BatchTagModal from '../components/BatchTagModal';
@@ -8,6 +8,17 @@ import DescriptionModal from '../components/DescriptionModal';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
+
+// 定义所有可配置的列（不包括固定的AI分析和操作列）
+const ALL_COLUMNS = [
+  { key: 'cover_url', title: '封面', defaultVisible: true },
+  { key: 'title', title: '标题', defaultVisible: true },
+  { key: 'author', title: '作者', defaultVisible: true },
+  { key: 'platform', title: '平台', defaultVisible: true },
+  { key: 'media_type', title: '类型', defaultVisible: true },
+  { key: 'source_type', title: '来源', defaultVisible: true },
+  { key: 'created_at', title: '采集时间', defaultVisible: true }
+];
 
 const ContentManagement = () => {
   const { token } = App.useApp();
@@ -42,173 +53,273 @@ const ContentManagement = () => {
   const [descriptionModalVisible, setDescriptionModalVisible] = useState(false);
   const [currentDescription, setCurrentDescription] = useState(null);
 
-  // Columns definition
-  const columns = [
-    {
-      title: '封面',
-      dataIndex: 'cover_url',
-      key: 'cover_url',
-      width: 100, // 设置固定宽度
-      render: (cover_url, record) => {
-        // 优先使用本地图片：GET /api/v1/content/:id/local-media?type=cover
-        const localCoverUrl = `/api/v1/content/${record.id}/local-media?type=cover`;
-
-        return (
-          <img
-            src={localCoverUrl}
-            alt="封面"
-            style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
-            onClick={() => handlePreview(record)}
-            onError={(e) => {
-              console.log('本地封面加载失败，使用远程代理');
-              e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(cover_url)}`;
-              e.target.onError = () => {
-                e.target.src = 'https://via.placeholder.com/80x60?text=加载失败';
-              };
-            }}
-          />
-        );
+  // Column visibility state
+  // 从localStorage加载列配置
+  const loadColumnConfig = () => {
+    try {
+      const saved = localStorage.getItem('content-table-columns');
+      if (saved) {
+        return JSON.parse(saved);
       }
-    },
-    {
-      title: '标题',
-      dataIndex: 'title',
-      key: 'title',
-      ellipsis: true,
-      width: 250,
-      render: (title, record) => (
-        <Space orientation="vertical" size={0}>
-          <span>{title}</span>
-          {record.is_missing && <Tag color="error">已消失</Tag>}
-          {/* 显示标签 */}
-          {record.tags && record.tags.length > 0 && (
-            <div style={{ marginTop: 4 }}>
-              {record.tags.map(tag => (
-                <Tag key={tag.id} color={tag.color} style={{ marginBottom: 2 }}>
-                  {tag.name}
-                </Tag>
-              ))}
-            </div>
-          )}
-          {/* 描述预览 - 显示前50个字符 */}
-          {record.description && (
-            <Tooltip title={record.description}>
-              <span
-                style={{
-                  fontSize: 12,
-                  color: token?.colorTextQuaternary,
-                  cursor: 'pointer'
-                }}
-                onClick={() => showDescriptionModal(record)}
-              >
-                {record.description.length > 50
-                  ? record.description.substring(0, 50) + '...'
-                  : record.description}
-              </span>
-            </Tooltip>
-          )}
-        </Space>
-      )
-    },
-    {
-      title: '作者',
-      dataIndex: 'author',
-      key: 'author'
-    },
-    {
-      title: '平台',
-      dataIndex: 'platform',
-      key: 'platform'
-    },
-    {
-      title: '类型',
-      dataIndex: 'media_type',
-      key: 'media_type',
-      render: (type, record) => {
-        if (type === 'video') {
-          const videoCount = record.all_videos && record.all_videos.length > 0 ? record.all_videos.length : 1;
-          return `视频 (${videoCount}个)`;
-        } else {
-          const imageCount = record.all_images && record.all_images.length > 0 ? record.all_images.length : 1;
-          return type === 'image' && imageCount > 1 ? `图片 (${imageCount}张)` : '图片';
+    } catch (error) {
+      console.error('加载列配置失败:', error);
+    }
+    // 返回默认配置
+    return ALL_COLUMNS.reduce((acc, col) => {
+      acc[col.key] = col.defaultVisible;
+      return acc;
+    }, {});
+  };
+
+  const [visibleColumns, setVisibleColumns] = useState(() => loadColumnConfig());
+
+  // 保存列配置到localStorage
+  const saveColumnConfig = (config) => {
+    try {
+      localStorage.setItem('content-table-columns', JSON.stringify(config));
+    } catch (error) {
+      console.error('保存列配置失败:', error);
+    }
+  };
+
+  // 处理列显示/隐藏切换
+  const handleColumnToggle = (columnKey) => {
+    const currentVisibleCount = Object.values(visibleColumns).filter(Boolean).length;
+    const isCurrentlyVisible = visibleColumns[columnKey];
+
+    // 如果当前只有1列可见且用户要隐藏它，给出提示
+    if (currentVisibleCount === 1 && isCurrentlyVisible) {
+      message.warning('至少需要保留一列');
+      return;
+    }
+
+    const newConfig = {
+      ...visibleColumns,
+      [columnKey]: !isCurrentlyVisible
+    };
+    setVisibleColumns(newConfig);
+    saveColumnConfig(newConfig);
+  };
+
+  // 重置列配置
+  const resetColumnConfig = () => {
+    const defaultConfig = ALL_COLUMNS.reduce((acc, col) => {
+      acc[col.key] = col.defaultVisible;
+      return acc;
+    }, {});
+    setVisibleColumns(defaultConfig);
+    saveColumnConfig(defaultConfig);
+    message.success('已恢复默认列设置');
+  };
+
+  // Get filtered columns based on user preferences
+  const getFilteredColumns = () => {
+    // 基础列（根据用户配置显示）
+    const baseColumns = [
+      {
+        title: '封面',
+        dataIndex: 'cover_url',
+        key: 'cover_url',
+        width: 100,
+        render: (cover_url, record) => {
+          // 优先使用本地图片：GET /api/v1/content/:id/local-media?type=cover
+          const localCoverUrl = `/api/v1/content/${record.id}/local-media?type=cover`;
+
+          return (
+            <img
+              src={localCoverUrl}
+              alt="封面"
+              style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+              onClick={() => handlePreview(record)}
+              onError={(e) => {
+                console.log('本地封面加载失败，使用远程代理');
+                e.target.src = `/api/v1/content/proxy-image?url=${encodeURIComponent(cover_url)}`;
+                e.target.onError = () => {
+                  e.target.src = 'https://via.placeholder.com/80x60?text=加载失败';
+                };
+              }}
+            />
+          );
+        }
+      },
+      {
+        title: '标题',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        width: 250,
+        render: (title, record) => (
+          <Space orientation="vertical" size={0}>
+            <span>{title}</span>
+            {record.is_missing && <Tag color="error">已消失</Tag>}
+            {/* 显示标签 */}
+            {record.tags && record.tags.length > 0 && (
+              <div style={{ marginTop: 4 }}>
+                {record.tags.map(tag => (
+                  <Tag key={tag.id} color={tag.color} style={{ marginBottom: 2 }}>
+                    {tag.name}
+                  </Tag>
+                ))}
+              </div>
+            )}
+            {/* 描述预览 - 显示前50个字符 */}
+            {record.description && (
+              <Tooltip title={record.description}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: token?.colorTextQuaternary,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => showDescriptionModal(record)}
+                >
+                  {record.description.length > 50
+                    ? record.description.substring(0, 50) + '...'
+                    : record.description}
+                </span>
+              </Tooltip>
+            )}
+          </Space>
+        )
+      },
+      {
+        title: '作者',
+        dataIndex: 'author',
+        key: 'author'
+      },
+      {
+        title: '平台',
+        dataIndex: 'platform',
+        key: 'platform'
+      },
+      {
+        title: '类型',
+        dataIndex: 'media_type',
+        key: 'media_type',
+        render: (type, record) => {
+          if (type === 'video') {
+            const videoCount = record.all_videos && record.all_videos.length > 0 ? record.all_videos.length : 1;
+            return `视频 (${videoCount}个)`;
+          } else {
+            const imageCount = record.all_images && record.all_images.length > 0 ? record.all_images.length : 1;
+            return type === 'image' && imageCount > 1 ? `图片 (${imageCount}张)` : '图片';
+          }
+        }
+      },
+      {
+        title: '来源',
+        dataIndex: 'source_type',
+        key: 'source_type',
+        render: (type) => type === 1 ? '单链接解析' : '监控任务'
+      },
+      {
+        title: '采集时间',
+        dataIndex: 'created_at',
+        key: 'created_at',
+        render: (time) => {
+          const date = new Date(time);
+          return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
         }
       }
-    },
-    {
-      title: '来源',
-      dataIndex: 'source_type',
-      key: 'source_type',
-      render: (type) => type === 1 ? '单链接解析' : '监控任务'
-    },
-    {
-      title: '采集时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (time) => {
-        const date = new Date(time);
-        return date.toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-      }
-    },
-    {
-      title: 'AI分析',
-      key: 'ai_status',
-      width: 120,
-      fixed: 'right',
-      render: (_, record) => {
-        // 检查是否有AI生成的标签
-        const hasAiTags = record.tags?.some(t => t.is_ai_generated);
-        // 检查是否有描述（描述长度>100视为有效描述）
-        const hasDescription = record.description && record.description.length > 100;
-        const isAnalyzing = aiLoading[record.id];
+    ];
 
-        return (
-          <Space orientation="vertical" size={0}>
-            <div>
-              {hasAiTags && <Badge status="success" text="标签" />}
-              {hasDescription && <Badge status="processing" text="描述" />}
-              {!hasAiTags && !hasDescription && <Badge status="default" text="未分析" />}
-            </div>
+    // 固定列（始终显示）
+    const fixedColumns = [
+      {
+        title: 'AI分析',
+        key: 'ai_status',
+        width: 120,
+        fixed: 'right',
+        render: (_, record) => {
+          // 检查是否有AI生成的标签
+          const hasAiTags = record.tags?.some(t => t.is_ai_generated);
+          // 检查是否有描述（描述长度>100视为有效描述）
+          const hasDescription = record.description && record.description.length > 100;
+          const isAnalyzing = aiLoading[record.id];
+
+          return (
+            <Space orientation="vertical" size={0}>
+              <div>
+                {hasAiTags && <Badge status="success" text="标签" />}
+                {hasDescription && <Badge status="processing" text="描述" />}
+                {!hasAiTags && !hasDescription && <Badge status="default" text="未分析" />}
+              </div>
+              <Button
+                type="link"
+                size="small"
+                icon={<RobotOutlined />}
+                loading={isAnalyzing}
+                onClick={() => handleAiAnalyze(record.id)}
+                style={{ padding: 0 }}
+              >
+                {hasAiTags || hasDescription ? '重新分析' : 'AI分析'}
+              </Button>
+            </Space>
+          );
+        }
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 180,
+        fixed: 'right',
+        render: (_, record) => (
+          <Space size="small" wrap>
+            <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>下载</Button>
             <Button
               type="link"
-              size="small"
-              icon={<RobotOutlined />}
-              loading={isAnalyzing}
-              onClick={() => handleAiAnalyze(record.id)}
-              style={{ padding: 0 }}
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.id)}
             >
-              {hasAiTags || hasDescription ? '重新分析' : 'AI分析'}
+              删除
             </Button>
           </Space>
-        );
+        )
       }
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 180,
-      fixed: 'right',
-      render: (_, record) => (
-        <Space size="small" wrap>
-          <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>下载</Button>
+    ];
+
+    // 过滤用户选择的列，然后加上固定列
+    const visibleBaseColumns = baseColumns.filter(col =>
+      visibleColumns[col.key]
+    );
+
+    return [...visibleBaseColumns, ...fixedColumns];
+  };
+
+  // Column settings menu
+  const columnSettingsMenu = (
+    <div style={{ padding: '8px', minWidth: '150px' }}>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        {ALL_COLUMNS.map(column => (
+          <Checkbox
+            key={column.key}
+            checked={visibleColumns[column.key]}
+            onChange={() => handleColumnToggle(column.key)}
+          >
+            {column.title}
+          </Checkbox>
+        ))}
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f0f0f0' }}>
           <Button
             type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.id)}
+            size="small"
+            onClick={resetColumnConfig}
+            style={{ padding: 0 }}
           >
-            删除
+            恢复默认
           </Button>
-        </Space>
-      )
-    }
-  ];
+        </div>
+      </Space>
+    </div>
+  );
 
   // Row selection configuration
   const rowSelection = {
@@ -1224,11 +1335,20 @@ const ContentManagement = () => {
             >
               批量下载 ({selectedRowKeys.length})
             </Button>
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              dropdownRender={() => columnSettingsMenu}
+            >
+              <Button icon={<SettingOutlined />}>
+                列设置
+              </Button>
+            </Dropdown>
           </Space>
           
-          <Table 
-            dataSource={contentList} 
-            columns={columns} 
+          <Table
+            dataSource={contentList}
+            columns={getFilteredColumns()} 
             rowKey="id"
             pagination={{
               current: pagination.current,
