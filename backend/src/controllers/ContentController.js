@@ -1,4 +1,5 @@
 const { AppDataSource } = require('../utils/db');
+const { In } = require('typeorm');
 const ParseService = require('../services/ParseService');
 const MediaDownloadService = require('../services/MediaDownloadService');
 const AiAnalysisService = require('../services/AiAnalysisService');
@@ -458,7 +459,7 @@ class ContentController {
       const contentRepository = AppDataSource.getRepository('Content');
 
       // Get contents to delete
-      const contents = await contentRepository.findBy({ id: ids });
+      const contents = await contentRepository.findBy({ id: In(ids) });
       
       // Delete from database
       await contentRepository.delete(ids);
@@ -470,10 +471,12 @@ class ContentController {
       for (const content of contents) {
         const filePath = path.join(process.env.STORAGE_ROOT_PATH, content.file_path);
         try {
-          await fs.unlink(filePath);
+          // 使用 fs.remove() 删除整个文件夹及其内容
+          await fs.remove(filePath);
+          console.log(`已删除文件/文件夹: ${filePath}`);
         } catch (fileError) {
           console.error('Delete file error:', fileError);
-          // Continue even if file deletion fails
+          // 继续删除其他文件，即使删除失败
         }
       }
       
