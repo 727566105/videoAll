@@ -1,0 +1,34 @@
+{
+  "title": "看得出她是\\公主/",
+  "author": "Huhu安",
+  "platform": "bilibili",
+  "content_id": "BV1sqvCBSEBH",
+  "description": "-",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1sqvCBSEBH/?-Arouter=story&buvid=XU1385511FED24B6C37D7F7040D8AA0BEFB89&from_spmid=tm.recommend.0.0&is_story_h5=true&mid=rMzHDsgn2jUxDg5x4vHDtw%3D%3D&p=1&plat_id=163&share_from=ugc&share_medium=android&share_plat=android&share_session_id=6cb6d65b-cb1f-4ce2-bae3-fcd7d7d8d684&share_source=COPY&share_tag=s_i&spmid=main.ugc-video-detail-vertical.0.0&timestamp=1766920746&unique_k=JWuXrcD&up_id=284194350",
+  "cover_url": "http://i1.hdslb.com/bfs/archive/5749094cfb83566146e31244fbb3de2973f6226b.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://b-3a941ad4guqmkj1a5gwi64a8q9h7l5fw95c.edge.mountaintoys.cn:4483/upgcxcode/41/85/35036268541/35036268541-1-192.mp4?e=ig8euxZM2rNcNbRghWdVhwdlhWN1hwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&gen=playurlv3&og=cos&oi=3707349438&deadline=1766928348&platform=pc&trid=0000e9404ae5639c4c32b5f2b87cacbc7c4u&mid=0&os=mcdn&nbs=1&uipk=5&upsig=8d8905dcd8849eec9a5fd011d0ef0bab&uparams=e,gen,og,oi,deadline,platform,trid,mid,os,nbs,uipk&mcdnid=50045820&bvc=vod&nettype=0&bw=1016524&lrs=54&dl=0&f=u_0_0&qn_dyeid=e3c6e27a949c9e07009bd2c7695113bc&agrr=0&buvid=&build=0&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 374,
+  "comment_count": 33,
+  "share_count": 14,
+  "tags": [],
+  "publish_time": "2025-12-28T10:46:41.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/看得出她是_公主__BV1sqvCBSEBH/cover.jpg",
+      "fileSize": 464309,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i1.hdslb.com/bfs/archive/5749094cfb83566146e31244fbb3de2973f6226b.jpg"
+    }
+  ],
+  "download_time": "2025-12-28T11:25:48.975Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/看得出她是_公主__BV1sqvCBSEBH"
+}

@@ -1,0 +1,45 @@
+{
+  "title": "简单4步，带你上手微调大模型【小白教程】",
+  "author": "秋芝2046",
+  "platform": "bilibili",
+  "content_id": "BV1Um421g7NM",
+  "description": "之前朋友们想要的微调来啦～\n喜欢的朋友们可以三连+关注支持一下～这对我帮助真的很大",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1Um421g7NM/?spm_id_from=333.337.search-card.all.click&vd_source=0444c7e4e9701a2bebef78ff53c23a20",
+  "cover_url": "http://i2.hdslb.com/bfs/archive/27b73c55745567a077f2e89b77ee8bf445c4f277.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://upos-sz-estgcos.bilivideo.com/upgcxcode/10/78/1646897810/1646897810-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&mid=0&platform=pc&deadline=1766922534&nbs=1&oi=3707349438&gen=playurlv3&os=estgcos&uipk=5&og=cos&trid=eebd955cf4764feda72bc408984204cu&upsig=bb69f9e1f29d33daaa958cf38343e8cb&uparams=e,mid,platform,deadline,nbs,oi,gen,os,uipk,og,trid&bvc=vod&nettype=0&bw=765893&agrr=1&buvid=&build=0&dl=0&f=u_0_0&qn_dyeid=d787d3a88881d81b00ff6d066950fd05&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 2971,
+  "comment_count": 219,
+  "share_count": 570,
+  "tags": [],
+  "publish_time": "2024-08-12T09:17:38.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/简单4步，带你上手微调大模型【小白教程】_BV1Um421g7NM/cover.jpg",
+      "fileSize": 195230,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i2.hdslb.com/bfs/archive/27b73c55745567a077f2e89b77ee8bf445c4f277.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/简单4步，带你上手微调大模型【小白教程】_BV1Um421g7NM/video_1.mp4",
+      "fileSize": 55048565,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "https://upos-sz-estgcos.bilivideo.com/upgcxcode/10/78/1646897810/1646897810-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&mid=0&platform=pc&deadline=1766922534&nbs=1&oi=3707349438&gen=playurlv3&os=estgcos&uipk=5&og=cos&trid=eebd955cf4764feda72bc408984204cu&upsig=bb69f9e1f29d33daaa958cf38343e8cb&uparams=e,mid,platform,deadline,nbs,oi,gen,os,uipk,og,trid&bvc=vod&nettype=0&bw=765893&agrr=1&buvid=&build=0&dl=0&f=u_0_0&qn_dyeid=d787d3a88881d81b00ff6d066950fd05&orderid=0,3"
+    }
+  ],
+  "download_time": "2025-12-28T09:48:54.930Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/简单4步，带你上手微调大模型【小白教程】_BV1Um421g7NM"
+}

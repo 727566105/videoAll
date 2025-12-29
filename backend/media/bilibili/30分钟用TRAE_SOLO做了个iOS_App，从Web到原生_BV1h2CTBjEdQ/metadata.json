@@ -1,0 +1,45 @@
+{
+  "title": "30分钟用TRAE SOLO做了个iOS App，从Web到原生",
+  "author": "AI进化论-花生",
+  "platform": "bilibili",
+  "content_id": "BV1h2CTBjEdQ",
+  "description": "我用 TRAE SOLO 把 Web 版的图像处理功能重构成了 iOS 原生 App。整个过程体验了 SOLO Coder 的核心功能:Plan模式先规划再执行、多任务并行同时开发多个模块、Sub Agent 智能协作自动调用专业智能体、Diff View集中查看所有代码变更。开发过程中遇到编译错误,用 Plan 模式分析并快速修复。\n最终 1:1 复刻了 Web 版功能。TRAE SOLO 特别适合专业开发者处理复杂项目:需求迭代、代码重构、Bug修复、技术迁移等场景。现在还在限时免费,可以试试。\n\n⏱️ 时间戳\n00:00:00 - 项目背景与需求\n00:00:25 - TRAE SOLO & SOLO Coder 介绍\n00:02:23 - Plan 模式制定开发计划 ⭐\n00:03:22 - To-Do List 实时进度追踪\n00:04:54 - 多任务并行开发 ⭐\n00:06:10 - Sub Agent 智能协作\n00:07:03 - Diff View 查看代码变更\n00:08:25 - 开发成果及小结",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1h2CTBjEdQ/?spm_id_from=333.1387.favlist.content.click&vd_source=0444c7e4e9701a2bebef78ff53c23a20",
+  "cover_url": "http://i0.hdslb.com/bfs/archive/14830dfcb8121aca05fc79d4735de724e54a8785.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://upos-sz-estgcos.bilivideo.com/upgcxcode/13/26/33996672613/33996672613-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&oi=3707349438&platform=pc&os=estgcos&nbs=1&uipk=5&gen=playurlv3&og=cos&trid=28a04d37f6e440d798d69c15069d192u&mid=0&deadline=1766852073&upsig=004bc3e403f1e5c242a404bf09167443&uparams=e,oi,platform,os,nbs,uipk,gen,og,trid,mid,deadline&bvc=vod&nettype=0&bw=604177&build=0&dl=0&f=u_0_0&qn_dyeid=dd0a375c19d88b0a00c27032694fe9c9&agrr=0&buvid=&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 1617,
+  "comment_count": 47,
+  "share_count": 89,
+  "tags": [],
+  "publish_time": "2025-11-14T08:01:47.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/30分钟用TRAE_SOLO做了个iOS_App，从Web到原生_BV1h2CTBjEdQ/cover.jpg",
+      "fileSize": 136757,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i0.hdslb.com/bfs/archive/14830dfcb8121aca05fc79d4735de724e54a8785.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/30分钟用TRAE_SOLO做了个iOS_App，从Web到原生_BV1h2CTBjEdQ/video_1.mp4",
+      "fileSize": 51279526,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "https://upos-sz-estgcos.bilivideo.com/upgcxcode/13/26/33996672613/33996672613-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&oi=3707349438&platform=pc&os=estgcos&nbs=1&uipk=5&gen=playurlv3&og=cos&trid=28a04d37f6e440d798d69c15069d192u&mid=0&deadline=1766852073&upsig=004bc3e403f1e5c242a404bf09167443&uparams=e,oi,platform,os,nbs,uipk,gen,og,trid,mid,deadline&bvc=vod&nettype=0&bw=604177&build=0&dl=0&f=u_0_0&qn_dyeid=dd0a375c19d88b0a00c27032694fe9c9&agrr=0&buvid=&orderid=0,3"
+    }
+  ],
+  "download_time": "2025-12-27T14:14:35.195Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/30分钟用TRAE_SOLO做了个iOS_App，从Web到原生_BV1h2CTBjEdQ"
+}

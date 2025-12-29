@@ -1,0 +1,45 @@
+{
+  "title": "为什么 Claude Code 能成？揭秘背后的极致产品哲学",
+  "author": "碳硅同传",
+  "platform": "bilibili",
+  "content_id": "BV1jnm2BGEQE",
+  "description": "如何设计一款让“人”和“AI”都好用的工具？Claude Code 的强大有目共睹，但很多人只看到了它的强，没看懂它背后的“巧”。 作为产品构建者，这期播客最打动我的是它的设计哲学：Dual-use（双重用途）。 它是如何把 CLI（命令行）这种古老的交互，改造成既符合人类直觉，又能让 AI 高效调用的“新物种”的？\n\n✨ 看点：\n痛点即机会： 哪怕是 Anthropic 内部，也是被“懒”驱动出来的创新。\nYOLO 原型法： 别写完美的 PRD 了，用“抛弃式代码”快速验证需求。\n交互创新： Auto-accept 和 Slash Commands 背后，是对用户心流的极致保护。\n数据飞轮： 怎么让 Agent 自己写日志、自己复盘，变成团队的知识资产？\n\n这不仅是给程序员看的，更是给所有想做 AI Native 应用的产品人的一个启发。",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1jnm2BGEQE/?spm_id_from=333.1007.tianma.9-1-31.click&vd_source=0444c7e4e9701a2bebef78ff53c23a20",
+  "cover_url": "http://i1.hdslb.com/bfs/archive/0187fa230859635ee906c4c35aef53c4c5a69bd1.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://upos-sz-mirror08c.bilivideo.com/upgcxcode/92/68/34700266892/34700266892-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&nbs=1&platform=pc&mid=0&deadline=1766923065&uipk=5&oi=3707349438&trid=22646045203b426dbc994361e011b75u&gen=playurlv3&os=08cbv&og=cos&upsig=4262af60dd17eb545f97ec912b318e99&uparams=e,nbs,platform,mid,deadline,uipk,oi,trid,gen,os,og&bvc=vod&nettype=0&bw=297936&build=0&dl=0&f=u_0_0&qn_dyeid=8db9a27682787e14005313cb6950ff19&agrr=1&buvid=&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 94,
+  "comment_count": 13,
+  "share_count": 27,
+  "tags": [],
+  "publish_time": "2025-12-13T03:35:00.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/为什么_Claude_Code_能成？揭秘背后的极致产品哲学_BV1jnm2BGEQE/cover.jpg",
+      "fileSize": 317636,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i1.hdslb.com/bfs/archive/0187fa230859635ee906c4c35aef53c4c5a69bd1.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/为什么_Claude_Code_能成？揭秘背后的极致产品哲学_BV1jnm2BGEQE/video_1.mp4",
+      "fileSize": 25250083,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "https://upos-sz-mirror08c.bilivideo.com/upgcxcode/92/68/34700266892/34700266892-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&nbs=1&platform=pc&mid=0&deadline=1766923065&uipk=5&oi=3707349438&trid=22646045203b426dbc994361e011b75u&gen=playurlv3&os=08cbv&og=cos&upsig=4262af60dd17eb545f97ec912b318e99&uparams=e,nbs,platform,mid,deadline,uipk,oi,trid,gen,os,og&bvc=vod&nettype=0&bw=297936&build=0&dl=0&f=u_0_0&qn_dyeid=8db9a27682787e14005313cb6950ff19&agrr=1&buvid=&orderid=0,3"
+    }
+  ],
+  "download_time": "2025-12-28T09:58:10.928Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/为什么_Claude_Code_能成？揭秘背后的极致产品哲学_BV1jnm2BGEQE"
+}

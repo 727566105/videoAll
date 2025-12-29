@@ -1,0 +1,45 @@
+{
+  "title": "Claude Code 用了 30 天，我再也回不去从零手写代码了 | 编程正式从「胶卷时代」正式迈入「数码时代」| Vibe Coding",
+  "author": "海拉鲁编程客",
+  "platform": "bilibili",
+  "content_id": "BV1YPYXzTE9w",
+  "description": "视频简介：\nClaude Code火了，但大部分人却在吐槽它的\"黑框界面\"。作为一个用Claude Code写了7万行代码的程序员，我想分享一些不一样的观点。\n本期视频，我会带你深入了解：\n\n- 为什么2025年最强的AI编程工具偏偏选择了\"土掉渣\"的终端界面\n- 我总结的\"谋定动\"三字诀，如何让AI编程效率真正翻倍\n- 那些隐藏的提示词技巧（比如\"think harder\"的魔法咒语）\n- Claude Code每天烧掉100-200美元Token的真实体验\n- 从\"代码搬运工\"到\"AI驾驶员\"的身份转变\n- AI编程的真实边界：大模型、工程、人的三要素框架\n\n如果你正在观望Claude Code，或者想提升AI编程效率，这个视频会给你最真实的参考。从编程的\"胶卷时代\"到\"数码时代\"，让我们一起探讨这场正在发生的革命。\n\n时间戳：\n\n00:00 开场：Claude Code的争议与真相\n00:20 我的实战成果 - 三个项目，7万行代码\n00:59 第一部分：编辑器进化史\n01:46 2015-2018：从手敲代码到智能补全\n02:19 2022-2023：ChatGPT时代的\"代码搬运工\"\n02:40 2024-2025：AI编程工具的神仙打架\n03:29 为什么Claude Code选择了黑框？- 深度解析\n04:05 终端的三大优势 - 自由度、认知负担、工具融合\n04:33 界面vs效率的真相 - Token额度的秘密\n04:58 第二部分：Claude Code实战技巧\n05:08 \"谋定动\"三字诀详解 - 自动驾驶式编程\n05:32 谋：需求聊透的艺术 - 对话式需求文档\n06:16 定：任务拆解的智慧 - 渐进式TODO\n06:55 动：狂飙模式的把控 - ESC与clear技巧\n07:46 实用小技巧合集 - init、commit、自定义命令\n09:06 第三部分：提示词技巧揭秘\n09:32 简单就是最好 - 不需要复杂框架\n09:50 \"你给我好好想想\"的科学原理\n10:09 魔法咒语：think harder与ultrathink\n10:15 链式思考：避免超时的秘诀\n10:33 正面表达vs负面限制 - 引导AI的艺术\n11:01 生产级代码标准 - 避免AI投机取巧\n11:23 长文本优化技巧 - 内容在前，指令在后\n11:47 第四部分：AI编程的边界\n11:54 大模型：天花板的决定因素\n12:32 工程：让能力落地的壳\n13:14 人：定义者、把关者、创新者\n13:37 AI编程现状：超级助手，而非替代品\n13:37 第五部分：从胶卷到数码的感悟\n13:39 Claude Code宕机那天的震撼\n14:07 编程习惯的根本改变\n14:16 胶卷时代vs数码时代的完美类比\n14:45 程序员角色的深刻转变\n15:10 结语：时代变了，我们不必回去\n\n👉 如果这个视频对你有帮助，记得点赞支持！\n💬 你对AI编程工具有什么看法？欢迎在评论区分享你的经历\n🔔 订阅频道，获取更多AI相关的内容",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1YPYXzTE9w/?spm_id_from=333.1387.favlist.content.click&vd_source=0444c7e4e9701a2bebef78ff53c23a20",
+  "cover_url": "http://i2.hdslb.com/bfs/archive/5b0f63f68f4f1e0dea3f4881ed3c7047e53c8d79.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://upos-sz-estgoss.bilivideo.com/upgcxcode/48/57/31844925748/31844925748-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&uipk=5&mid=0&deadline=1766839418&gen=playurlv3&os=estgoss&og=hw&platform=pc&oi=3707349438&trid=88c3745a66e64a50924233e2a32e42au&nbs=1&upsig=4087d3661c36b4ff1161a452c7a29c3d&uparams=e,uipk,mid,deadline,gen,os,og,platform,oi,trid,nbs&bvc=vod&nettype=0&bw=343495&dl=0&f=u_0_0&qn_dyeid=03f02f61e47194d000f4b3fd694fb85a&agrr=1&buvid=&build=0&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 1443,
+  "comment_count": 274,
+  "share_count": 317,
+  "tags": [],
+  "publish_time": "2025-08-21T08:10:31.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/Claude_Code_用了_30_天，我再也回不去从零手写代码了___编程正式从「胶卷时代」正式迈入「数码时代」__Vibe_Coding_BV1YPYXzTE9w/cover.jpg",
+      "fileSize": 328545,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i2.hdslb.com/bfs/archive/5b0f63f68f4f1e0dea3f4881ed3c7047e53c8d79.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/Claude_Code_用了_30_天，我再也回不去从零手写代码了___编程正式从「胶卷时代」正式迈入「数码时代」__Vibe_Coding_BV1YPYXzTE9w/video_1.mp4",
+      "fileSize": 39673775,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "https://upos-sz-estgoss.bilivideo.com/upgcxcode/48/57/31844925748/31844925748-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&uipk=5&mid=0&deadline=1766839418&gen=playurlv3&os=estgoss&og=hw&platform=pc&oi=3707349438&trid=88c3745a66e64a50924233e2a32e42au&nbs=1&upsig=4087d3661c36b4ff1161a452c7a29c3d&uparams=e,uipk,mid,deadline,gen,os,og,platform,oi,trid,nbs&bvc=vod&nettype=0&bw=343495&dl=0&f=u_0_0&qn_dyeid=03f02f61e47194d000f4b3fd694fb85a&agrr=1&buvid=&build=0&orderid=0,3"
+    }
+  ],
+  "download_time": "2025-12-27T10:43:42.411Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/Claude_Code_用了_30_天，我再也回不去从零手写代码了___编程正式从「胶卷时代」正式迈入「数码时代」__Vibe_Coding_BV1YPYXzTE9w"
+}

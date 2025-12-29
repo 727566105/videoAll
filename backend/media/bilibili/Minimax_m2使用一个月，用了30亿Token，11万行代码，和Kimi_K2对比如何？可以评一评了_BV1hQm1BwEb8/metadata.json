@@ -1,0 +1,45 @@
+{
+  "title": "Minimax m2使用一个月，用了30亿Token，11万行代码，和Kimi K2对比如何？可以评一评了",
+  "author": "小天fotos",
+  "platform": "bilibili",
+  "content_id": "BV1hQm1BwEb8",
+  "description": "Minimax的Coding Plan订阅刚好满一个月，同时也订阅了Kimi k2。\n\n用这两个模型尝试不读一行代码的黑盒式开发。\n\n用了一个月，产出11万行代码，也跑通了流程。\n\n这期先聊一下这两个模型的能力对比。\n\n下期详细分享这个项目的黑盒式开发的经验。",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1hQm1BwEb8/?spm_id_from=333.1387.favlist.content.click&vd_source=0444c7e4e9701a2bebef78ff53c23a20",
+  "cover_url": "http://i1.hdslb.com/bfs/archive/5f8f24265fed3992d2c6aaa0323df0f16e3cb9f2.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://upos-sz-mirror08h.bilivideo.com/upgcxcode/26/90/34750989026/34750989026-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&nbs=1&gen=playurlv3&os=08hbv&trid=b0efeeeff2994909b209c4458e23688u&mid=0&oi=3707349438&deadline=1766854690&og=hw&uipk=5&platform=pc&upsig=2bd78ab84dafd0c670c9c67841f1cfa3&uparams=e,nbs,gen,os,trid,mid,oi,deadline,og,uipk,platform&bvc=vod&nettype=0&bw=182608&qn_dyeid=91736d114b7973e30065a426694ff402&agrr=0&buvid=&build=0&dl=0&f=u_0_0&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 311,
+  "comment_count": 207,
+  "share_count": 34,
+  "tags": [],
+  "publish_time": "2025-12-15T11:00:00.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/Minimax_m2使用一个月，用了30亿Token，11万行代码，和Kimi_K2对比如何？可以评一评了_BV1hQm1BwEb8/cover.jpg",
+      "fileSize": 141083,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i1.hdslb.com/bfs/archive/5f8f24265fed3992d2c6aaa0323df0f16e3cb9f2.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/Minimax_m2使用一个月，用了30亿Token，11万行代码，和Kimi_K2对比如何？可以评一评了_BV1hQm1BwEb8/video_1.mp4",
+      "fileSize": 19676099,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "https://upos-sz-mirror08h.bilivideo.com/upgcxcode/26/90/34750989026/34750989026-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&nbs=1&gen=playurlv3&os=08hbv&trid=b0efeeeff2994909b209c4458e23688u&mid=0&oi=3707349438&deadline=1766854690&og=hw&uipk=5&platform=pc&upsig=2bd78ab84dafd0c670c9c67841f1cfa3&uparams=e,nbs,gen,os,trid,mid,oi,deadline,og,uipk,platform&bvc=vod&nettype=0&bw=182608&qn_dyeid=91736d114b7973e30065a426694ff402&agrr=0&buvid=&build=0&dl=0&f=u_0_0&orderid=0,3"
+    }
+  ],
+  "download_time": "2025-12-27T14:58:29.956Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/Minimax_m2使用一个月，用了30亿Token，11万行代码，和Kimi_K2对比如何？可以评一评了_BV1hQm1BwEb8"
+}

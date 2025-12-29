@@ -1,0 +1,34 @@
+{
+  "title": "看得出她是\\公主/",
+  "author": "Huhu安",
+  "platform": "bilibili",
+  "content_id": "BV1sqvCBSEBH",
+  "description": "-",
+  "media_type": "video",
+  "source_url": "https://b23.tv/JWuXrcD",
+  "cover_url": "http://i1.hdslb.com/bfs/archive/5749094cfb83566146e31244fbb3de2973f6226b.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://b-3a941ad4guqmkj1a5gwi64a8q9h7l5fw95c.edge.mountaintoys.cn:4483/upgcxcode/41/85/35036268541/35036268541-1-192.mp4?e=ig8euxZM2rNcNbRghWdVhwdlhWN1hwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&oi=3707349438&deadline=1766928305&platform=pc&trid=00007ae5de4f4fda4869a1320636cc73b6bu&os=mcdn&og=cos&nbs=1&mid=0&gen=playurlv3&uipk=5&upsig=4e6506cb70656924d3dcdde468c781b0&uparams=e,oi,deadline,platform,trid,os,og,nbs,mid,gen,uipk&mcdnid=50045820&bvc=vod&nettype=0&bw=1016524&lrs=54&dl=0&f=u_0_0&qn_dyeid=164b5849d1b2a38e000e4c6069511391&agrr=0&buvid=&build=0&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 372,
+  "comment_count": 31,
+  "share_count": 14,
+  "tags": [],
+  "publish_time": "2025-12-28T10:46:41.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/看得出她是_公主__BV1sqvCBSEBH/cover.jpg",
+      "fileSize": 464309,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i1.hdslb.com/bfs/archive/5749094cfb83566146e31244fbb3de2973f6226b.jpg"
+    }
+  ],
+  "download_time": "2025-12-28T11:25:06.163Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/看得出她是_公主__BV1sqvCBSEBH"
+}

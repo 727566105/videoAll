@@ -104,8 +104,27 @@ class ContentController {
       } else if (error.code === '23505') {
         errorMessage = '解析失败: 内容已存在';
       }
-      
-      res.status(500).json({ message: errorMessage });
+      // Cookie 相关错误提示
+      else if (error.message && error.message.includes('Cookie') &&
+               (error.message.includes('页面访问受限') || error.message.includes('需要提供'))) {
+        errorMessage = '解析失败: 该链接需要 Cookie 才能访问\n\n请前往「系统配置 → Cookie 管理」添加小红书 Cookie 以提高解析成功率。\n\n获取 Cookie 方法：\n1. 浏览器登录小红书\n2. 打开「开发者工具」(F12)\n3. 进入「Network」标签\n4. 刷新页面，找到任意请求\n5. 复制 Request Headers 中的 Cookie 值';
+      }
+      // 网络错误（无 Cookie 模式下的通用错误）
+      else if (error.message && error.message.includes('NETWORK_ERROR')) {
+        errorMessage = '解析失败: 页面访问受限，需要配置 Cookie\n\n建议：\n1. 前往「系统配置 → Cookie 管理」配置平台 Cookie\n2. 使用含 Cookie 的链接重试\n\n提示：配置 Cookie 可以显著提高解析成功率';
+      }
+
+      // 返回详细错误信息，前端根据 error_type 字段判断
+      let errorType = 'general';
+      if (error.message && (error.message.includes('Cookie') || error.message.includes('NETWORK_ERROR'))) {
+        errorType = 'cookie_required';
+      }
+
+      res.status(500).json({
+        message: errorMessage,
+        error_type: errorType,
+        original_error: error.message
+      });
     }
   }
 
@@ -970,20 +989,29 @@ class ContentController {
   static async saveContent(req, res) {
     try {
       const { link, source_type = 1, task_id = null } = req.body;
-      
+
       if (!link) {
         return res.status(400).json({ message: '请提供作品链接' });
       }
-      
+
       // Parse the link first
       const parsedData = await ParseService.parseLink(link);
-      
+
       // Detect platform from link
       const platform = ParseService.detectPlatform(link);
       if (!platform) {
         return res.status(400).json({ message: '不支持的平台链接' });
       }
-      
+
+      // Check if AppDataSource is initialized
+      if (!AppDataSource.isInitialized) {
+        console.error('PostgreSQL 数据库未初始化');
+        return res.status(500).json({
+          message: '数据库连接失败，请稍后重试',
+          error: 'DATABASE_NOT_INITIALIZED'
+        });
+      }
+
       // Get Content repository from TypeORM
       const contentRepository = AppDataSource.getRepository('Content');
       
@@ -1069,7 +1097,7 @@ class ContentController {
       CacheService.flush();
 
       // 触发AI分析（异步，不阻塞响应，但需要捕获异常防止未处理Promise拒绝）
-      this.triggerAiAnalysis(content, parsedData).catch(error => {
+      ContentController.triggerAiAnalysis(content, parsedData).catch(error => {
         console.error('AI分析异步任务异常（不影响内容保存）:', error.message);
       });
 

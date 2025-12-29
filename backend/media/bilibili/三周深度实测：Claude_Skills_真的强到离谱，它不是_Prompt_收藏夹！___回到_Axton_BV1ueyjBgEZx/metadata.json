@@ -1,0 +1,45 @@
+{
+  "title": "三周深度实测：Claude Skills 真的强到离谱，它不是 Prompt 收藏夹！ | 回到 Axton",
+  "author": "回到Axton",
+  "platform": "bilibili",
+  "content_id": "BV1ueyjBgEZx",
+  "description": "Claude Skills 发布三周后，我确信它是当前最值得关注的 Agent 技术。\n\n 很多人误以为 Skills 只是\"保存 Prompt 的地方\"，但它真正的能力是：把你的判断逻辑和处理流程封装成可复用的模块，将 4-5\n 小时的人工工作压缩到 5 分钟。\n\n 本期视频用两个真实案例带你理解：\n ✅ 能力包型 Skills：封装复杂判断逻辑（笔记整理案例）\n ✅ 软编排型 Skills：协调多个 sub-agents 协作（字幕处理案例）\n\n 无需写代码，看完即可上手。视频最后提供完整的 5 步操作指南。\n\n 🎯 适合人群：\n • Claude 付费用户（想深度使用 Skills 功能）\n • 需要处理重复性知识工作的人（整理笔记、处理文档等）\n • 对 AI 自动化、Agent 技术感兴趣的探索者\n\n ⏱️ 章节目录：\n 0:00 开场：为什么 Skills 能改变 Agent 格局\n 1:35 什么是 Claude Skills？\n 3:39 Prompt vs Skill 的本质区别\n 5:55 案例1：能力包型 Skills（笔记整理自动化）\n 12:05 案例2：软编排型 Skills（字幕转文章工作流）\n 16:17 使用限制与注意事项\n 19:35 快速上手：5步创建你的第一个 Skill\n\n以下是2 个 Skills 资源网站，供大家参考。 但是注意，由于 Skill 需要代码执行权限，因此对于第三方的 Skills 大家要谨慎使用：\n\nhttps://github.com/anthropics/skills\n这是 Anthropic 的官方 Skills，既可以用来学习，还可以用来把他们放到 Claude Code 里用。\nhttps://github.com/BehiSecc/awesome-claude-skills\nAwesome 系列，这是 Skills\n\n---\n\n『我的核心课程与社群』\n\n🔥「MAPS™ AI 系统化训练营」| 从“工具使用者”到“系统构建者”\n从零开始，手把手带你掌握可迁移的系统化思维，独立设计、部署并迭代多场景的AI自动化工作流，用AI重塑你的核心竞争力。\n👉 https://www.axtonliu.ai/aiagent\n\n⚡「AI 精英圈」社群 | 你的AI私人智囊团\n加入社群，解锁精英周刊、社区深度互动、专属工具资源与每月直播答疑等多项会员特权。\n👉 https://www.axtonliu.ai/ai-elite\n\n▶︎ 其他实战课程\n-「AI 实战派」Prompt Engineering 提示工程课: https://axtonliu.ai/ai \n-「AI 自动化」ChatGPT + Make 高效工作流: https://axtonliu.ai/autoai \n\n\n ---\n\n✨『我使用的生产力工具』\n（免责声明：以下部分链接为推荐链接，您通过此链接购买，我可能会获得少量佣金，但不会影响您的购买价格。）\n\n• Make: 我首选的无代码自动化平台 → https://www.make.com/en/register?pc=axton\n• TubeBuddy: YouTube频道主必备的增长与管理工具 → https://www.tubebuddy.com/axton\n• Envato Elements: 高性价比的无限图片视频素材库 → https://1.envato.market/axton\n\n---\n\n#ClaudeSkills #AI自动化 #AIAgent #MAPS #AxtonLiu\n\n🤝【联系与关注】\n\n官网首页：https://axtonliu.ai\nTwitter: https://twitter.com/AxtonLiu\n我的博客&Newsletter: https://www.axtonliu.ai/newsletters/ai-2\n\n免责声明：\n视频仅供娱乐和教育之用。所有信息都是基于互联网的公开资料，请进行独立研究并做出明智决策。",
+  "media_type": "video",
+  "source_url": "https://www.bilibili.com/video/BV1ueyjBgEZx/?spm_id_from=333.1387.favlist.content.click&vd_source=0444c7e4e9701a2bebef78ff53c23a20",
+  "cover_url": "http://i2.hdslb.com/bfs/archive/110552c69ac1f50127bd50a259b17ec09b896b81.jpg",
+  "all_images": [],
+  "all_videos": [
+    "https://upos-sz-estgcos.bilivideo.com/upgcxcode/68/52/34102185268/34102185268-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&nbs=1&trid=097f6f8d301544ca86a14e7d2ffa074u&uipk=5&mid=0&os=estgcos&oi=3707349438&platform=pc&deadline=1766840200&gen=playurlv3&og=cos&upsig=8f1da1550e09e70e649d280f14bfa051&uparams=e,nbs,trid,uipk,mid,os,oi,platform,deadline,gen,og&bvc=vod&nettype=0&bw=351859&qn_dyeid=9f147c97b71ef7c1000c214d694fbb68&agrr=1&buvid=&build=0&dl=0&f=u_0_0&orderid=0,3"
+  ],
+  "has_live_photo": false,
+  "like_count": 903,
+  "comment_count": 140,
+  "share_count": 339,
+  "tags": [],
+  "publish_time": "2025-11-19T13:00:00.000Z",
+  "downloaded_files": [
+    {
+      "success": true,
+      "filename": "cover.jpg",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/三周深度实测：Claude_Skills_真的强到离谱，它不是_Prompt_收藏夹！___回到_Axton_BV1ueyjBgEZx/cover.jpg",
+      "fileSize": 132569,
+      "contentType": "image/jpeg",
+      "extension": ".jpg",
+      "type": "cover",
+      "originalUrl": "http://i2.hdslb.com/bfs/archive/110552c69ac1f50127bd50a259b17ec09b896b81.jpg"
+    },
+    {
+      "success": true,
+      "filename": "video_1.mp4",
+      "filePath": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/三周深度实测：Claude_Skills_真的强到离谱，它不是_Prompt_收藏夹！___回到_Axton_BV1ueyjBgEZx/video_1.mp4",
+      "fileSize": 66985325,
+      "contentType": "video/mp4",
+      "extension": ".mp4",
+      "type": "video",
+      "index": 1,
+      "originalUrl": "https://upos-sz-estgcos.bilivideo.com/upgcxcode/68/52/34102185268/34102185268-1-192.mp4?e=ig8euxZM2rNcNbRVhwdVhwdlhWdVhwdVhoNvNC8BqJIzNbfqXBvEqxTEto8BTrNvN0GvT90W5JZMkX_YN0MvXg8gNEV4NC8xNEV4N03eN0B5tZlqNxTEto8BTrNvNeZVuJ10Kj_g2UB02J0mN0B5tZlqNCNEto8BTrNvNC7MTX502C8f2jmMQJ6mqF2fka1mqx6gqj0eN0B599M=&nbs=1&trid=097f6f8d301544ca86a14e7d2ffa074u&uipk=5&mid=0&os=estgcos&oi=3707349438&platform=pc&deadline=1766840200&gen=playurlv3&og=cos&upsig=8f1da1550e09e70e649d280f14bfa051&uparams=e,nbs,trid,uipk,mid,os,oi,platform,deadline,gen,og&bvc=vod&nettype=0&bw=351859&qn_dyeid=9f147c97b71ef7c1000c214d694fbb68&agrr=1&buvid=&build=0&dl=0&f=u_0_0&orderid=0,3"
+    }
+  ],
+  "download_time": "2025-12-27T10:56:41.576Z",
+  "folder_path": "/Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/backend/media/bilibili/三周深度实测：Claude_Skills_真的强到离谱，它不是_Prompt_收藏夹！___回到_Axton_BV1ueyjBgEZx"
+}
