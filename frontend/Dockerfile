@@ -4,7 +4,7 @@
 # ============================================
 # 阶段 1: 构建阶段
 # ============================================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # 构建参数
@@ -91,7 +91,7 @@ CMD ["nginx", "-g", "daemon off;"]
 # ============================================
 # 阶段 3: 开发环境（可选）
 # ============================================
-FROM node:18-alpine AS development
+FROM node:20-alpine AS development
 WORKDIR /app
 
 # 安装开发工具
