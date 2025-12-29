@@ -56,7 +56,9 @@ jobs:
 
       - name: 安装后端依赖
         working-directory: ./backend
-        run: npm ci
+        run: |
+          echo "使用 npm install 替代 npm ci..."
+          npm install --prefer-offline --no-audit --no-fund
 
       - name: 代码检查 (ESLint)
         working-directory: ./backend
@@ -124,7 +126,9 @@ jobs:
 
       - name: 安装前端依赖
         working-directory: ./frontend
-        run: npm ci
+        run: |
+          echo "使用 npm install 替代 npm ci 以避免可选依赖问题..."
+          npm install --prefer-offline --no-audit --no-fund
 
       - name: 代码检查 (ESLint)
         working-directory: ./frontend
