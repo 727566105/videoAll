@@ -249,7 +249,7 @@ jobs:
 
       # 可选：发送钉钉/企业微信/Slack 通知
       - name: 发送钉钉通知 (可选)
-        if: ${{ secrets.DINGTALK_WEBHOOK != '' }}
+        if: ${{ secrets.DINGTALK_WEBHOOK }}
         run: |
           curl -X POST "${{ secrets.DINGTALK_WEBHOOK }}" \
             -H 'Content-Type: application/json' \
@@ -263,7 +263,7 @@ jobs:
         continue-on-error: true
 
       - name: 发送 Slack 通知 (可选)
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ secrets.SLACK_WEBHOOK_URL }}
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
