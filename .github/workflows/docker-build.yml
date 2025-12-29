@@ -107,6 +107,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # 强制拉取最新的基础镜像
+          pull: true
           build-args: |
             NODE_ENV=production
             VERSION=${{ github.ref_name }}
@@ -202,6 +204,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # 强制拉取最新的基础镜像
+          pull: true
           build-args: |
             VITE_API_BASE_URL=/api/v1
             VERSION=${{ github.ref_name }}
@@ -298,6 +302,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # 强制拉取最新的基础镜像
+          pull: true
           build-args: |
             VERSION=${{ github.ref_name }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
