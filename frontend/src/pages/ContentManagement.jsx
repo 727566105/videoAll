@@ -998,7 +998,9 @@ const ContentManagement = () => {
             backgroundColor: `${token?.colorSuccess}15`,
             border: `1px solid ${token?.colorSuccess}40`,
             borderRadius: token?.borderRadiusLG || 8,
-            marginBottom: '16px'
+            marginBottom: '16px',
+            position: 'relative',
+            overflow: 'hidden'
           }}>
             <h4 style={{
               marginTop: 0,
@@ -1007,40 +1009,79 @@ const ContentManagement = () => {
               fontWeight: 600,
               color: token?.colorSuccess,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
+              alignItems: 'center'
             }}>
-              <span>📝 内容描述</span>
-              {previewContent.description.length > 200 && (
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDescriptionExpanded(!descriptionExpanded);
-                  }}
-                  style={{ padding: 0, height: 'auto', fontSize: '13px' }}
-                >
-                  {descriptionExpanded ? (
-                    <>收起 <UpOutlined /></>
-                  ) : (
-                    <>展开 <DownOutlined /></>
-                  )}
-                </Button>
-              )}
+              📝 内容描述
             </h4>
-            <p style={{
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              lineHeight: '1.8',
-              color: token?.colorText,
-              fontSize: '14px'
+
+            <div style={{
+              position: 'relative',
+              maxHeight: descriptionExpanded ? 'none' : '120px',
+              overflow: 'hidden',
+              transition: 'max-height 0.3s ease-in-out'
             }}>
-              {descriptionExpanded || previewContent.description.length <= 200
-                ? previewContent.description
-                : previewContent.description.slice(0, 200) + '...'}
-            </p>
+              <p style={{
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                lineHeight: '1.8',
+                color: token?.colorText,
+                fontSize: '14px'
+              }}>
+                {previewContent.description}
+              </p>
+
+              {/* 渐变遮罩 - 折叠时显示 */}
+              {!descriptionExpanded && previewContent.description.length > 200 && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '60px',
+                  background: 'linear-gradient(transparent, ' + token?.colorSuccess + '15)',
+                  pointerEvents: 'none'
+                }} />
+              )}
+            </div>
+
+            {/* 展开/收起按钮 */}
+            {previewContent.description.length > 200 && (
+              <div style={{
+                marginTop: descriptionExpanded ? '12px' : '8px',
+                textAlign: 'center',
+                paddingTop: '8px',
+                borderTop: `1px solid ${token?.colorSuccess}30`
+              }}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={descriptionExpanded ? <UpOutlined /> : <DownOutlined />}
+                  onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                  style={{
+                    color: token?.colorSuccess,
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    padding: '4px 16px',
+                    height: 'auto',
+                    borderRadius: '16px',
+                    backgroundColor: `${token?.colorSuccess}10`,
+                    border: `1px solid ${token?.colorSuccess}30`,
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = `${token?.colorSuccess}20`;
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = `${token?.colorSuccess}10`;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {descriptionExpanded ? '收起内容' : '展开全部'}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
