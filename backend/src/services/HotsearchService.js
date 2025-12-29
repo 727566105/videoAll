@@ -6,6 +6,16 @@ const logger = require('../utils/logger');
 const CacheService = require('./CacheService');
 
 class HotsearchService {
+  // Helper method to safely get repository
+  static getRepository(entityName) {
+    if (!AppDataSource.isInitialized) {
+      const error = new Error('PostgreSQL 数据库未初始化');
+      console.error('HotsearchService: 数据库未初始化');
+      throw error;
+    }
+    return AppDataSource.getRepository(entityName);
+  }
+
   // Setup puppeteer browser with cookies
   static async setupBrowser(platform, config = {}) {
     const browser = await puppeteer.launch({
@@ -423,7 +433,7 @@ class HotsearchService {
   // Save hotsearch snapshot to database using TypeORM
   static async saveHotsearchSnapshot(platform, data) {
     try {
-      const hotsearchRepository = AppDataSource.getRepository('HotsearchSnapshot');
+      const hotsearchRepository = this.getRepository('HotsearchSnapshot');
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -459,7 +469,7 @@ class HotsearchService {
   // Get hotsearch snapshot by date and platform using TypeORM
   static async getHotsearchByDate(platform, date) {
     try {
-      const hotsearchRepository = AppDataSource.getRepository('HotsearchSnapshot');
+      const hotsearchRepository = this.getRepository('HotsearchSnapshot');
       const targetDate = date ? new Date(date) : new Date();
       targetDate.setHours(0, 0, 0, 0);
 
@@ -481,7 +491,7 @@ class HotsearchService {
   // Get recent hotsearch trends using TypeORM
   static async getHotsearchTrends(platform, days = 7) {
     try {
-      const hotsearchRepository = AppDataSource.getRepository('HotsearchSnapshot');
+      const hotsearchRepository = this.getRepository('HotsearchSnapshot');
       const endDate = new Date();
       endDate.setHours(0, 0, 0, 0);
       const startDate = new Date(endDate);
@@ -651,7 +661,7 @@ class HotsearchService {
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
 
-      const hotsearchRepository = AppDataSource.getRepository('HotsearchSnapshot');
+      const hotsearchRepository = this.getRepository('HotsearchSnapshot');
 
       const snapshots = await hotsearchRepository
         .createQueryBuilder('snapshot')
@@ -789,7 +799,7 @@ class HotsearchService {
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
 
-      const hotsearchRepository = AppDataSource.getRepository('HotsearchSnapshot');
+      const hotsearchRepository = this.getRepository('HotsearchSnapshot');
 
       const snapshots = await hotsearchRepository
         .createQueryBuilder('snapshot')

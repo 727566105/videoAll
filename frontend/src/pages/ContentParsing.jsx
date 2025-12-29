@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import JSZip from 'jszip';
-import { Form, Input, Button, Card, Typography, Space, message, Progress, Modal, Image, App } from 'antd';
-import { FileSearchOutlined, DownloadOutlined, FileTextOutlined, EyeOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Space, Progress, Modal, Image, App } from 'antd';
+import { FileSearchOutlined, DownloadOutlined, FileTextOutlined, EyeOutlined, SettingOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import { getPlatformColor } from '../utils/themeColors';
 
@@ -10,7 +10,7 @@ const { Title } = Typography;
 
 const ContentParsing = () => {
   const location = useLocation();
-  const { token } = App.useApp();
+  const { token, message } = App.useApp();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [parsedResult, setParsedResult] = useState(null);
@@ -581,7 +581,46 @@ const ContentParsing = () => {
       form.resetFields();
     } catch (error) {
       console.error('Parse error:', error);
-      message.error(`解析失败：${error.message || '请检查链接是否有效！'}`);
+
+      // 根据后端返回的 error_type 显示不同的错误提示
+      const errorType = error.response?.data?.error_type || 'general';
+      const errorMessage = error.response?.data?.message || error.message || '解析失败';
+
+      if (errorType === 'cookie_required') {
+        // Cookie 缺失错误 - 显示友好的引导提示
+        Modal.error({
+          title: '需要配置 Cookie',
+          content: (
+            <div>
+              <p>该链接需要 Cookie 才能访问，请配置后重试。</p>
+              <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 4 }}>
+                <strong>📋 获取 Cookie 方法：</strong>
+                <ol style={{ marginTop: 8, paddingLeft: 20 }}>
+                  <li>浏览器登录小红书</li>
+                  <li>打开开发者工具 (F12)</li>
+                  <li>进入 Network 标签</li>
+                  <li>刷新页面，找到任意请求</li>
+                  <li>复制 Request Headers 中的 Cookie 值</li>
+                </ol>
+              </div>
+              <Button
+                type="primary"
+                icon={<SettingOutlined />}
+                style={{ marginTop: 16 }}
+                onClick={() => window.location.href = '/system-config'}
+              >
+                前往配置 Cookie
+              </Button>
+            </div>
+          ),
+          width: 500,
+          okText: '我知道了'
+        });
+      } else {
+        // 其他错误 - 显示简短提示
+        message.error(`解析失败：${errorMessage}`);
+      }
+
       setProcessingStatus('failed');
       setProgress(0);
     } finally {
