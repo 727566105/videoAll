@@ -73,6 +73,9 @@ app.use((req, res, next) => {
 // API routes
 const apiPrefix = process.env.API_PREFIX || '/api/v1';
 
+// Health check routes (before other routes)
+app.use(`${apiPrefix}/health`, require('./routes/health'));
+
 // Placeholder for routes (will be imported later)
 app.use(`${apiPrefix}/auth`, require('./routes/auth'));
 app.use(`${apiPrefix}/users`, require('./routes/users'));
@@ -85,7 +88,7 @@ app.use(`${apiPrefix}/dashboard`, require('./routes/dashboard'));
 app.use(`${apiPrefix}/backup`, require('./routes/backup'));
 app.use(`${apiPrefix}/ai-config`, require('./routes/aiConfig'));
 
-// Health check route
+// Legacy health check route (for backward compatibility)
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });

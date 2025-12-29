@@ -1,0 +1,610 @@
+openapi: 3.0.0
+info:
+  title: 内容解析、管理与热点发现系统 API
+  version: 1.0.0
+  description: |
+    完整的后端 API 文档，涵盖内容解析、管理、任务调度、热搜追踪、AI 配置等所有功能。
+    
+    ## 认证方式
+    
+    系统使用 JWT Token 进行认证。在需要认证的接口中，在请求头中添加：
+    
+    ```
+    Authorization: Bearer <your-token>
+    ```
+    
+    ## 速率限制
+    
+    - 时间窗口：15分钟
+    - 最大请求数：100次（每个IP）
+    - 超限响应：429 Too Many Requests
+    
+  contact:
+    name: 后端开发团队
+    email: support@example.com
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: 开发环境
+  - url: https://api.example.com/api/v1
+    description: 生产环境
+
+tags:
+  - name: Auth
+    description: 认证模块
+  - name: Content
+    description: 内容管理
+  - name: Dashboard
+    description: 仪表盘统计
+  - name: Tasks
+    description: 任务管理
+  - name: HotSearch
+    description: 热搜管理
+  - name: Config
+    description: 系统配置
+  - name: AI
+    description: AI配置
+  - name: Users
+    description: 用户管理
+  - name: Tags
+    description: 标签管理
+  - name: Backup
+    description: 备份管理
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Token认证，格式：Bearer <token>
+
+  schemas:
+    # 通用响应
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "操作成功"
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-12-28T12:00:00.000Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "错误描述"
+        error:
+          type: string
+          example: "详细错误信息"
+        code:
+          type: integer
+          example: 400
+        timestamp:
+          type: string
+          format: date-time
+
+    # 分页响应
+    PaginatedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            list:
+              type: array
+              items:
+                type: object
+            total:
+              type: integer
+              example: 100
+            page:
+              type: integer
+              example: 1
+            page_size:
+              type: integer
+              example: 20
+
+    # 用户相关
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, operator]
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "登录成功"
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+            token:
+              type: string
+              description: JWT Token，有效期7天
+
+    # 内容相关
+    Content:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        author:
+          type: string
+        platform:
+          type: string
+          enum: [xiaohongshu, douyin, weibo, bilibili]
+        content_id:
+          type: string
+        description:
+          type: string
+        media_type:
+          type: string
+          enum: [video, image]
+        cover_url:
+          type: string
+          format: uri
+        all_images:
+          type: array
+          items:
+            type: string
+            format: uri
+        all_videos:
+          type: array
+          items:
+            type: string
+            format: uri
+        like_count:
+          type: integer
+        collect_count:
+          type: integer
+        comment_count:
+          type: integer
+        share_count:
+          type: integer
+        view_count:
+          type: integer
+        source_url:
+          type: string
+          format: uri
+        source_type:
+          type: integer
+          enum: [1, 2]
+          description: 1-单链接解析, 2-监控任务
+        created_at:
+          type: string
+          format: date-time
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+    ParseRequest:
+      type: object
+      required:
+        - link
+      properties:
+        link:
+          type: string
+          format: uri
+          description: 作品链接
+          example: "https://www.xiaohongshu.com/explore/12345678"
+
+    ParseResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        platform:
+          type: string
+        content_id:
+          type: string
+        description:
+          type: string
+        media_type:
+          type: string
+        cover_url:
+          type: string
+        all_images:
+          type: array
+          items:
+            type: string
+        all_videos:
+          type: array
+          items:
+            type: string
+        like_count:
+          type: integer
+        publish_time:
+          type: string
+          format: date-time
+
+    # 标签相关
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: "#1890ff"
+        description:
+          type: string
+        usage_count:
+          type: integer
+
+# ==============================================================================
+# 认证模块 API
+# ==============================================================================
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 用户登录
+      description: 使用用户名和密码登录系统，成功后返回 JWT Token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              admin:
+                value:
+                  username: "admin"
+                  password: "admin123"
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: 参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "用户名和密码不能为空"
+        '401':
+          description: 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "用户名或密码错误"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 用户退出
+      description: 退出登录（客户端需自行清除 Token）
+      security: []
+      responses:
+        '200':
+          description: 退出成功
+          content:
+            application/json:
+              example:
+                message: "退出登录成功"
+
+  /auth/system-status:
+    get:
+      tags: [Auth]
+      summary: 检查系统状态
+      description: 检查系统是否已有用户，用于判断是否需要初始化
+      security: []
+      responses:
+        '200':
+          description: 系统状态
+          content:
+            application/json:
+              example:
+                message: "系统状态检查成功"
+                data:
+                  hasUsers: true
+                  userCount: 5
+                  needsInitialSetup: false
+
+  /auth/initial-setup:
+    post:
+      tags: [Auth]
+      summary: 系统初始化
+      description: 创建第一个管理员用户（仅可执行一次）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  minLength: 6
+            example:
+              username: "admin"
+              password: "admin123"
+      responses:
+        '201':
+          description: 初始化成功
+          content:
+            application/json:
+              example:
+                message: "系统初始化成功"
+                data:
+                  user:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    username: "admin"
+                    role: "admin"
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: 系统已初始化或参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ==============================================================================
+# 内容管理 API
+# ==============================================================================
+  /content/parse:
+    post:
+      tags: [Content]
+      summary: 解析内容链接
+      description: 解析平台内容链接，提取元数据（不下载媒体文件）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseRequest'
+      responses:
+        '201':
+          description: 解析成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParseResponse'
+        '400':
+          description: 参数错误或不支持的平台
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 解析失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /content/:
+    get:
+      tags: [Content]
+      summary: 获取内容列表
+      description: 分页查询内容列表，支持多条件筛选
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: platform
+          in: query
+          schema:
+            type: string
+            enum: [xiaohongshu, douyin, weibo, bilibili]
+        - name: media_type
+          in: query
+          schema:
+            type: string
+            enum: [video, image]
+        - name: author
+          in: query
+          schema:
+            type: string
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: tags
+          in: query
+          schema:
+            type: string
+            description: 标签筛选（逗号分隔）
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /content/{id}:
+    get:
+      tags: [Content]
+      summary: 获取内容详情
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Content'
+        '404':
+          description: 内容不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Content]
+      summary: 删除内容
+      description: 删除单条内容（数据库记录 + 文件）
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              example:
+                message: "删除成功"
+        '404':
+          description: 内容不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /content/batch-delete:
+    post:
+      tags: [Content]
+      summary: 批量删除内容
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              example:
+                message: "批量删除成功"
+
+# ==============================================================================
+# 仪表盘 API（示例）
+# ==============================================================================
+  /dashboard/stats:
+    get:
+      tags: [Dashboard]
+      summary: 获取仪表盘统计数据
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              example:
+                message: "获取成功"
+                data:
+                  totalContents: 1000
+                  totalAuthors: 150
+                  totalViews: 500000
+                  todayNewContents: 25
+                  platformDistribution:
+                    xiaohongshu: 600
+                    douyin: 400
+

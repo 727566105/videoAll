@@ -14,4 +14,25 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      external: [],
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          antd: ['antd', '@ant-design/icons'],
+          charts: ['@ant-design/charts']
+        }
+      }
+    },
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
+  },
+  optimizeDeps: {
+    include: ['@ant-design/charts', '@antv/g6', '@antv/g2']
+  },
+  define: {
+    global: 'globalThis'
+  }
 })

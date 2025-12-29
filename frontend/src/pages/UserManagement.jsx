@@ -24,7 +24,6 @@ import {
   LockOutlined
 } from '@ant-design/icons';
 import apiService from '../services/api';
-import ApiDebugger from '../components/ApiDebugger';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -247,7 +246,6 @@ const UserManagement = () => {
 
   return (
     <div>
-      <ApiDebugger />
       <Card
         title={
           <Space>
