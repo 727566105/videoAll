@@ -30,13 +30,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       # 后端测试
-      - name: Clean backend node_modules
-        working-directory: ./backend
-        run: rm -rf node_modules
-
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci --no-audit --no-fund
+        run: |
+          rm -rf node_modules
+          npm install --no-audit --no-fund
 
       - name: Run backend tests
         working-directory: ./backend
