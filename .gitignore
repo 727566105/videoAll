@@ -123,12 +123,8 @@ Dockerfile
 *.tf
 *.tfvars
 .terraform/
-<<<<<<< HEAD
-.claude/settings.local.json
 backend/logs/
 backend/media/
-.claude/settings.local.json
 新增功能/
->>>>>>> backup-before-mongodb-cleanup
 .trae/
 .claude/

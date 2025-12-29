@@ -212,16 +212,43 @@ class PlatformCookieController {
   // Test cookie validity for a specific platform
   static async testCookieValidity(platform, cookies) {
     try {
+      // 对于小红书，使用 Python SDK 测试（更可靠）
+      if (platform === 'xiaohongshu') {
+        const { exec } = require('child_process');
+        const path = require('path');
+
+        // 使用一个简单的公开笔记进行测试
+        const testNoteUrl = 'https://www.xiaohongshu.com/explore/645239a20000000013003327';
+
+        return new Promise((resolve) => {
+          const command = `python3 ${path.join(__dirname, '../../../media_parser_sdk/wrapper.py')} xiaohongshu_note "${testNoteUrl}" --cookie "${cookies}"`;
+
+          exec(command, { encoding: 'utf8', timeout: 30000 }, (error, stdout, stderr) => {
+            if (error) {
+              console.log(`小红书Cookie测试失败: ${stderr || error.message}`);
+              resolve(false);
+              return;
+            }
+
+            try {
+              const result = JSON.parse(stdout);
+              const isValid = result.success === true;
+              console.log(`小红书Cookie测试: ${isValid ? 'VALID' : 'INVALID'}`);
+              resolve(isValid);
+            } catch (parseError) {
+              console.log(`小红书Cookie测试: JSON解析失败`);
+              resolve(false);
+            }
+          });
+        });
+      }
+
       let testUrl;
       let expectedContent;
       let customHeaders = {};
 
       // Define test URLs and expected content for each platform
       switch (platform) {
-        case 'xiaohongshu':
-          testUrl = 'https://www.xiaohongshu.com/api/sns/web/v1/user/selfinfo';
-          expectedContent = 'success';
-          break;
         case 'douyin':
           // 使用抖音首页作为测试端点，更可靠
           testUrl = 'https://www.douyin.com/';

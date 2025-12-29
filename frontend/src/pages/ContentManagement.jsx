@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress, Dropdown, Checkbox } from 'antd';
-import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined, SettingOutlined, UserOutlined, GlobalOutlined, VideoCameraOutlined, ClockCircleOutlined, LinkOutlined, LikeOutlined, StarOutlined, MessageOutlined, ShareAltOutlined, EyeOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined, SettingOutlined, UserOutlined, GlobalOutlined, VideoCameraOutlined, ClockCircleOutlined, LinkOutlined, LikeOutlined, StarOutlined, MessageOutlined, ShareAltOutlined, EyeOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
 import BatchTagModal from '../components/BatchTagModal';
@@ -43,6 +43,8 @@ const ContentManagement = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewContent, setPreviewContent] = useState(null);
   const [refreshingStats, setRefreshingStats] = useState(false);
+  // Content description expanded state
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   // Batch tag modal state
   const [batchTagModalVisible, setBatchTagModalVisible] = useState(false);
   // AI analysis state - 按内容ID分别存储
@@ -497,6 +499,7 @@ const ContentManagement = () => {
 
     setPreviewContent(processedRecord);
     setPreviewVisible(true);
+    setDescriptionExpanded(false); // 重置折叠状态
 
     // 获取AI分析状态
     fetchAiStatus(record.id);
@@ -1004,9 +1007,27 @@ const ContentManagement = () => {
               fontWeight: 600,
               color: token?.colorSuccess,
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              justifyContent: 'space-between'
             }}>
-              📝 内容描述
+              <span>📝 内容描述</span>
+              {previewContent.description.length > 200 && (
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDescriptionExpanded(!descriptionExpanded);
+                  }}
+                  style={{ padding: 0, height: 'auto', fontSize: '13px' }}
+                >
+                  {descriptionExpanded ? (
+                    <>收起 <UpOutlined /></>
+                  ) : (
+                    <>展开 <DownOutlined /></>
+                  )}
+                </Button>
+              )}
             </h4>
             <p style={{
               margin: 0,
@@ -1016,7 +1037,9 @@ const ContentManagement = () => {
               color: token?.colorText,
               fontSize: '14px'
             }}>
-              {previewContent.description}
+              {descriptionExpanded || previewContent.description.length <= 200
+                ? previewContent.description
+                : previewContent.description.slice(0, 200) + '...'}
             </p>
           </div>
         )}
@@ -1686,7 +1709,6 @@ const ContentManagement = () => {
                   onClick={handleRefreshStats}
                   loading={refreshingStats}
                   type="default"
-                  size="small"
                 >
                   刷新统计数据
                 </Button>

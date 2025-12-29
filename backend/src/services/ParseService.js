@@ -1,8 +1,13 @@
 const path = require('path');
 const { exec } = require('child_process');
-const { AppDataSource } = require('../utils/db');
 const storageService = require('./StorageService');
 const EncryptionService = require('../utils/encryption');
+
+// 延迟加载 AppDataSource 以避免循环依赖
+const getAppDataSource = () => {
+  const { AppDataSource } = require('../utils/db');
+  return AppDataSource;
+};
 
 class ParseService {
   // Python SDK包装器路径
@@ -11,6 +16,15 @@ class ParseService {
   // 获取平台Cookie
   static async getPlatformCookie(platform) {
     try {
+      // 延迟加载 AppDataSource 以避免循环依赖
+      const AppDataSource = getAppDataSource();
+
+      // 确保数据库已初始化
+      if (!AppDataSource.isInitialized) {
+        console.warn('数据库未初始化，无法获取Cookie');
+        return null;
+      }
+
       const platformCookieRepository = AppDataSource.getRepository('PlatformCookie');
 
       // 查找该平台最新且有效的Cookie
