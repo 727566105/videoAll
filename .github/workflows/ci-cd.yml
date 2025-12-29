@@ -52,7 +52,10 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm install --no-audit --no-fund
+        run: |
+          npm install --no-audit --no-fund
+          # 显式安装 rollup 原生模块以解决可选依赖问题
+          npm install --no-save --no-audit --no-fund @rollup/rollup-linux-x64-gnu || echo "Optional dependency installation skipped"
 
       - name: Build frontend
         working-directory: ./frontend

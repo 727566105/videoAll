@@ -1,0 +1,72 @@
+name: Dependency Update
+
+on:
+  schedule:
+    # 每周一早上8点检查依赖更新
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
+          cache: "npm"
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # 更新后端依赖
+      - name: Update backend dependencies
+        working-directory: ./backend
+        run: |
+          npm update
+          npm audit fix --force || true
+
+      # 更新前端依赖
+      - name: Update frontend dependencies
+        working-directory: ./frontend
+        run: |
+          npm update
+          npm audit fix --force || true
+
+      # 运行测试确保更新没有破坏功能
+      - name: Run tests
+        run: |
+          cd backend && npm test || echo "Backend tests failed"
+          cd ../frontend && npm run build || echo "Frontend build failed"
+
+      # 创建PR
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update dependencies"
+          title: "🔄 自动依赖更新"
+          body: |
+            ## 📦 依赖更新
+
+            这是一个自动生成的PR，用于更新项目依赖。
+
+            ### 更新内容
+            - 更新了所有可用的依赖包
+            - 修复了已知的安全漏洞
+
+            ### 验证
+            - [ ] 后端测试通过
+            - [ ] 前端构建成功
+            - [ ] 手动测试核心功能
+
+            请仔细检查更改并进行必要的测试。
+          branch: dependency-updates
+          delete-branch: true

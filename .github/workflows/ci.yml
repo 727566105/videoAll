@@ -143,6 +143,9 @@ jobs:
         run: |
           echo "使用 npm install 安装依赖..."
           npm install --no-audit --no-fund
+          # 显式安装 rollup 原生模块以解决可选依赖问题
+          echo "显式安装 @rollup/rollup-linux-x64-gnu..."
+          npm install --no-save --no-audit --no-fund @rollup/rollup-linux-x64-gnu || echo "Optional dependency installation skipped"
 
       - name: 代码检查 (ESLint)
         working-directory: ./frontend
