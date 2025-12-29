@@ -1,0 +1,107 @@
+# Docker 忽略文件配置
+# 用于优化 Docker 构建性能，减小镜像大小
+
+# ============================================
+# 通用忽略
+# ============================================
+.git
+.gitignore
+.github
+.gitattributes
+.env
+.env.*
+!.env.docker.example
+
+# ============================================
+# 文档
+# ============================================
+*.md
+!README.md
+LICENSE
+CHANGELOG
+docs/
+*.txt
+
+# ============================================
+# IDE 和编辑器
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+
+# ============================================
+# 日志和临时文件
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+tmp/
+temp/
+*.tmp
+
+# ============================================
+# 测试和覆盖率
+# ============================================
+coverage/
+.nyc_output/
+*.test.js
+*.spec.js
+__tests__/
+__mocks__/
+jest.config.js
+.eslintrc*
+.prettierrc*
+
+# ============================================
+# 依赖目录
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ============================================
+# 构建产物（backend）
+# ============================================
+backend/dist/
+backend/build/
+backend/media/
+backend/uploads/
+backend/backups/
+backend/logs/
+backend/*.log
+
+# ============================================
+# 构建产物（frontend）
+# ============================================
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/node_modules/.vite/
+
+# ============================================
+# Python SDK
+# ============================================
+media_parser_sdk/__pycache__/
+media_parser_sdk/*.pyc
+media_parser_sdk/.pytest_cache/
+media_parser_sdk/.mypy_cache/
+media_parser_sdk/*.egg-info/
+media_parser_sdk/build/
+media_parser_sdk/dist/
+
+# ============================================
+# 其他
+# ============================================
+*.bak
+*.backup
+*.old
+.cache/

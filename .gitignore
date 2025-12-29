@@ -112,12 +112,21 @@ coverage/
 .gitlab-ci.yml
 
 # Docker
-Dockerfile
-.dockerignore
+# Dockerfile 和 .dockerignore 不再全局忽略
+!Dockerfile
+!backend/Dockerfile
+!frontend/Dockerfile
+!.dockerignore
 
 # Kubernetes
-*.yaml
-*.yml
+# *.yaml
+# *.yml
+# 允许特定目录下的 yml 文件
+!.github/workflows/*.yml
+!.github/**/*.yml
+!.github/**/*.yaml
+!docker-compose.yml
+!frontend/docker/*.conf
 
 # AWS
 *.tf

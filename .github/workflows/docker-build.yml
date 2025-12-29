@@ -1,0 +1,317 @@
+name: Docker 镜像构建与发布
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      push_images:
+        description: '推送镜像到仓库'
+        required: true
+        default: true
+        type: boolean
+      registry:
+        description: '镜像仓库类型'
+        required: true
+        default: 'ghcr'
+        type: choice
+        options:
+          - ghcr
+          - dockerhub
+          - both
+
+env:
+  REGISTRY_GHCR: ghcr.io
+  REGISTRY_DOCKERHUB: docker.io
+  IMAGE_NAME_BACKEND: ${{ github.repository }}/backend
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}/frontend
+  IMAGE_NAME_NGINX: ${{ github.repository }}/nginx
+
+jobs:
+  # 构建后端镜像
+  build-backend:
+    name: 构建后端 Docker 镜像
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录到 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 登录到 Docker Hub (可选)
+        uses: docker/login-action@v3
+        if: github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 提取元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_BACKEND }}
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送后端镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+            VERSION=${{ github.ref_name }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            COMMIT_SHA=${{ github.sha }}
+
+      - name: 生成镜像 SBOM
+        uses: anchore/sbom-action@v0
+        if: github.event_name != 'pull_request'
+        with:
+          image: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_BACKEND }}:${{ github.sha }}
+          output-format: spdx-json
+          output-file: backend-sbom.spdx.json
+
+      - name: 上传 SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-sbom
+          path: backend-sbom.spdx.json
+
+  # 构建前端镜像
+  build-frontend:
+    name: 构建前端 Docker 镜像
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录到 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 登录到 Docker Hub (可选)
+        uses: docker/login-action@v3
+        if: github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 提取元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_FRONTEND }}
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}-frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送前端镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_BASE_URL=/api/v1
+            VERSION=${{ github.ref_name }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            COMMIT_SHA=${{ github.sha }}
+
+      - name: 生成镜像 SBOM
+        uses: anchore/sbom-action@v0
+        if: github.event_name != 'pull_request'
+        with:
+          image: ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_FRONTEND }}:${{ github.sha }}
+          output-format: spdx-json
+          output-file: frontend-sbom.spdx.json
+
+      - name: 上传 SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-sbom
+          path: frontend-sbom.spdx.json
+
+  # 构建完整应用镜像 (包含 Nginx)
+  build-app:
+    name: 构建完整应用 Docker 镜像
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录到 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 登录到 Docker Hub (可选)
+        uses: docker/login-action@v3
+        if: github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 提取元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_GHCR }}/${{ github.repository }}
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送完整应用镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            COMMIT_SHA=${{ github.sha }}
+
+      - name: 生成镜像 SBOM
+        uses: anchore/sbom-action@v0
+        if: github.event_name != 'pull_request'
+        with:
+          image: ${{ env.REGISTRY_GHCR }}/${{ github.repository }}:${{ github.sha }}
+          output-format: spdx-json
+          output-file: app-sbom.spdx.json
+
+      - name: 上传 SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-sbom
+          path: app-sbom.spdx.json
+
+  # 镜像安全扫描
+  scan-images:
+    name: 镜像安全扫描
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend, build-app]
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      matrix:
+        image: [backend, frontend, app]
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 运行 Trivy 漏洞扫描
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY_GHCR }}/${{ github.repository }}${{ matrix.image == 'app' && '' || '-' }}${{ matrix.image }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-${{ matrix.image }}-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: 上传扫描结果到 GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ matrix.image }}-results.sarif'
+
+  # 生成构建报告
+  build-summary:
+    name: 构建报告
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend, build-app, scan-images]
+    if: always()
+
+    steps:
+      - name: 生成构建汇总报告
+        run: |
+          echo "## Docker 镜像构建报告 🐳" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 构建状态" >> $GITHUB_STEP_SUMMARY
+          echo "- 后端镜像: ${{ needs.build-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 前端镜像: ${{ needs.build-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 完整应用镜像: ${{ needs.build-app.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 安全扫描: ${{ needs.scan-images.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 镜像信息" >> $GITHUB_STEP_SUMMARY
+          echo "- Registry: ${{ env.REGISTRY_GHCR }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tag: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
