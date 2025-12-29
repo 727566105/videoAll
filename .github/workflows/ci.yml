@@ -131,18 +131,11 @@ jobs:
           fi
           echo "✅ Node.js 版本验证通过"
 
-      - name: 清理前端 node_modules
-        working-directory: ./frontend
-        run: |
-          echo "删除旧的 node_modules（保留 package-lock.json）..."
-          rm -rf node_modules
-          echo "✅ 清理完成"
-
       - name: 安装前端依赖
         working-directory: ./frontend
         run: |
-          echo "使用 npm ci 安装依赖（确保与 package-lock.json 同步）..."
-          npm ci --no-audit --no-fund
+          echo "安装前端依赖（使用 npm install --legacy-peer-deps）..."
+          npm install --no-audit --no-fund --legacy-peer-deps
 
       - name: 代码检查 (ESLint)
         working-directory: ./frontend

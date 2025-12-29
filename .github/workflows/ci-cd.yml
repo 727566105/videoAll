@@ -46,13 +46,11 @@ jobs:
           fi
 
       # 前端测试
-      - name: Clean frontend node_modules
-        working-directory: ./frontend
-        run: rm -rf node_modules
-
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm ci --no-audit --no-fund
+        run: |
+          echo "安装前端依赖（使用 npm install 确保可选依赖正确安装）..."
+          npm install --no-audit --no-fund --legacy-peer-deps
 
       - name: Build frontend
         working-directory: ./frontend
