@@ -57,15 +57,15 @@ jobs:
       - name: 清理后端 node_modules
         working-directory: ./backend
         run: |
-          echo "删除旧的 node_modules..."
-          rm -rf node_modules package-lock.json
+          echo "删除旧的 node_modules（保留 package-lock.json）..."
+          rm -rf node_modules
           echo "✅ 清理完成"
 
       - name: 安装后端依赖
         working-directory: ./backend
         run: |
-          echo "使用 npm install 安装依赖..."
-          npm install --no-audit --no-fund
+          echo "使用 npm ci 安装依赖（确保与 package-lock.json 同步）..."
+          npm ci --no-audit --no-fund
 
       - name: 代码检查 (ESLint)
         working-directory: ./backend
@@ -134,18 +134,15 @@ jobs:
       - name: 清理前端 node_modules
         working-directory: ./frontend
         run: |
-          echo "删除旧的 node_modules 以避免 rollup 可选依赖问题..."
-          rm -rf node_modules package-lock.json
+          echo "删除旧的 node_modules（保留 package-lock.json）..."
+          rm -rf node_modules
           echo "✅ 清理完成"
 
       - name: 安装前端依赖
         working-directory: ./frontend
         run: |
-          echo "使用 npm install 安装依赖..."
-          npm install --no-audit --no-fund
-          # 显式安装 rollup 原生模块以解决可选依赖问题
-          echo "显式安装 @rollup/rollup-linux-x64-gnu..."
-          npm install --no-save --no-audit --no-fund @rollup/rollup-linux-x64-gnu || echo "Optional dependency installation skipped"
+          echo "使用 npm ci 安装依赖（确保与 package-lock.json 同步）..."
+          npm ci --no-audit --no-fund
 
       - name: 代码检查 (ESLint)
         working-directory: ./frontend

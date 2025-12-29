@@ -32,11 +32,11 @@ jobs:
       # 后端测试
       - name: Clean backend node_modules
         working-directory: ./backend
-        run: rm -rf node_modules package-lock.json
+        run: rm -rf node_modules
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Run backend tests
         working-directory: ./backend
@@ -48,14 +48,11 @@ jobs:
       # 前端测试
       - name: Clean frontend node_modules
         working-directory: ./frontend
-        run: rm -rf node_modules package-lock.json
+        run: rm -rf node_modules
 
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: |
-          npm install --no-audit --no-fund
-          # 显式安装 rollup 原生模块以解决可选依赖问题
-          npm install --no-save --no-audit --no-fund @rollup/rollup-linux-x64-gnu || echo "Optional dependency installation skipped"
+        run: npm ci --no-audit --no-fund
 
       - name: Build frontend
         working-directory: ./frontend
