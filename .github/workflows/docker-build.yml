@@ -57,7 +57,9 @@ jobs:
 
       - name: 登录到 Docker Hub (可选)
         uses: docker/login-action@v3
-        if: github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both'
+        if: |
+          (github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both') &&
+          secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -68,7 +70,6 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_BACKEND }}
-            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}-backend
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -78,13 +79,31 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: 提取 Docker Hub 元数据
+        id: meta-dockerhub
+        if: |
+          (github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both') &&
+          secrets.DOCKERHUB_USERNAME != ''
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}-backend
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: 构建并推送后端镜像
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/Dockerfile
           push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.meta-dockerhub.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -133,7 +152,9 @@ jobs:
 
       - name: 登录到 Docker Hub (可选)
         uses: docker/login-action@v3
-        if: github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both'
+        if: |
+          (github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both') &&
+          secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -144,7 +165,6 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME_FRONTEND }}
-            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}-frontend
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -154,13 +174,31 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: 提取 Docker Hub 元数据
+        id: meta-dockerhub
+        if: |
+          (github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both') &&
+          secrets.DOCKERHUB_USERNAME != ''
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}-frontend
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: 构建并推送前端镜像
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.meta-dockerhub.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -210,7 +248,9 @@ jobs:
 
       - name: 登录到 Docker Hub (可选)
         uses: docker/login-action@v3
-        if: github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both'
+        if: |
+          (github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both') &&
+          secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -221,7 +261,6 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY_GHCR }}/${{ github.repository }}
-            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -231,13 +270,31 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: 提取 Docker Hub 元数据
+        id: meta-dockerhub
+        if: |
+          (github.event.inputs.registry == 'dockerhub' || github.event.inputs.registry == 'both') &&
+          secrets.DOCKERHUB_USERNAME != ''
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: 构建并推送完整应用镜像
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_images == 'true' || github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.meta-dockerhub.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
