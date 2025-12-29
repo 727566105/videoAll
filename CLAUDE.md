@@ -116,8 +116,6 @@ videoAll/
   - `CrawlTask.js` - 定时爬取任务
   - `HotSearch.js` - 热搜记录
 
-- **[models/](backend/src/models/)** - Mongoose Schema（MongoDB 模型）
-
 - **[services/](backend/src/services/)** - 业务逻辑层
   - 平台特定解析器和下载器
   - 基于 node-cron 的任务调度
@@ -167,12 +165,15 @@ videoAll/
 
 ## 关键技术细节
 
-### 多数据库配置
-- **MongoDB** (Mongoose) - 主数据存储，用于内容、任务、热搜等核心数据
-- **PostgreSQL** (TypeORM) - 实体辅助存储，用于结构化数据查询和报表
+### 数据库配置
+- **PostgreSQL** (TypeORM) - 数据存储，用于内容、用户、配置等所有数据
 - 连接配置在 `backend/.env` 文件中：
   ```env
-  MONGODB_URI=mongodb://localhost:27017/video_all
+  POSTGRES_HOST=localhost
+  POSTGRES_PORT=5432
+  POSTGRES_DATABASE=video_all
+  POSTGRES_USER=your_username
+  POSTGRES_PASSWORD=your_password
   ```
 
 ### 认证流程
@@ -202,7 +203,7 @@ media/
 5. **后端**：
    - 下载媒体文件到结构化存储目录
    - 生成封面图（使用 OCR 提取文字）
-   - 保存元数据到 MongoDB 和 PostgreSQL
+   - 保存元数据到 PostgreSQL
 6. **前端**：在内容管理页面展示结果
 
 ### OCR 文字识别配置
@@ -230,7 +231,11 @@ NODE_ENV=development
 HTTPS_ENABLED=false
 
 # 数据库配置
-MONGODB_URI=mongodb://localhost:27017/video_all
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=your_username
+POSTGRES_PASSWORD=your_password
+POSTGRES_DATABASE=video_all
 
 # JWT 配置
 JWT_SECRET=your_jwt_secret_key
@@ -358,9 +363,9 @@ tail -f backend/logs/combined.log    # 查看 Winston 日志
 - 检查 Node.js 版本：`node --version`（建议 >= 16.0.0）
 
 **5. 数据库连接失败**
-- 确认 MongoDB 服务运行：`mongosh --eval "db.version()"`
-- 检查 `backend/.env` 中的 `MONGODB_URI` 配置
-- 检查 PostgreSQL 连接（如果使用）
+- 确认 PostgreSQL 服务运行：`pg_isready`
+- 检查 `backend/.env` 中的 PostgreSQL 配置
+- 测试连接：`psql -U postgres -h localhost -d video_all`
 
 **6. OCR 识别失败或慢**
 - 检查 OCR 配置：`backend/src/config/ocr.config.js`
@@ -449,8 +454,8 @@ pip install -e .
 
 ### 检查服务状态
 ```bash
-# MongoDB
-mongosh --eval "db.version()"
+# PostgreSQL
+pg_isready
 
 # 后端服务
 curl http://localhost:3000/api/v1/health
