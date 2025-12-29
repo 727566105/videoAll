@@ -1,4 +1,105 @@
-# 内容解析、管理与热点发现系统
+# 🚀 videoAll - 内容解析、管理与热点发现系统
+
+[![CI/CD](https://github.com/727566105/videoAll/workflows/ci.yml/badge.svg)](https://github.com/727566105/videoAll/actions)
+[![Docker](https://github.com/727566105/videoAll/workflows/docker-build.yml/badge.svg)](https://github.com/727566105/videoAll/actions)
+[![Release](https://github.com/727566105/videoAll/workflows/release.yml/badge.svg)](https://github.com/727566105/videoAll/actions)
+
+> 🎯 **一站式内容资产管理平台** | 支持🔥小红书、抖音、微博、哔哩哔哩
+
+## ⚡ 快速开始
+
+### 🐳 使用 Docker 部署（推荐）
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/727566105/videoAll.git
+cd videoAll
+
+# 2. 启动服务
+docker-compose up -d
+
+# 3. 访问应用
+# 前端：http://localhost:80
+# 后端：http://localhost:3000
+```
+
+### 📦 拉取 Docker 镜像
+
+```bash
+# 从 GitHub Container Registry 拉取
+docker pull ghcr.io/727566105/videoall:latest
+
+# 或使用 docker-compose 启动
+docker-compose up -d
+```
+
+### 🔧 开发模式
+
+```bash
+# 后端
+cd backend
+npm install
+npm run dev
+
+# 前端
+cd frontend
+npm install
+npm run dev
+```
+
+## 🎨 功能特性
+
+### 核心功能
+
+1. **单作品解析**：输入链接，自动解析并保存无水印原始媒体
+2. **作者监控**：定时监控指定创作者，自动采集新作品
+3. **内容管理**：集中化内容资产管理与结构化存储
+4. **任务调度**：统一管理自动化任务的生命周期
+5. **热搜发现**：定时抓取平台热搜，助力选题发现
+6. **数据看板**：多维度数据可视化展示
+7. **系统配置**：用户权限与平台 Cookie 管理
+
+### 支持平台
+
+| 平台 | 状态 | 功能 |
+|------|------|------|
+| 小红书 | ✅ 完整支持 | 图片、视频、实况图、作者信息 |
+| 抖音 | ✅ 完整支持 | 视频信息、无水印下载 |
+| 微博 | 🚧 开发中 | - |
+| 哔哩哔哩 | ✅ 完整支持 | 视频解析、多清晰度 |
+
+## 🤖 CI/CD 自动化
+
+### ✨ 已配置的 GitHub Actions 工作流
+
+- ✅ **持续集成**：代码推送自动测试、代码检查、安全扫描
+- ✅ **Docker 构建**：自动构建并推送镜像到 GHCR 和 Docker Hub
+- ✅ **版本发布**：推送标签自动创建 Release 和发布镜像
+- ✅ **通知集成**：支持钉钉、Slack 通知
+
+### 📋 工作流状态
+
+[![CI Workflow](https://github.com/727566105/videoAll/workflows/ci.yml/badge.svg)](https://github.com/727566105/videoAll/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/727566105/videoAll/workflows/docker-build.yml/badge.svg)](https://github.com/727566105/videoAll/actions/workflows/docker-build.yml)
+[![Release](https://github.com/727566105/videoAll/workflows/release.yml/badge.svg)](https://github.com/727566105/videoAll/actions/workflows/release.yml)
+
+### 📚 详细文档
+
+- 📖 [CI/CD 完整指南](CI_CD_GUIDE.md) - 详细的 CI/CD 配置和使用指南
+- 📖 [.github/DEPLOYMENT.md](.github/DEPLOYMENT.md) - 部署文档
+- 📖 [.github/README.md](.github/README.md) - 快速开始
+
+### 🚀 版本发布
+
+```bash
+# 创建版本标签
+git tag v1.0.0
+
+# 推送标签（自动触发 Release 工作流）
+git push origin v1.0.0
+```
+
+---
 
 ## 项目概述
 
