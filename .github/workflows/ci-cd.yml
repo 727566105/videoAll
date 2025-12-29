@@ -46,16 +46,11 @@ jobs:
           fi
 
       # 前端测试
-      - name: Clean frontend dependencies
-        working-directory: ./frontend
-        run: |
-          echo "删除旧的 node_modules（保留 package-lock.json）..."
-          rm -rf node_modules
-          echo "✅ 清理完成"
-
       - name: Install frontend dependencies
         working-directory: ./frontend
-        run: npm ci --no-audit --no-fund
+        run: |
+          rm -rf node_modules
+          npm install --no-audit --no-fund --legacy-peer-deps --force
 
       - name: Build frontend
         working-directory: ./frontend
