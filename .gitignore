@@ -128,5 +128,4 @@ backend/logs/
 backend/logs/*.log
 backend/logs/combined.log
 backend/logs/error.log
-.gitignore
-backend/.gitignore
+backend/media/
