@@ -49,8 +49,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: ./frontend
         run: |
-          echo "安装前端依赖（使用 npm install 确保可选依赖正确安装）..."
+          echo "安装前端依赖..."
           npm install --no-audit --no-fund --legacy-peer-deps
+          echo "强制安装 rollup 原生模块..."
+          npm install --no-save --no-audit @rollup/rollup-linux-x64-gnu || echo "Warning: Rollup native module installation had issues"
 
       - name: Build frontend
         working-directory: ./frontend

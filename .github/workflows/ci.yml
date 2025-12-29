@@ -134,8 +134,10 @@ jobs:
       - name: 安装前端依赖
         working-directory: ./frontend
         run: |
-          echo "安装前端依赖（使用 npm install --legacy-peer-deps）..."
+          echo "安装前端依赖..."
           npm install --no-audit --no-fund --legacy-peer-deps
+          echo "强制安装 rollup 原生模块..."
+          npm install --no-save --no-audit @rollup/rollup-linux-x64-gnu || echo "Warning: Rollup native module installation had issues"
 
       - name: 代码检查 (ESLint)
         working-directory: ./frontend
