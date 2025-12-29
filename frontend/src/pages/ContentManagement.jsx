@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, message, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress, Dropdown, Checkbox } from 'antd';
+import { App, Card, Typography, Space, Table, Button, Input, Select, DatePicker, Modal, Image, Tag, Badge, Tooltip, Spin, Tabs, List, Empty, Progress, Dropdown, Checkbox } from 'antd';
 import { SearchOutlined, DownloadOutlined, DeleteOutlined, ReloadOutlined, TagOutlined, RobotOutlined, ExperimentOutlined, FileTextOutlined, SettingOutlined, UserOutlined, GlobalOutlined, VideoCameraOutlined, ClockCircleOutlined, LinkOutlined, LikeOutlined, StarOutlined, MessageOutlined, ShareAltOutlined, EyeOutlined } from '@ant-design/icons';
 import apiService from '../services/api';
 import TagFilter from '../components/TagFilter';
@@ -21,7 +21,7 @@ const ALL_COLUMNS = [
 ];
 
 const ContentManagement = () => {
-  const { token } = App.useApp();
+  const { token, message } = App.useApp();
   // State management
   const [contentList, setContentList] = useState([]);
   const [total, setTotal] = useState(0);
