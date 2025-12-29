@@ -1,20 +1,15 @@
-name: 版本发布
+name: Simple Release
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号 (例如: v1.0.0)'
+        description: "版本号 (例如: v1.0.0)"
         required: true
-        default: 'v1.0.0'
-      prerelease:
-        description: '是否为预发布版本'
-        required: false
-        default: false
-        type: boolean
+        default: "v1.0.0"
 
 permissions:
   contents: write
@@ -46,43 +41,31 @@ jobs:
 
       - name: 生成变更日志
         id: changelog
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { version } = require('./package.json');
-            const fs = require('fs');
+        run: |
+          # 获取当前标签与前一个标签之间的提交
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 
-            // 获取当前标签与前一个标签之间的提交
-            const { data: commits } = await github.rest.repos.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100
-            });
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "## 📦 版本 ${{ steps.tag.outputs.version }}" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "### 🔄 变更内容" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          else
+            echo "## 📦 版本 ${{ steps.tag.outputs.version }}" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "### 🎉 首次发布" >> CHANGELOG.md
+            echo "这是项目的首次发布版本。" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
 
-            // 按提交类型分组
-            const features = [];
-            const fixes = [];
-            const others = [];
+          echo "### 🔗 相关链接" >> CHANGELOG.md
+          echo "- [查看完整变更记录](https://github.com/${{ github.repository }}/commits/${{ github.sha }})" >> CHANGELOG.md
 
-            for (const commit of commits) {
-              if (!commit.commit.message) continue;
-
-              const msg = commit.commit.message.split('\n')[0];
-              if (msg.startsWith('feat(')) {
-                features.push(`- ${msg} (${commit.sha.substring(0, 7)})`);
-              } else if (msg.startsWith('fix(')) {
-                fixes.push(`- ${msg} (${commit.sha.substring(0, 7)})`);
-              }
-            }
-
-            let changelog = `## 📦 版本 ${context.payload.inputs.version || context.ref.replace('refs/tags/', '')}\n\n`;
-            changelog += `### ✨ 新功能\n${features.length ? features.join('\n') : '无'}\n\n`;
-            changelog += `### 🐛 问题修复\n${fixes.length ? fixes.join('\n') : '无'}\n\n`;
-            changelog += `### 📝 其他更新\n${others.length ? others.join('\n') : '无'}\n\n`;
-            changelog += `### 🔗 相关链接\n`;
-            changelog += `- [查看完整变更记录](https://github.com/${context.repo.owner}/${context.repo.repo}/commits/${context.sha})\n`;
-
-            return changelog;
+          # 设置输出
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: 创建 Release
         id: release
@@ -92,9 +75,9 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.version }}
           release_name: Release ${{ steps.tag.outputs.version }}
-          body: ${{ steps.changelog.outputs.result }}
+          body: ${{ steps.changelog.outputs.changelog }}
           draft: false
-          prerelease: ${{ github.event.inputs.prerelease || false }}
+          prerelease: false
 
   # 构建并发布 Docker 镜像
   publish-docker:
@@ -107,7 +90,7 @@ jobs:
 
     strategy:
       matrix:
-        component: [backend, frontend, app]
+        component: [backend, frontend]
 
     steps:
       - name: 检出代码
@@ -123,30 +106,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 登录到 Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: 提取元数据
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ghcr.io/${{ github.repository }}${{ matrix.component == 'app' && '' || '-' }}${{ matrix.component }}
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.repository }}${{ matrix.component == 'app' && '' || '-' }}${{ matrix.component }}
+          images: ghcr.io/${{ github.repository }}-${{ matrix.component }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ matrix.component == 'app' }}
+            type=raw,value=latest
 
       - name: 构建并推送镜像
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.component == 'app' && '.' || format('./{0}', matrix.component) }}
-          file: ${{ matrix.component == 'app' && './Dockerfile' || format('./{0}/Dockerfile', matrix.component) }}
+          context: ./${{ matrix.component }}
+          file: ./${{ matrix.component }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -157,74 +132,11 @@ jobs:
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             COMMIT_SHA=${{ github.sha }}
 
-      - name: 输出镜像信息
-        run: |
-          echo "### 🐳 Docker 镜像已发布" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**${{ matrix.component }}:**" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo ${{ steps.meta.outputs.tags }} | tr ' ' '\n' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-  # 构建并发布安装包
-  build-packages:
-    name: 构建安装包
-    runs-on: ubuntu-latest
-    needs: create-release
-
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 设置 Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: 安装依赖并构建
-        run: |
-          cd frontend && npm ci && npm run build
-          cd ../backend && npm ci --production
-          cd ..
-
-      - name: 创建发布包
-        run: |
-          # 创建临时目录
-          mkdir -p release-package
-
-          # 复制必要文件
-          cp -r frontend/dist release-package/frontend
-          cp -r backend release-package/backend
-          cp -r media_parser_sdk release-package/
-          cp docker-compose.yml release-package/ 2>/dev/null || echo "docker-compose.yml not found"
-          cp README.md release-package/ 2>/dev/null || echo "README.md not found"
-
-          # 创建部署脚本
-          cat > release-package/deploy.sh << 'EOF'
-          #!/bin/bash
-          echo "开始部署 videoAll..."
-          # 这里添加部署逻辑
-          EOF
-          chmod +x release-package/deploy.sh
-
-          # 打包
-          tar -czf videoall-${{ needs.create-release.outputs.version }}.tar.gz -C release-package .
-
-      - name: 上传发布包到 Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./videoall-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_name: videoall-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_content_type: application/gzip
-
   # 发送通知
   notify:
     name: 发送发布通知
     runs-on: ubuntu-latest
-    needs: [create-release, publish-docker, build-packages]
+    needs: [create-release, publish-docker]
     if: always()
 
     steps:
@@ -240,16 +152,26 @@ jobs:
           echo "### ✅ 任务状态" >> $GITHUB_STEP_SUMMARY
           echo "- 创建 Release: ${{ needs.create-release.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Docker 镜像: ${{ needs.publish-docker.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- 安装包: ${{ needs.build-packages.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🚀 快速开始" >> $GITHUB_STEP_SUMMARY
-          echo '```bash' >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ghcr.io/${{ github.repository }}:${{ needs.create-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
 
-      # 可选：发送钉钉/企业微信/Slack 通知
-      - name: 发送钉钉通知 (可选)
-        if: ${{ secrets.DINGTALK_WEBHOOK }}
+      # 检查是否配置了通知webhook
+      - name: Check notification webhooks
+        id: webhook-check
+        run: |
+          if [ -n "${{ secrets.DINGTALK_WEBHOOK }}" ]; then
+            echo "dingtalk=true" >> $GITHUB_OUTPUT
+          else
+            echo "dingtalk=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            echo "slack=true" >> $GITHUB_OUTPUT
+          else
+            echo "slack=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 发送钉钉通知
+      - name: 发送钉钉通知
+        if: steps.webhook-check.outputs.dingtalk == 'true'
         run: |
           curl -X POST "${{ secrets.DINGTALK_WEBHOOK }}" \
             -H 'Content-Type: application/json' \
@@ -262,8 +184,9 @@ jobs:
             }'
         continue-on-error: true
 
-      - name: 发送 Slack 通知 (可选)
-        if: ${{ secrets.SLACK_WEBHOOK_URL }}
+      # 发送Slack通知
+      - name: 发送 Slack 通知
+        if: steps.webhook-check.outputs.slack == 'true'
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
