@@ -126,20 +126,9 @@ Dockerfile
 <<<<<<< HEAD
 .claude/settings.local.json
 backend/logs/
-backend/logs/*.log
-backend/logs/combined.log
-backend/logs/error.log
 backend/media/
-=======
-backend/media/xiaohongshu
-backend/logs/combined.log
-backend/logs/error.log
-新增功能/start_services.sh
-.claude/settings.local.json
-backend/media/xiaohongshu
-backend/logs/combined.log
-backend/logs/error.log
 .claude/settings.local.json
 新增功能/
-backend/logs/combined.log
 >>>>>>> backup-before-mongodb-cleanup
+.trae/
+.claude/
