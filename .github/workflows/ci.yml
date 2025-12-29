@@ -38,6 +38,16 @@ jobs:
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
+      - name: 验证 Node.js 版本
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          if [ $(node -v | cut -d'.' -f1 | sed 's/v//') -lt 20 ]; then
+            echo "❌ Node.js 版本必须 >= 20"
+            exit 1
+          fi
+          echo "✅ Node.js 版本验证通过"
+
       - name: 安装后端依赖
         working-directory: ./backend
         run: npm ci
@@ -87,6 +97,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+
+      - name: 验证 Node.js 版本
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Vite 要求: Node.js 20.19+ or 22.12+"
+          NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//')
+          if [ "$NODE_MAJOR" -lt 20 ]; then
+            echo "❌ Node.js 版本 $NODE_MAJOR 低于要求的 20"
+            exit 1
+          fi
+          echo "✅ Node.js 版本验证通过"
 
       - name: 安装前端依赖
         working-directory: ./frontend
