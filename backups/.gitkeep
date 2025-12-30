@@ -1,0 +1,2 @@
+# 此文件确保 backups 目录被 Git 跟踪
+# 实际的备份文件应通过 .gitignore 排除

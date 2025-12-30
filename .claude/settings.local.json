@@ -26,7 +26,17 @@
       "Bash(git push:*)",
       "Bash(sort echo \"\" echo \"🐳 Docker 配置文件：\" ls -1 /Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/*Dockerfile /Users/wangxuyang/Downloads/01_GitHub/demo/videoAll/*/Dockerfile)",
       "Bash(git fetch:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(kill:*)",
+      "Bash(xargs kill:*)",
+      "Bash(chmod:*)",
+      "Bash(make:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(pkill:*)",
+      "Bash(tee:*)"
     ]
   }
 }

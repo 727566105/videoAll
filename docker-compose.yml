@@ -64,6 +64,7 @@ services:
       - media_data:/app/media
       - logs_data:/app/logs
       - backup_data:/app/backups
+      - ./media_parser_sdk:/app/media_parser_sdk:ro
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     networks:
