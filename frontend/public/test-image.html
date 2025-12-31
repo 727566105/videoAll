@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Image Load Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .test-item { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+    img { width: 200px; height: 150px; object-fit: cover; border: 2px solid #ddd; }
+    .success { border-color: #52c41a; background: #f6ffed; }
+    .error { border-color: #ff4d4f; background: #fff1f0; }
+    pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>图片加载测试</h1>
+
+  <div class="test-item">
+    <h2>测试 1: 通过 Vite 代理加载本地封面</h2>
+    <img id="test1" src="/api/v1/content/2100bdd1-9aef-48ea-bbb4-60f9ab875ac0/local-media?type=cover"
+         onerror="this.parentElement.classList.add('error'); log('test1', 'ERROR: 图片加载失败');" />
+    <p id="test1-status">加载中...</p>
+  </div>
+
+  <div class="test-item">
+    <h2>测试 2: 直接加载后端图片</h2>
+    <img id="test2" src="http://localhost:3000/api/v1/content/2100bdd1-9aef-48ea-bbb4-60f9ab875ac0/local-media?type=cover"
+         onerror="this.parentElement.classList.add('error'); log('test2', 'ERROR: 图片加载失败');" />
+    <p id="test2-status">加载中...</p>
+  </div>
+
+  <div class="test-item">
+    <h2>测试 3: 通过代理加载远程图片</h2>
+    <img id="test3" src="/api/v1/content/proxy-image?url=http://sns-webpic-qc.xhscdn.com/202512252037/b2e632e246e7983ee1e0ac118437de27/1040g2sg31qechn7d00005nsr8pl08bl9slu6638!nd_dft_wlteh_jpg_3"
+         onerror="this.parentElement.classList.add('error'); log('test3', 'ERROR: 图片加载失败');" />
+    <p id="test3-status">加载中...</p>
+  </div>
+
+  <div class="test-item">
+    <h2>控制台日志</h2>
+    <pre id="log"></pre>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+
+    function log(testId, message) {
+      const timestamp = new Date().toLocaleTimeString();
+      logEl.textContent += `[${timestamp}] ${testId}: ${message}\n`;
+    }
+
+    // 为每个图片添加加载成功事件
+    document.getElementById('test1').onload = function() {
+      this.parentElement.classList.add('success');
+      document.getElementById('test1-status').textContent = '✅ 加载成功';
+      log('test1', 'SUCCESS: 本地封面通过 Vite 代理加载成功');
+    };
+
+    document.getElementById('test2').onload = function() {
+      this.parentElement.classList.add('success');
+      document.getElementById('test2-status').textContent = '✅ 加载成功';
+      log('test2', 'SUCCESS: 图片直接从后端加载成功');
+    };
+
+    document.getElementById('test3').onload = function() {
+      this.parentElement.classList.add('success');
+      document.getElementById('test3-status').textContent = '✅ 加载成功';
+      log('test3', 'SUCCESS: 远程图片通过代理加载成功');
+    };
+
+    log('system', '测试页面已加载，开始测试图片加载...');
+  </script>
+</body>
+</html>

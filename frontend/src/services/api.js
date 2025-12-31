@@ -1,0 +1,279 @@
+import axios from 'axios';
+
+// Create axios instance with relative path to support both HTTP and HTTPS
+// The baseURL is constructed dynamically based on the current window location
+const getBaseURL = () => {
+  // In production, use relative path to auto-adapt to HTTP/HTTPS
+  // In development, use hardcoded URL for easier development
+  if (import.meta.env.MODE === 'production') {
+    return '/api/v1';
+  } else {
+    // Use HTTP for development by default, can be changed via environment variable
+    const protocol = import.meta.env.VITE_API_PROTOCOL || 'http';
+    const host = import.meta.env.VITE_API_HOST || 'localhost';
+    const port = import.meta.env.VITE_API_PORT || '3000';
+    return `${protocol}://${host}:${port}/api/v1`;
+  }
+};
+
+const api = axios.create({
+  baseURL: getBaseURL(),
+  timeout: 60000 // 60 seconds timeout
+});
+
+// Request interceptor - add auth token
+api.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - handle errors
+api.interceptors.response.use(
+  (response) => {
+    return response.data;
+  },
+  (error) => {
+    // Handle 401 Unauthorized - redirect to login
+    if (error.response && error.response.status === 401) {
+      // Check if current token is mock token
+      const token = localStorage.getItem('token');
+      if (token && token.startsWith('mock-token-')) {
+        // For mock tokens, provide a clearer error message
+        const message = '认证令牌无效，请重新登录';
+        return Promise.reject(new Error(message));
+      }
+
+      // For real token errors, clear authentication info and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('savedCredentials');
+      window.location.href = '/login';
+    }
+
+    // Handle network errors specially
+    if (!error.response) {
+      const message = '网络连接失败，请检查后端服务是否正常运行';
+      return Promise.reject(new Error(message));
+    }
+
+    // Handle other errors
+    let message = error.response?.data?.message || error.message || '请求失败';
+
+    // Provide more specific error messages for common status codes
+    if (error.response.status === 403) {
+      message = '您没有权限执行此操作';
+    } else if (error.response.status === 404) {
+      message = '请求的资源不存在';
+    } else if (error.response.status === 409) {
+      // 409 Conflict - 内容已存在
+      message = error.response.data?.message || '内容已存在';
+    } else if (error.response.status === 503) {
+      message = error.response.data?.message || '数据库连接不可用，请稍后重试';
+    } else if (error.response.status >= 500) {
+      message = '服务器内部错误，请稍后重试';
+    }
+
+    return Promise.reject(new Error(message));
+  }
+);
+
+// Request interceptor - add auth token only (no caching)
+api.interceptors.request.use(
+  (config) => {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// API endpoints
+const apiService = {
+  // Authentication
+  auth: {
+    login: (data) => api.post('/auth/login', data),
+    logout: () => api.post('/auth/logout'),
+    checkSystemStatus: () => api.get('/auth/system-status'),
+    initialSetup: (data) => api.post('/auth/initial-setup', data)
+  },
+  
+  // User management
+  users: {
+    // Current user
+    getCurrentUser: () => api.get('/users/me'),
+    updateCurrentUser: (data) => api.put('/users/me', data),
+    changeCurrentUserPassword: (data) => api.put('/users/me/password', data),
+    
+    // Admin user management
+    getAll: () => api.get('/users'),
+    getById: (id) => api.get(`/users/${id}`),
+    create: (data) => api.post('/users', data),
+    update: (id, data) => api.put(`/users/${id}`, data),
+    updatePassword: (id, data) => api.put(`/users/${id}/password`, data),
+    delete: (id) => api.delete(`/users/${id}`)
+  },
+  
+  // Content parsing and management
+  content: {
+    parse: (data) => api.post('/content/parse', data),
+    getList: (params) => api.get('/content', { params }),
+    getById: (id) => api.get(`/content/${id}`),
+    delete: (id) => api.delete(`/content/${id}`),
+    batchDelete: (data) => api.post('/content/batch-delete', data),
+    export: (data) => api.post('/content/export', data),
+    download: (id) => api.post('/content/download', { id }, { responseType: 'blob' }),
+    downloadByUrl: (data) => api.post('/content/download-by-url', data),
+    save: (data) => api.post('/content/save', data),
+    refreshStats: (id) => api.post(`/content/${id}/refresh-stats`)
+  },
+  
+  // Task management
+  tasks: {
+    create: (data) => api.post('/tasks', data),
+    getList: (params) => api.get('/tasks', { params }),
+    getById: (id) => api.get(`/tasks/${id}`),
+    update: (id, data) => api.put(`/tasks/${id}`, data),
+    delete: (id) => api.delete(`/tasks/${id}`),
+    toggleStatus: (id, data) => api.patch(`/tasks/${id}/status`, data),
+    runImmediately: (id) => api.post(`/tasks/${id}/run`),
+    runHotsearch: () => api.post('/tasks/hotsearch/run'),
+    getHotsearchLogs: (params) => api.get('/tasks/hotsearch/logs', { params }),
+    getLogs: (taskId, params) => api.get(`/tasks/${taskId}/logs`, { params }),
+    getAllLogs: (params) => api.get('/tasks/logs/all', { params })
+  },
+  
+  // Hotsearch management
+  hotsearch: {
+    fetch: (platform) => api.post(`/hotsearch/${platform}`),
+    fetchAll: () => api.post('/hotsearch'),
+    getByDate: (platform, params) => api.get(`/hotsearch/${platform}`, { params }),
+    getTrends: (platform, params) => api.get(`/hotsearch/${platform}/trends`, { params }),
+    getPlatforms: () => api.get('/hotsearch/platforms'),
+    parseContent: (data) => api.post('/hotsearch/parse', data),
+    getRelatedContent: (params) => api.get('/hotsearch/related', { params }),
+    // Phase 2 新增API
+    getAllPlatforms: () => api.get('/hotsearch/all'),
+    getHistory: (params) => api.get('/hotsearch/history', { params }),
+    compare: (params) => api.get('/hotsearch/compare', { params }),
+    getAnalysis: (params) => api.get('/hotsearch/analysis', { params }),
+    getKeywordTrends: (keyword, params) => api.get(`/hotsearch/keywords/${keyword}`, { params }),
+    refresh: () => api.post('/hotsearch/refresh'),
+    getStats: () => api.get('/hotsearch/stats')
+  },
+  
+  // Dashboard data
+  dashboard: {
+    getAllData: () => api.get('/dashboard'),
+    getStats: () => api.get('/dashboard/stats'),
+    getPlatformDistribution: () => api.get('/dashboard/platform-distribution'),
+    getContentTypeComparison: () => api.get('/dashboard/content-type-comparison'),
+    getRecentTrend: () => api.get('/dashboard/recent-trend')
+  },
+
+  // Download settings
+  downloadSettings: {
+    get: () => api.get('/config/download-settings'),
+    update: (data) => api.put('/config/download-settings', data),
+    getQualityOptions: (platform) => api.get(`/config/download-settings/quality-options/${platform}`)
+  },
+
+  // System configuration management
+  config: {
+    // User management
+    getUsers: () => api.get('/config/users'),
+    createUser: (data) => api.post('/config/users', data),
+    updateUser: (id, data) => api.put(`/config/users/${id}`, data),
+    updateUserPassword: (id, data) => api.patch(`/config/users/${id}/password`, data),
+    deleteUser: (id) => api.delete(`/config/users/${id}`),
+    toggleUserStatus: (id, data) => api.patch(`/config/users/${id}/status`, data),
+
+    // Cookie management
+    getCookies: () => api.get('/config/cookies'),
+    createCookie: (data) => api.post('/config/cookies', data),
+    updateCookie: (id, data) => api.put(`/config/cookies/${id}`, data),
+    deleteCookie: (id) => api.delete(`/config/cookies/${id}`),
+    testCookie: (id) => api.post(`/config/cookies/${id}/test`),
+
+    // Platform Cookie management
+    getPlatformCookies: () => api.get('/config/platform-cookies'),
+    createPlatformCookie: (data) => api.post('/config/platform-cookies', data),
+    updatePlatformCookie: (id, data) => api.put(`/config/platform-cookies/${id}`, data),
+    deletePlatformCookie: (id) => api.delete(`/config/platform-cookies/${id}`),
+    testPlatformCookie: (id) => api.post(`/config/platform-cookies/${id}/test`),
+    autoFetchCookie: (platform, headless = false) => api.get(`/config/platform-cookies/auto-fetch/${platform}`, { params: { headless }, timeout: 120000 }),
+
+    // System settings
+    getSystemSettings: () => api.get('/config/system'),
+    updateSystemSettings: (data) => api.put('/config/system', data)
+  },
+
+  // Tag management
+  tags: {
+    getAll: () => api.get('/tags'),
+    create: (data) => api.post('/tags', data),
+    update: (id, data) => api.put(`/tags/${id}`, data),
+    delete: (id) => api.delete(`/tags/${id}`),
+    getContentTags: (id) => api.get(`/tags/content/${id}/tags`),
+    addTagsToContent: (data) => api.post('/tags/content/tags/add', data),
+    removeTagsFromContent: (data) => api.post('/tags/content/tags/remove', data),
+    batchUpdateTags: (data) => api.post('/tags/content/tags/batch', data)
+  },
+
+  // AI configuration management
+  aiConfig: {
+    getConfigs: () => api.get('/ai-config'),
+    getConfigById: (id) => api.get(`/ai-config/${id}`),
+    getActiveConfig: () => api.get('/ai-config/active'),
+    createConfig: (data) => api.post('/ai-config', data),
+    updateConfig: (id, data) => api.put(`/ai-config/${id}`, data),
+    deleteConfig: (id) => api.delete(`/ai-config/${id}`),
+    testConnection: (id) => api.post(`/ai-config/${id}/test`),
+    getProviders: () => api.get('/ai-config/meta/providers'),
+    getConfigTemplate: (provider) => api.get(`/ai-config/meta/templates/${provider}`),
+    getKeyStatus: () => api.get('/ai-config/security/key-status'),
+    rotateKey: () => api.post('/ai-config/security/rotate-key'),
+    copyConfig: (id) => api.post(`/ai-config/${id}/copy`),
+    getTestHistory: (id) => api.get(`/ai-config/${id}/test-history`),
+    importConfig: (data) => api.post('/ai-config/import', data),
+    exportConfig: (id) => api.post(`/ai-config/export/${id}`),
+    batchUpdate: (data) => api.put('/ai-config/batch', data),
+    batchDelete: (data) => api.delete('/ai-config/batch', { data })
+  },
+
+  // AI content analysis
+  aiAnalysis: {
+    // 分析内容（统一入口 - 包含标签和描述）
+    analyzeContent: (id, options = {}) => {
+      const { tags = true, description = true, ocr = true } = options;
+      return api.post(`/content/${id}/ai-analyze`, {
+        tags,
+        description,
+        ocr
+      });
+    },
+    // 获取内容AI状态
+    getContentStatus: (id) => api.get(`/content/${id}/ai-status`),
+    // 确认AI标签
+    confirmTags: (id, data) => api.post(`/content/${id}/ai-tags/confirm`, data),
+    // 获取待确认标签
+    getPendingTags: (id) => api.get(`/content/${id}/ai-tags/pending`),
+    // 获取AI标签统计
+    getTagStats: () => api.get('/content/ai-tags/stats')
+  }
+};
+
+export default apiService;

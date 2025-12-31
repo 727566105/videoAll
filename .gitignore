@@ -1,0 +1,141 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+*.pem
+package-lock.json
+**/package-lock.json
+
+# Build outputs
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Media files
+media/*
+!.gitkeep
+
+# Parser module logs
+parser-module/logs/*
+
+# Backup files
+*.bak
+*.backup
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# IDE generated files
+*.swp
+*.swo
+*~
+
+# Build artifacts
+build/
+out/
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS generated files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.md.bak
+*.md.tmp
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+.temp/
+
+# Editor directories and files
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
+*.vscode/*
+!.vscode/extensions.json
+*.code-workspace
+
+# Gitlab
+.gitlab-ci.yml
+
+# Docker
+# Dockerfile 和 .dockerignore 不再全局忽略
+!Dockerfile
+!backend/Dockerfile
+!frontend/Dockerfile
+!.dockerignore
+
+# Kubernetes
+# *.yaml
+# *.yml
+# 允许特定目录下的 yml 文件
+!.github/workflows/*.yml
+!.github/**/*.yml
+!.github/**/*.yaml
+!docker-compose.yml
+!frontend/docker/*.conf
+
+# AWS
+*.tf
+*.tfvars
+.terraform/
+backend/logs/
+backend/media/
+新增功能/
+.trae/
+.claude/

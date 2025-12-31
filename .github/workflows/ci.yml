@@ -1,0 +1,226 @@
+name: 持续集成 (CI)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # 后端测试和代码检查
+  backend-test:
+    name: 后端测试与检查
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: 20
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: video_all_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 清除旧的 npm 缓存
+        run: |
+          echo "清除可能存在的 Node.js 18 缓存..."
+          rm -rf ~/.npm/_cacache/index-v5 || true
+          npm cache clean --force
+
+      - name: 验证 Node.js 版本
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          if [ $(node -v | cut -d'.' -f1 | sed 's/v//') -lt 20 ]; then
+            echo "❌ Node.js 版本必须 >= 20"
+            exit 1
+          fi
+          echo "✅ Node.js 版本验证通过"
+
+      - name: 安装后端依赖
+        working-directory: ./backend
+        run: |
+          rm -rf node_modules
+          npm install --no-audit --no-fund
+
+      - name: 代码检查 (ESLint)
+        working-directory: ./backend
+        run: npm run lint --if-present
+        continue-on-error: true
+
+      - name: 运行单元测试
+        working-directory: ./backend
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DATABASE: video_all_test
+          NODE_ENV: test
+        run: npm test
+        continue-on-error: true
+
+      - name: 生成测试覆盖率报告
+        working-directory: ./backend
+        run: npm run test:coverage --if-present
+        continue-on-error: true
+
+      - name: 上传覆盖率报告
+        uses: codecov/codecov-action@v3
+        if: success()
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  # 前端测试和构建
+  frontend-test:
+    name: 前端测试与构建
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: 20
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 清除旧的 npm 缓存
+        run: |
+          echo "清除可能存在的 Node.js 18 缓存..."
+          rm -rf ~/.npm/_cacache/index-v5 || true
+          npm cache clean --force
+
+      - name: 验证 Node.js 版本
+        run: |
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Vite 要求: Node.js 20.19+ or 22.12+"
+          NODE_MAJOR=$(node -v | cut -d'.' -f1 | sed 's/v//')
+          if [ "$NODE_MAJOR" -lt 20 ]; then
+            echo "❌ Node.js 版本 $NODE_MAJOR 低于要求的 20"
+            exit 1
+          fi
+          echo "✅ Node.js 版本验证通过"
+
+      - name: 安装前端依赖
+        working-directory: ./frontend
+        run: |
+          rm -rf node_modules
+          npm install --no-audit --no-fund --legacy-peer-deps --force
+
+      - name: 代码检查 (ESLint)
+        working-directory: ./frontend
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 构建前端
+        working-directory: ./frontend
+        env:
+          VITE_API_BASE_URL: /api/v1
+        run: npm run build
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+
+  # 安全扫描
+  security-scan:
+    name: 安全扫描
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 运行 Trivy 漏洞扫描
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 上传扫描结果到 GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Python SDK 检查
+  python-sdk-check:
+    name: Python SDK 检查
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./media_parser_sdk
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: |
+          pip install -e .
+          pip install pytest pytest-cov flake8
+
+      - name: 代码检查 (flake8)
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        continue-on-error: true
+
+      - name: 运行测试
+        run: pytest tests/ -v --cov=. --cov-report=xml
+        continue-on-error: true
+
+  # 汇总状态
+  ci-summary:
+    name: CI 汇总
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test, security-scan, python-sdk-check]
+    if: always()
+
+    steps:
+      - name: 生成 CI 汇总报告
+        run: |
+          echo "## CI 流程执行结果 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 任务状态" >> $GITHUB_STEP_SUMMARY
+          echo "- 后端测试: ${{ needs.backend-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 前端测试: ${{ needs.frontend-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 安全扫描: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Python SDK: ${{ needs.python-sdk-check.result }}" >> $GITHUB_STEP_SUMMARY

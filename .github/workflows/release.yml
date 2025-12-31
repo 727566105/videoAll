@@ -1,0 +1,197 @@
+name: Simple Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号 (例如: v1.0.0)"
+        required: true
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # 创建 GitHub Release
+  create-release:
+    name: 创建 GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+      version: ${{ steps.tag.outputs.version }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 获取版本号
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 生成变更日志
+        id: changelog
+        run: |
+          # 获取当前标签与前一个标签之间的提交
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "## 📦 版本 ${{ steps.tag.outputs.version }}" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "### 🔄 变更内容" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          else
+            echo "## 📦 版本 ${{ steps.tag.outputs.version }}" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "### 🎉 首次发布" >> CHANGELOG.md
+            echo "这是项目的首次发布版本。" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+
+          echo "### 🔗 相关链接" >> CHANGELOG.md
+          echo "- [查看完整变更记录](https://github.com/${{ github.repository }}/commits/${{ github.sha }})" >> CHANGELOG.md
+
+          # 设置输出
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: 创建 Release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.version }}
+          release_name: Release ${{ steps.tag.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+  # 构建并发布 Docker 镜像
+  publish-docker:
+    name: 发布 Docker 镜像
+    runs-on: ubuntu-latest
+    needs: create-release
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        component: [backend, frontend]
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录到 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 提取元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-${{ matrix.component }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: 构建并推送镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.component }}
+          file: ./${{ matrix.component }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.create-release.outputs.version }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            COMMIT_SHA=${{ github.sha }}
+
+  # 发送通知
+  notify:
+    name: 发送发布通知
+    runs-on: ubuntu-latest
+    needs: [create-release, publish-docker]
+    if: always()
+
+    steps:
+      - name: 生成发布通知
+        run: |
+          echo "## 🎉 版本发布完成!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 发布信息" >> $GITHUB_STEP_SUMMARY
+          echo "- **版本号:** \`${{ needs.create-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **发布时间:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ 任务状态" >> $GITHUB_STEP_SUMMARY
+          echo "- 创建 Release: ${{ needs.create-release.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker 镜像: ${{ needs.publish-docker.result }}" >> $GITHUB_STEP_SUMMARY
+
+      # 检查是否配置了通知webhook
+      - name: Check notification webhooks
+        id: webhook-check
+        run: |
+          if [ -n "${{ secrets.DINGTALK_WEBHOOK }}" ]; then
+            echo "dingtalk=true" >> $GITHUB_OUTPUT
+          else
+            echo "dingtalk=false" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            echo "slack=true" >> $GITHUB_OUTPUT
+          else
+            echo "slack=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 发送钉钉通知
+      - name: 发送钉钉通知
+        if: steps.webhook-check.outputs.dingtalk == 'true'
+        run: |
+          curl -X POST "${{ secrets.DINGTALK_WEBHOOK }}" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "msgtype": "markdown",
+              "markdown": {
+                "title": "🎉 videoAll 新版本发布",
+                "text": "## 🎉 videoAll ${{ needs.create-release.outputs.version }} 发布成功!\n\n**发布时间:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')\n\n**Commit:** ${{ github.sha }}\n\n[查看 Release](https://github.com/${{ github.repository }}/releases/tag/${{ needs.create-release.outputs.version }})"
+              }
+            }'
+        continue-on-error: true
+
+      # 发送Slack通知
+      - name: 发送 Slack 通知
+        if: steps.webhook-check.outputs.slack == 'true'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            🎉 videoAll ${{ needs.create-release.outputs.version }} 发布成功!
+            查看详情: https://github.com/${{ github.repository }}/releases/tag/${{ needs.create-release.outputs.version }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
